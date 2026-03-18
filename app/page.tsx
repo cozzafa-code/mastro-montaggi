@@ -1,5 +1,5 @@
-﻿"use client";
-import MastroMontaggi from "@/components/MastroMontaggi";
+import MastroMontaggiApp from "@/components/MastroMontaggiApp";
+
 export default function Page() {
-  return <MastroMontaggi />;
+  return <MastroMontaggiApp />;
 }
