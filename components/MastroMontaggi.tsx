@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase as sb_client } from '@/lib/supabase'
 
 const DS = {
   teal: '#14B8A6', tealDark: '#0F766E', tealLight: '#CCFBF1', tealBg: '#F0FDF9',
@@ -47,7 +47,7 @@ interface LavorazioneRow {
 }
 
 function useMastroMontaggi(operatoreId: string, aziendaId: string) {
-  const sb = createClientComponentClient()
+  const sb = sb_client
   const [montaggiOggi, setMontaggiOggi] = useState<Montaggio[]>([])
   const [taskOggi, setTaskOggi] = useState<TaskMontaggio[]>([])
   const [loading, setLoading] = useState(true)
@@ -138,7 +138,7 @@ function useMastroMontaggi(operatoreId: string, aziendaId: string) {
 }
 
 function useCommessaDetail(commessaId: string, aziendaId: string) {
-  const sb = createClientComponentClient()
+  const sb = sb_client
   const [vani, setVani] = useState<Vano[]>([])
   const [task, setTask] = useState<TaskMontaggio[]>([])
   const [comunicazioni, setComunicazioni] = useState<Comunicazione[]>([])
