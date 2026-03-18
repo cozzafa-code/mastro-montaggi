@@ -63,7 +63,7 @@ function useMastroMontaggi(operatoreId: string, aziendaId: string) {
 
     if (!data) return
     // Fetch commesse separatamente
-    const commessaIds = [...new Set(data.map((m: any) => m.commessa_id).filter(Boolean))]
+    const commessaIds = Array.from(new Set(data.map((m: any) => m.commessa_id).filter(Boolean)))
     let commesseMap: Record<string, any> = {}
     let contattiMap: Record<string, any> = {}
 
@@ -73,7 +73,7 @@ function useMastroMontaggi(operatoreId: string, aziendaId: string) {
         .in('id', commessaIds)
       if (commesse) {
         commesse.forEach((c: any) => { commesseMap[c.id] = c })
-        const contattoIds = [...new Set(commesse.map((c: any) => c.contatto_id).filter(Boolean))]
+        const contattoIds = Array.from(new Set(commesse.map((c: any) => c.contatto_id).filter(Boolean)))
         if (contattoIds.length > 0) {
           const { data: contatti } = await sb.from('contatti')
             .select('id,indirizzo,citta,telefono,email')
