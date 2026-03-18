@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
-// MASTRO MONTAGGI — App satellite per montatori
+// MASTRO MONTAGGI â€” App satellite per montatori
 // Deploy: mastro-montaggi.vercel.app
 // Login: PIN 4 cifre
 // Device: smartphone ottimizzato, offline-ready
@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
-// ─── DESIGN SYSTEM ───────────────────────────────────────────
+// â”€â”€â”€ DESIGN SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TEAL = "#1A9E73";
 const DARK = "#1A1A1C";
 const RED  = "#DC4444";
@@ -18,7 +18,7 @@ const PURPLE = "#8B5CF6";
 const FF = "Inter, system-ui, sans-serif";
 const FM = "JetBrains Mono, monospace";
 
-// ─── TYPES ───────────────────────────────────────────────────
+// â”€â”€â”€ TYPES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface Montaggio {
   id: string;
   cmId: string;
@@ -39,7 +39,7 @@ interface Montaggio {
   note?: string;
   checklist?: ChecklistItem[];
   foto?: Foto[];
-  materialiRichiesti?: RichiestaMatriale[];
+  materialiRichiesti?: RichiestaMateriale[];
   tempoStimato?: number; // minuti
   tempoReale?: number;
 }
@@ -74,7 +74,7 @@ interface RichiestaMateriale {
   ts: string;
 }
 
-// ─── CHECKLIST DEFAULT (configurabile per azienda) ──────────
+// â”€â”€â”€ CHECKLIST DEFAULT (configurabile per azienda) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CHECKLIST_DEFAULT: ChecklistItem[] = [
   // CARICO
   { id:"c1", testo:"Verifica materiali in magazzino", fatto:false, obbligatorio:true,  fase:"carico" },
@@ -102,7 +102,7 @@ const CHECKLIST_DEFAULT: ChecklistItem[] = [
   { id:"s4", testo:"Foto finali scattate",            fatto:false, obbligatorio:true,  fase:"scarico" },
 ];
 
-// ─── DEMO DATA ───────────────────────────────────────────────
+// â”€â”€â”€ DEMO DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MONTAGGI_DEMO: Montaggio[] = [
   {
     id:"m1", cmId:"cm001", code:"S-0042",
@@ -114,10 +114,10 @@ const MONTAGGI_DEMO: Montaggio[] = [
     tempoStimato:450,
     note:"Cliente disponibile tutto il giorno. Accesso dal portone laterale.",
     vani:[
-      {id:"v1",nome:"Salone",tipo:"Scorrevole HST",mis:"2400×2200",col:"RAL 7016",uw:"1.1"},
-      {id:"v2",nome:"Camera",tipo:"Finestra 2 ante",mis:"1400×1400",col:"RAL 7016",uw:"1.3"},
-      {id:"v3",nome:"Cameretta",tipo:"Finestra 1 anta",mis:"1000×1200",col:"RAL 7016",uw:"1.3"},
-      {id:"v4",nome:"Bagno",tipo:"Vasistas",mis:"600×600",col:"RAL 9010",uw:"1.4"},
+      {id:"v1",nome:"Salone",tipo:"Scorrevole HST",mis:"2400Ã—2200",col:"RAL 7016",uw:"1.1"},
+      {id:"v2",nome:"Camera",tipo:"Finestra 2 ante",mis:"1400Ã—1400",col:"RAL 7016",uw:"1.3"},
+      {id:"v3",nome:"Cameretta",tipo:"Finestra 1 anta",mis:"1000Ã—1200",col:"RAL 7016",uw:"1.3"},
+      {id:"v4",nome:"Bagno",tipo:"Vasistas",mis:"600Ã—600",col:"RAL 9010",uw:"1.4"},
     ],
     checklist: JSON.parse(JSON.stringify(CHECKLIST_DEFAULT)),
     foto:[], materialiRichiesti:[],
@@ -132,8 +132,8 @@ const MONTAGGI_DEMO: Montaggio[] = [
     tempoStimato:240,
     note:"Solo mattina. 2 finestre piano terra.",
     vani:[
-      {id:"v5",nome:"Cucina",tipo:"Finestra 2 ante",mis:"1200×1400",col:"RAL 9010",uw:"1.3"},
-      {id:"v6",nome:"Salotto",tipo:"Porta finestra",mis:"900×2200",col:"RAL 9010",uw:"1.3"},
+      {id:"v5",nome:"Cucina",tipo:"Finestra 2 ante",mis:"1200Ã—1400",col:"RAL 9010",uw:"1.3"},
+      {id:"v6",nome:"Salotto",tipo:"Porta finestra",mis:"900Ã—2200",col:"RAL 9010",uw:"1.3"},
     ],
     checklist: JSON.parse(JSON.stringify(CHECKLIST_DEFAULT)),
     foto:[], materialiRichiesti:[],
@@ -148,7 +148,7 @@ const CONTATTI_DEMO = [
   {ruolo:"Responsabile prod.", nome:"Luigi Russo",  tel:"333 4444444"},
 ];
 
-// ─── LOGIN PIN ───────────────────────────────────────────────
+// â”€â”€â”€ LOGIN PIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LoginPIN({ onLogin }: { onLogin:(nome:string)=>void }) {
   const [pin, setPin] = useState("");
   const [errore, setErrore] = useState(false);
@@ -190,9 +190,9 @@ function LoginPIN({ onLogin }: { onLogin:(nome:string)=>void }) {
       {errore&&<div style={{color:RED,fontSize:13,marginBottom:16,fontWeight:500}}>PIN non riconosciuto</div>}
       {/* Tastiera */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,width:240}}>
-        {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((n,i)=>(
-          <div key={i} onClick={()=>{ if(n==="⌫"){setPin(p=>p.slice(0,-1));setErrore(false);}else if(n)pressNum(n); }}
-            style={{height:64,borderRadius:14,background:n?"rgba(255,255,255,0.1)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:n==="⌫"?20:22,fontWeight:500,color:"#fff",cursor:n?"pointer":"default",userSelect:"none" as any,WebkitUserSelect:"none" as any,transition:"background .1s",fontFamily:n==="⌫"?FF:FM}}
+        {["1","2","3","4","5","6","7","8","9","","0","âŒ«"].map((n,i)=>(
+          <div key={i} onClick={()=>{ if(n==="âŒ«"){setPin(p=>p.slice(0,-1));setErrore(false);}else if(n)pressNum(n); }}
+            style={{height:64,borderRadius:14,background:n?"rgba(255,255,255,0.1)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:n==="âŒ«"?20:22,fontWeight:500,color:"#fff",cursor:n?"pointer":"default",userSelect:"none" as any,WebkitUserSelect:"none" as any,transition:"background .1s",fontFamily:n==="âŒ«"?FF:FM}}
             onTouchStart={e=>{if(n)(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.2)";}}
             onTouchEnd={e=>{if(n)(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.1)";}}
           >{n}</div>
@@ -202,7 +202,7 @@ function LoginPIN({ onLogin }: { onLogin:(nome:string)=>void }) {
   );
 }
 
-// ─── SCHEDA VANO ────────────────────────────────────────────
+// â”€â”€â”€ SCHEDA VANO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SchedaVano({ vano }: { vano:any }) {
   return (
     <div style={{background:"#F8FAFC",borderRadius:12,padding:"12px 14px",marginBottom:8,border:"1px solid #E5E3DC"}}>
@@ -212,14 +212,14 @@ function SchedaVano({ vano }: { vano:any }) {
       </div>
       <div style={{fontSize:12,color:"#6B7280"}}>{vano.tipo}</div>
       <div style={{display:"flex",gap:12,marginTop:4}}>
-        <span style={{fontSize:11,color:"#6B7280"}}>📐 {vano.mis} mm</span>
-        <span style={{fontSize:11,color:"#6B7280"}}>🎨 {vano.col}</span>
+        <span style={{fontSize:11,color:"#6B7280"}}>ðŸ“ {vano.mis} mm</span>
+        <span style={{fontSize:11,color:"#6B7280"}}>ðŸŽ¨ {vano.col}</span>
       </div>
     </div>
   );
 }
 
-// ─── CHECKLIST ───────────────────────────────────────────────
+// â”€â”€â”€ CHECKLIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ChecklistView({ items, onToggle, fase }: { items:ChecklistItem[]; onToggle:(id:string)=>void; fase:string }) {
   const filtered = items.filter(i=>i.fase===fase);
   const done = filtered.filter(i=>i.fatto).length;
@@ -243,7 +243,7 @@ function ChecklistView({ items, onToggle, fase }: { items:ChecklistItem[]; onTog
   );
 }
 
-// ─── RICHIESTA MATERIALI ────────────────────────────────────
+// â”€â”€â”€ RICHIESTA MATERIALI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function RichiestaMaterialiForm({ onSave, onClose }: { onSave:(r:any)=>void; onClose:()=>void }) {
   const [desc, setDesc] = useState("");
   const [qty, setQty] = useState("1");
@@ -294,13 +294,13 @@ function RichiestaMaterialiForm({ onSave, onClose }: { onSave:(r:any)=>void; onC
       <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"20px 16px 32px",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto" as any,fontFamily:FF}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <span style={{fontSize:16,fontWeight:600,color:DARK}}>Richiesta materiali</span>
-          <button onClick={onClose} style={{width:30,height:30,borderRadius:"50%",border:"none",background:"#F4F6F8",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          <button onClick={onClose} style={{width:30,height:30,borderRadius:"50%",border:"none",background:"#F4F6F8",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>Ã—</button>
         </div>
         {/* Urgenza */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:14}}>
           {(["normale","urgente","bloccante"] as const).map(u=>(
             <div key={u} onClick={()=>setUrgenza(u)} style={{padding:"8px",borderRadius:9,border:`1.5px solid ${urgenza===u?urgColors[u]:"#E5E3DC"}`,background:urgenza===u?urgColors[u]+"10":"transparent",textAlign:"center" as any,cursor:"pointer"}}>
-              <div style={{fontSize:16,marginBottom:2}}>{u==="normale"?"✅":u==="urgente"?"⚡":"🚨"}</div>
+              <div style={{fontSize:16,marginBottom:2}}>{u==="normale"?"âœ…":u==="urgente"?"âš¡":"ðŸš¨"}</div>
               <div style={{fontSize:11,fontWeight:500,color:urgenza===u?urgColors[u]:DARK,textTransform:"capitalize" as any}}>{u}</div>
             </div>
           ))}
@@ -308,16 +308,16 @@ function RichiestaMaterialiForm({ onSave, onClose }: { onSave:(r:any)=>void; onC
         {/* Descrizione */}
         <div style={{marginBottom:10}}>
           <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase" as any,letterSpacing:0.5,marginBottom:5}}>Cosa serve</div>
-          <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Es. Lamiera angolare 200×100 mm..." style={{width:"100%",padding:"10px 12px",border:"1px solid #E5E3DC",borderRadius:9,fontSize:14,fontFamily:FF,outline:"none",color:DARK}}/>
+          <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Es. Lamiera angolare 200Ã—100 mm..." style={{width:"100%",padding:"10px 12px",border:"1px solid #E5E3DC",borderRadius:9,fontSize:14,fontFamily:FF,outline:"none",color:DARK}}/>
         </div>
-        {/* Quantità */}
+        {/* QuantitÃ  */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
-            <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase" as any,letterSpacing:0.5,marginBottom:5}}>Quantità</div>
+            <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase" as any,letterSpacing:0.5,marginBottom:5}}>QuantitÃ </div>
             <input type="number" value={qty} onChange={e=>setQty(e.target.value)} min="1" style={{width:"100%",padding:"10px 12px",border:"1px solid #E5E3DC",borderRadius:9,fontSize:14,fontFamily:FM,outline:"none",color:DARK}}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase" as any,letterSpacing:0.5,marginBottom:5}}>Unità</div>
+            <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase" as any,letterSpacing:0.5,marginBottom:5}}>UnitÃ </div>
             <select value={um} onChange={e=>setUm(e.target.value)} style={{width:"100%",padding:"10px 12px",border:"1px solid #E5E3DC",borderRadius:9,fontSize:14,fontFamily:FF,outline:"none",color:DARK,background:"#fff"}}>
               {["pz","ml","mq","kg","set","rotolo"].map(u=><option key={u} value={u}>{u}</option>)}
             </select>
@@ -346,14 +346,14 @@ function RichiestaMaterialiForm({ onSave, onClose }: { onSave:(r:any)=>void; onC
           )}
         </div>
         <button onClick={save} style={{width:"100%",padding:"14px",borderRadius:12,background:urgenza==="bloccante"?RED:urgenza==="urgente"?AMBER:TEAL,color:"#fff",border:"none",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:FF}}>
-          {urgenza==="bloccante"?"🚨 Invia — URGENTISSIMO":urgenza==="urgente"?"⚡ Invia urgente":"✓ Invia richiesta"}
+          {urgenza==="bloccante"?"ðŸš¨ Invia â€” URGENTISSIMO":urgenza==="urgente"?"âš¡ Invia urgente":"âœ“ Invia richiesta"}
         </button>
       </div>
     </div>
   );
 }
 
-// ─── FIRMA CLIENTE ───────────────────────────────────────────
+// â”€â”€â”€ FIRMA CLIENTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function FirmaCliente({ cliente, onFirma, onClose }: { cliente:string; onFirma:(dataUrl:string)=>void; onClose:()=>void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -408,7 +408,7 @@ function FirmaCliente({ cliente, onFirma, onClose }: { cliente:string; onFirma:(
   );
 }
 
-// ─── DETTAGLIO MONTAGGIO ─────────────────────────────────────
+// â”€â”€â”€ DETTAGLIO MONTAGGIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; operatore:string; onBack:()=>void; onUpdate:(m:Montaggio)=>void }) {
   const [tab, setTab] = useState<"info"|"vani"|"checklist"|"materiali"|"foto"|"team">("info");
   const [checkFase, setCheckFase] = useState<"carico"|"posa"|"collaudo"|"scarico">("carico");
@@ -454,17 +454,17 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
       {/* HEADER */}
       <div style={{background:DARK,padding:"14px 16px 0",position:"sticky" as any,top:0,zIndex:50}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-          <button onClick={onBack} style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+          <button onClick={onBack} style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>â€¹</button>
           <div style={{flex:1}}>
             <div style={{fontSize:15,fontWeight:600,color:"#fff"}}>{m.cliente} {m.cognome||""}</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>{m.code} · {m.comune} · {m.oraInizio}–{m.oraFine}</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>{m.code} Â· {m.comune} Â· {m.oraInizio}â€“{m.oraFine}</div>
           </div>
           <span style={{fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:100,background:statoInfo.bg,color:statoInfo.c}}>{statoInfo.l}</span>
         </div>
         {/* CTA principale */}
         {m.stato==="programmato"&&(
           <button onClick={inizia} style={{width:"100%",padding:"12px",borderRadius:"0 0 0 0",background:TEAL,color:"#fff",border:"none",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:FF,marginBottom:0}}>
-            ▶ Inizia montaggio
+            â–¶ Inizia montaggio
           </button>
         )}
         {m.stato==="in_corso"&&(
@@ -474,7 +474,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
               <div style={{fontSize:10,color:"rgba(255,255,255,0.4)"}}>Tempo trascorso</div>
             </div>
             <button onClick={completa} style={{padding:"10px",background:TEAL,color:"#fff",border:"none",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:FF,borderTop:"1px solid rgba(255,255,255,0.1)"}}>
-              ✓ Completa
+              âœ“ Completa
             </button>
           </div>
         )}
@@ -494,16 +494,16 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
 
         {tab==="info"&&<>
           {m.urgenza&&<div style={{background:RED+"10",border:`1px solid ${RED}30`,borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:18}}>🚨</span>
+            <span style={{fontSize:18}}>ðŸš¨</span>
             <span style={{fontSize:13,fontWeight:500,color:RED}}>Montaggio urgente</span>
           </div>}
           {[
             {l:"Indirizzo",v:`${m.indirizzo}, ${m.comune}`},
             {l:"Data",v:m.data},
-            {l:"Orario",v:`${m.oraInizio||"—"} → ${m.oraFine||"—"}`},
-            {l:"Tempo stimato",v:m.tempoStimato?`${Math.floor(m.tempoStimato/60)}h ${m.tempoStimato%60}m`:"—"},
+            {l:"Orario",v:`${m.oraInizio||"â€”"} â†’ ${m.oraFine||"â€”"}`},
+            {l:"Tempo stimato",v:m.tempoStimato?`${Math.floor(m.tempoStimato/60)}h ${m.tempoStimato%60}m`:"â€”"},
             {l:"Vani da installare",v:`${(m.vani||[]).length}`},
-            {l:"Operatori",v:(m.operatori||[]).join(", ")||"—"},
+            {l:"Operatori",v:(m.operatori||[]).join(", ")||"â€”"},
           ].map((r,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,marginBottom:4,background:"#fff",border:"1px solid #E5E3DC"}}>
               <span style={{fontSize:13,color:"#6B7280"}}>{r.l}</span>
@@ -517,7 +517,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
           {/* GPS */}
           <a href={`https://maps.google.com/?q=${encodeURIComponent(m.indirizzo+", "+m.comune)}`} target="_blank" rel="noreferrer"
             style={{display:"block",marginTop:12,padding:"12px",borderRadius:12,background:BLUE,color:"#fff",textAlign:"center" as any,textDecoration:"none",fontSize:14,fontWeight:600}}>
-            📍 Apri in Google Maps
+            ðŸ“ Apri in Google Maps
           </a>
         </>}
 
@@ -550,7 +550,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
           </div>
           {(m.materialiRichiesti||[]).length===0&&(
             <div style={{textAlign:"center" as any,padding:"40px 20px",color:"#9CA3AF"}}>
-              <div style={{fontSize:32,marginBottom:8}}>📦</div>
+              <div style={{fontSize:32,marginBottom:8}}>ðŸ“¦</div>
               <div style={{fontSize:13}}>Nessuna richiesta inviata</div>
             </div>
           )}
@@ -576,7 +576,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <span style={{fontSize:14,fontWeight:600,color:DARK}}>Foto cantiere</span>
             <label style={{padding:"8px 14px",borderRadius:9,background:TEAL,color:"#fff",fontSize:13,fontWeight:500,cursor:"pointer"}}>
-              📷 Scatta
+              ðŸ“· Scatta
               <input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{
                 const file=e.target.files?.[0];
                 if(!file) return;
@@ -591,7 +591,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
           </div>
           {(m.foto||[]).length===0&&(
             <div style={{textAlign:"center" as any,padding:"40px 20px",color:"#9CA3AF"}}>
-              <div style={{fontSize:40,marginBottom:8}}>📷</div>
+              <div style={{fontSize:40,marginBottom:8}}>ðŸ“·</div>
               <div style={{fontSize:13}}>Scatta foto durante il montaggio</div>
             </div>
           )}
@@ -619,9 +619,9 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
               </a>
             </div>
           ))}
-          {/* Segnala criticità */}
+          {/* Segnala criticitÃ  */}
           <div style={{marginTop:16,padding:"14px",borderRadius:12,background:RED+"06",border:`1px solid ${RED}20`}}>
-            <div style={{fontSize:13,fontWeight:600,color:RED,marginBottom:6}}>🚨 Segnala criticità</div>
+            <div style={{fontSize:13,fontWeight:600,color:RED,marginBottom:6}}>ðŸš¨ Segnala criticitÃ </div>
             <textarea placeholder="Descrivi il problema..." rows={2} style={{width:"100%",padding:"8px 10px",border:`1px solid ${RED}30`,borderRadius:8,fontSize:13,fontFamily:FF,outline:"none",color:DARK,resize:"none" as any,background:"#fff"}}/>
             <button style={{marginTop:8,width:"100%",padding:"10px",borderRadius:9,background:RED,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:FF}}>Invia segnalazione urgente</button>
           </div>
@@ -634,7 +634,7 @@ function DettaglioMontaggio({ m, operatore, onBack, onUpdate }: { m:Montaggio; o
   );
 }
 
-// ─── HOME CALENDARIO ──────────────────────────────────────────
+// â”€â”€â”€ HOME CALENDARIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:Montaggio[]; operatore:string; onSelect:(m:Montaggio)=>void; onLogout:()=>void }) {
   const TODAY = new Date().toISOString().split("T")[0];
   const TOMORROW = new Date(Date.now()+86400000).toISOString().split("T")[0];
@@ -650,7 +650,7 @@ function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-              {m.urgenza&&<span style={{fontSize:14}}>🚨</span>}
+              {m.urgenza&&<span style={{fontSize:14}}>ðŸš¨</span>}
               <span style={{fontSize:15,fontWeight:600,color:DARK}}>{m.cliente} {m.cognome||""}</span>
             </div>
             <div style={{fontSize:12,color:"#6B7280"}}>{m.indirizzo}, {m.comune}</div>
@@ -658,9 +658,9 @@ function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:
           <span style={{fontSize:11,padding:"3px 8px",borderRadius:100,background:statoC+"12",color:statoC,fontWeight:500,flexShrink:0,marginLeft:8}}>{m.stato.replace("_"," ")}</span>
         </div>
         <div style={{display:"flex",gap:12,alignItems:"center"}}>
-          <span style={{fontSize:12,color:"#6B7280"}}>🕐 {m.oraInizio||"—"}–{m.oraFine||"—"}</span>
-          <span style={{fontSize:12,color:"#6B7280"}}>🪟 {(m.vani||[]).length} vani</span>
-          {m.tempoStimato&&<span style={{fontSize:12,color:"#6B7280"}}>⏱ {Math.floor(m.tempoStimato/60)}h</span>}
+          <span style={{fontSize:12,color:"#6B7280"}}>ðŸ• {m.oraInizio||"â€”"}â€“{m.oraFine||"â€”"}</span>
+          <span style={{fontSize:12,color:"#6B7280"}}>ðŸªŸ {(m.vani||[]).length} vani</span>
+          {m.tempoStimato&&<span style={{fontSize:12,color:"#6B7280"}}>â± {Math.floor(m.tempoStimato/60)}h</span>}
         </div>
         <div style={{marginTop:8,height:3,background:"#F4F6F8",borderRadius:2,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${Math.round(((m.checklist||[]).filter(c=>c.fatto).length/Math.max((m.checklist||[]).length,1))*100)}%`,background:TEAL,borderRadius:2}}/>
@@ -690,7 +690,7 @@ function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:
               <div style={{fontSize:18,fontWeight:700,color:"rgba(255,255,255,0.6)",fontFamily:FM}}>{domani.length}</div>
               <div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>domani</div>
             </div>
-            <button onClick={onLogout} style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,0.08)",border:"none",color:"rgba(255,255,255,0.5)",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>⏻</button>
+            <button onClick={onLogout} style={{width:32,height:32,borderRadius:8,background:"rgba(255,255,255,0.08)",border:"none",color:"rgba(255,255,255,0.5)",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>â»</button>
           </div>
         </div>
       </div>
@@ -698,12 +698,12 @@ function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:
       <div style={{padding:16}}>
         {/* OGGI */}
         {oggi.length>0&&<>
-          <div style={{fontSize:12,fontWeight:700,color:TEAL,textTransform:"uppercase" as any,letterSpacing:1,marginBottom:10}}>Oggi · {new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}</div>
+          <div style={{fontSize:12,fontWeight:700,color:TEAL,textTransform:"uppercase" as any,letterSpacing:1,marginBottom:10}}>Oggi Â· {new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}</div>
           {oggi.map(m=><Card key={m.id} m={m}/>)}
         </>}
 
         {oggi.length===0&&<div style={{textAlign:"center" as any,padding:"32px 20px",background:"#fff",borderRadius:14,border:"1px solid #E5E3DC",marginBottom:16}}>
-          <div style={{fontSize:32,marginBottom:8}}>✅</div>
+          <div style={{fontSize:32,marginBottom:8}}>âœ…</div>
           <div style={{fontSize:14,fontWeight:500,color:DARK}}>Nessun montaggio oggi</div>
           <div style={{fontSize:12,color:"#9CA3AF",marginTop:4}}>Buona giornata {operatore.split(" ")[0]}!</div>
         </div>}
@@ -721,20 +721,20 @@ function HomeCalendario({ montaggi, operatore, onSelect, onLogout }: { montaggi:
         </>}
 
         {montaggi.length===0&&<div style={{textAlign:"center" as any,padding:"60px 20px",color:"#9CA3AF"}}>
-          <div style={{fontSize:40,marginBottom:12}}>🔧</div>
+          <div style={{fontSize:40,marginBottom:12}}>ðŸ”§</div>
           <div style={{fontSize:15,fontWeight:500,color:DARK}}>Nessun montaggio programmato</div>
         </div>}
       </div>
 
       {/* FAB urgenza */}
       <button style={{position:"fixed" as any,bottom:24,right:16,width:52,height:52,borderRadius:16,background:RED,color:"#fff",border:"none",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(220,68,68,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}}>
-        🚨
+        ðŸš¨
       </button>
     </div>
   );
 }
 
-// ─── ROOT ────────────────────────────────────────────────────
+// â”€â”€â”€ ROOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function MastroMontaggi() {
   const [operatore, setOperatore] = useState<string|null>(null);
   const [montaggi, setMontaggi] = useState<Montaggio[]>(MONTAGGI_DEMO);
