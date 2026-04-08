@@ -18,7 +18,7 @@ const DS = {
 
 // ── DB ERP (cervello unico Galassia) ──────────────────────────────
 const ERP_URL = 'https://wdqhjnpnkhfarcvwnumk.supabase.co';
-const ERP_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkcWhqbnBua2hmYXJjdndudW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NTk2NDksImV4cCI6MjA1NjIzNTY0OX0.r21sM5wi9TaGm0ynTRJKLgKAqpCUl9D_fNb2IAmGGjQ';
+const ERP_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkcWhqbnBua2hmYXJjdndudW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MDg0ODYsImV4cCI6MjA4NjQ4NDQ4Nn0.UXN5-0qfV68nOG-n6HJWWU3twZlDJOyNW-jw5Wt6xNs';
 
 async function fetchGalassiaKnowledge(): Promise<string> {
   try {
