@@ -161,6 +161,7 @@ export default function PortaleAzienda() {
   const [selOp, setSelOp] = useState(null);
   const [selComm, setSelComm] = useState(null);
   const [tab, setTab] = useState("vani");
+  const [expandedDays, setExpandedDays] = useState({});
 
   const op = selOp ? OPERATORI.find(o => o.id === selOp) : null;
   const comm = op && selComm ? op.commesse.find(c => c.id === selComm) : null;
@@ -325,31 +326,36 @@ export default function PortaleAzienda() {
             <div style={{flex:1,overflowY:"auto",padding:"0 20px 16px"}}>
               {[{g:"Mer 09",idx:2},{g:"Gio 10",idx:3},{g:"Ven 11",idx:4}].map(day => {
                 const attivi = OPERATORI.filter(o=>{const ag=(o.agenda||[])[day.idx];return ag&&ag.a&&!ag.a.includes("Malattia");});
-                const liberiG = OPERATORI.filter(o=>{const ag=(o.agenda||[])[day.idx];return !ag||!ag.a||ag.a.includes("Malattia");});
+                const liberiG = OPERATORI.filter(o=>{const ag=(o.agenda||[])[day.idx];return !ag||!ag.a||ag.a.includes("Malattia");}).filter(o=>o.stato!=="non_disponibile");
+                const isOpen = expandedDays[day.g] !== false;
                 return (
-                  <div key={day.g} style={{marginBottom:16}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                      <span style={{fontSize:13,fontWeight:700,color:T.ink}}>{day.g}</span>
+                  <div key={day.g} style={{marginBottom:4}}>
+                    <div onClick={()=>setExpandedDays(prev=>({...prev,[day.g]:!isOpen}))}
+                      style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",cursor:"pointer",borderBottom:`1px solid ${T.lineLight}`,userSelect:"none"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.ink} strokeWidth="2.5" style={{transform:isOpen?"rotate(90deg)":"rotate(0deg)",transition:"transform .15s"}}><path d="M9 18l6-6-6-6"/></svg>
+                      <span style={{fontSize:14,fontWeight:700,color:T.ink}}>{day.g}</span>
                       <span style={{fontSize:11,color:T.teal,fontWeight:600}}>{attivi.length} attivi</span>
-                      {liberiG.filter(o=>o.stato!=="non_disponibile").length>0&&<span style={{fontSize:11,color:T.muted}}>{liberiG.filter(o=>o.stato!=="non_disponibile").length} liberi</span>}
+                      {liberiG.length>0&&<span style={{fontSize:11,color:T.muted}}>{liberiG.length} liberi</span>}
                     </div>
-                    {attivi.map(o => {
-                      const ag = (o.agenda||[])[day.idx];
-                      return (
-                        <div key={o.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:6,background:`${ag.col||T.muted}08`,borderLeft:`3px solid ${ag.col||T.muted}`,marginBottom:4}}>
-                          <div style={{width:22,height:22,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-                          <span style={{fontSize:11,fontWeight:600,color:T.ink,minWidth:60}}>{o.nome.split(" ")[0]}</span>
-                          <span style={{fontSize:10,color:T.sub,flex:1}}>{ag.a}</span>
-                          {ag.c&&<span style={{fontSize:9,fontWeight:700,color:ag.col||T.teal,fontFamily:T.mono}}>{ag.c}</span>}
-                          {ag.h&&<span style={{fontSize:9,color:T.muted}}>{ag.h}</span>}
+                    {isOpen&&<div style={{padding:"8px 0"}}>
+                      {attivi.map(o => {
+                        const ag = (o.agenda||[])[day.idx];
+                        return (
+                          <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:6,background:`${ag.col||T.muted}08`,borderLeft:`3px solid ${ag.col||T.muted}`,marginBottom:4}}>
+                            <div style={{width:26,height:26,borderRadius:6,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:9,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+                            <span style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:70}}>{o.nome.split(" ")[0]}</span>
+                            <span style={{fontSize:11,color:T.sub,flex:1}}>{ag.a}</span>
+                            {ag.c&&<span style={{fontSize:10,fontWeight:700,color:ag.col||T.teal,fontFamily:T.mono}}>{ag.c}</span>}
+                            {ag.h&&<span style={{fontSize:10,color:T.muted}}>{ag.h}</span>}
+                          </div>
+                        );
+                      })}
+                      {liberiG.length>0&&(
+                        <div style={{fontSize:11,color:T.muted,padding:"6px 12px",fontStyle:"italic"}}>
+                          Liberi: {liberiG.map(o=>o.nome.split(" ")[0]).join(", ")}
                         </div>
-                      );
-                    })}
-                    {liberiG.filter(o=>o.stato!=="non_disponibile").length>0&&(
-                      <div style={{fontSize:10,color:T.muted,padding:"4px 10px",fontStyle:"italic"}}>
-                        Liberi: {liberiG.filter(o=>o.stato!=="non_disponibile").map(o=>o.nome.split(" ")[0]).join(", ")}
-                      </div>
-                    )}
+                      )}
+                    </div>}
                   </div>
                 );
               })}
