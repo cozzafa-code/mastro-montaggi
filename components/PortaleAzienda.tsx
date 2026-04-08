@@ -1,823 +1,860 @@
 // @ts-nocheck
-// PortaleAzienda.tsx v3 — Gestione completa multi-freelance + marketplace
+// PortaleAzienda.tsx v4 — WOW Premium Portal
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import ImportaCommessa from './ImportaCommessa';
-import type { CommessaImportata } from './ImportaCommessa';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const SB_URL = 'https://fgefcigxlbrmbeqqzjmo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODgwNDIsImV4cCI6MjA4NzI2NDA0Mn0.Pw_XaFZ1JMVsoNy5_LiozF2r3YZGuhUkqzRtUdPnjk8';
-
-const sb = {
-  get: async (t,p={}) => { try { const r=await fetch(`${SB_URL}/rest/v1/${t}?${new URLSearchParams(p)}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}}); return r.ok?r.json():[]; } catch{return[];} },
-  post: async (t,b) => { try { const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(b)}); return r.ok?r.json():null; } catch{return null;} },
-  patch: async (t,id,b) => { try { await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(b)}); } catch{} },
-  upload: async (path,file) => { try { const r=await fetch(`${SB_URL}/storage/v1/object/foto-vani/${path}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type,'x-upsert':'true'},body:file}); return r.ok?`${SB_URL}/storage/v1/object/public/foto-vani/${path}`:null; } catch{return null;} },
+const sb={
+  get:async(t,p={})=>{try{const r=await fetch(`${SB_URL}/rest/v1/${t}?${new URLSearchParams(p)}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});return r.ok?r.json():[];}catch{return[];}},
+  post:async(t,b)=>{try{const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(b)});return r.ok?r.json():null;}catch{return null;}},
+  patch:async(t,id,b)=>{try{await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(b)});}catch{}},
+  upload:async(path,file)=>{try{const r=await fetch(`${SB_URL}/storage/v1/object/foto-vani/${path}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type,'x-upsert':'true'},body:file});return r.ok?`${SB_URL}/storage/v1/object/public/foto-vani/${path}`:null;}catch{return null;}},
 };
 
-const DS={bg:'#E8F4F4',topbar:'#0D1F1F',teal:'#28A0A0',tealDark:'#156060',card:'#fff',border:'#C8E4E4',text:'#0D1F1F',textMid:'#4A7070',textLight:'#8BBCBC',red:'#DC4444',green:'#1A9E73',amber:'#D08008',blue:'#3B7FE0'};
+// ═══ DESIGN SYSTEM — PREMIUM ═══════════════════════════════════════════════════
+const FONT = `'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
+const MONO = `'JetBrains Mono', 'SF Mono', monospace`;
+const C = {
+  // Dark theme - premium
+  bg: '#0A0F1A',
+  surface: '#111827',
+  surfaceHover: '#1A2235',
+  card: '#151E2F',
+  cardHover: '#1A2740',
+  border: '#1E293B',
+  borderLight: '#283548',
+  // Accent
+  teal: '#2DD4BF',
+  tealDark: '#14B8A6',
+  tealBg: 'rgba(45,212,191,0.08)',
+  tealBorder: 'rgba(45,212,191,0.2)',
+  // Status
+  green: '#34D399',
+  greenBg: 'rgba(52,211,153,0.1)',
+  amber: '#FBBF24',
+  amberBg: 'rgba(251,191,36,0.1)',
+  red: '#F87171',
+  redBg: 'rgba(248,113,113,0.1)',
+  blue: '#60A5FA',
+  blueBg: 'rgba(96,165,250,0.1)',
+  purple: '#A78BFA',
+  // Text
+  t1: '#F8FAFC',
+  t2: '#94A3B8',
+  t3: '#475569',
+};
 
-const STATO_CFG={nuova:{bg:'#FEF3C7',c:'#92400E',l:'In attesa'},vista:{bg:'#DBEAFE',c:'#1E40AF',l:'Presa in carico'},accettata:{bg:'#D1FAE5',c:'#065F46',l:'Accettata'},in_corso:{bg:'#E0F2FE',c:'#0369A1',l:'In lavorazione'},completata:{bg:'#E0E7FF',c:'#3730A3',l:'Completata'},rifiutata:{bg:'#FEE2E2',c:'#991B1B',l:'Rifiutata'},annullata:{bg:'#F3F4F6',c:'#6B7280',l:'Annullata'}};
-const DOC_TIPI=['planimetria','specifiche','contratto','preventivo','rapporto','foto','certificato','altro'];
+const STATO={
+  nuova:{bg:C.amberBg,c:C.amber,l:'In attesa',dot:C.amber},
+  vista:{bg:C.blueBg,c:C.blue,l:'Presa in carico',dot:C.blue},
+  accettata:{bg:C.greenBg,c:C.green,l:'Accettata',dot:C.green},
+  in_corso:{bg:C.tealBg,c:C.teal,l:'In lavorazione',dot:C.teal},
+  completata:{bg:'rgba(167,139,250,0.1)',c:C.purple,l:'Completata',dot:C.purple},
+  rifiutata:{bg:C.redBg,c:C.red,l:'Rifiutata',dot:C.red},
+  annullata:{bg:'rgba(71,85,105,0.1)',c:C.t3,l:'Annullata',dot:C.t3},
+};
+
 const TIPI_VANO=['Finestra','Portafinestra','Porta','Scorrevole','Velux','Persiana','Zanzariera','Cassonetto','Altro'];
 const MAT_OPT=['PVC','Alluminio','Legno','Alluminio-Legno','Acciaio','Altro'];
+const DOC_TIPI=['planimetria','specifiche','contratto','preventivo','rapporto','foto','certificato','altro'];
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
-export default function PortaleAzienda({inviteCode}:{inviteCode:string}) {
+// ═══ GLOBAL STYLES (injected once) ═══════════════════════════════════════════
+const GlobalCSS = () => <style>{`
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700;9..40,800&family=JetBrains+Mono:wght@500;700&display=swap');
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .card-hover{transition:all .2s ease}
+  .card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 0 1px rgba(45,212,191,.15)!important}
+  .btn-glow{transition:all .15s ease}
+  .btn-glow:hover{box-shadow:0 0 20px rgba(45,212,191,.3),0 4px 16px rgba(0,0,0,.3)}
+  .btn-glow:active{transform:scale(.97)}
+  .glass{background:rgba(17,24,39,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)}
+  *::-webkit-scrollbar{width:6px;height:6px}
+  *::-webkit-scrollbar-track{background:transparent}
+  *::-webkit-scrollbar-thumb{background:#283548;border-radius:3px}
+  *::-webkit-scrollbar-thumb:hover{background:#3B4D66}
+  input,select,textarea{font-family:${FONT}}
+`}</style>;
+
+// ═══ MAIN COMPONENT ══════════════════════════════════════════════════════════
+export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
   const [loading,setLoading]=useState(true);
   const [azienda,setAzienda]=useState(null);
   const [notFound,setNotFound]=useState(false);
-  // Tutti i freelance collegati a questa azienda
   const [freelancers,setFreelancers]=useState([]);
   const [richieste,setRichieste]=useState([]);
-  const [documenti,setDocumenti]=useState([]);
-  const [candidature,setCandidature]=useState([]);
-  // Views
-  const [view,setView]=useState('dashboard'); // dashboard | freelancer | dettaglio | nuovo | marketplace
+  const [view,setView]=useState('dashboard');
   const [selFreelancer,setSelFreelancer]=useState(null);
   const [selRichiesta,setSelRichiesta]=useState(null);
   const [filtro,setFiltro]=useState('tutti');
-  const [montaggi,setMontaggi]=useState([]);
-  const [fotoFasi,setFotoFasi]=useState([]);
-  const [firme,setFirme]=useState([]);
-  const [fatture,setFatture]=useState([]);
-  const [costi,setCosti]=useState([]);
+  const [dettaglio,setDettaglio]=useState({montaggi:[],fotoFasi:[],firme:[],fatture:[],costi:[],documenti:[],candidature:[]});
+  const [showImport,setShowImport]=useState(false);
   const pollRef=useRef(null);
 
   useEffect(()=>{
     (async()=>{
-      // Load azienda
       const azRes=await sb.get('aziende_freelance',{invite_code:'eq.'+inviteCode,limit:'1'});
       if(!azRes?.length){setNotFound(true);setLoading(false);return;}
-      const az=azRes[0];
-      setAzienda(az);
-      // L'azienda potrebbe avere DIVERSI invite codes per diversi freelance
-      // Oppure un unico portale che mostra tutti i freelance collegati
-      // Approccio: carica TUTTE le aziende_freelance con lo stesso nome/email
+      const az=azRes[0];setAzienda(az);
       const allAz=await sb.get('aziende_freelance',{nome:'eq.'+az.nome,attiva:'eq.true'});
-      // Per ogni azienda_freelance, carica l'operatore
-      const opIds=[...new Set((allAz||[]).map(a=>a.operatore_id))];
       const ops=[];
-      for(const oid of opIds){
-        const o=await sb.get('operatori',{id:'eq.'+oid,limit:'1'});
-        if(o?.[0]) ops.push({...o[0],azienda_fl_id:(allAz||[]).find(a=>a.operatore_id===oid)?.id});
+      for(const a of(allAz||[])){
+        const o=await sb.get('operatori',{id:'eq.'+a.operatore_id,limit:'1'});
+        if(o?.[0])ops.push({...o[0],azienda_fl_id:a.id});
       }
       setFreelancers(ops);
-      // Carica tutte le richieste
-      const azIds=(allAz||[]).map(a=>a.id);
-      if(azIds.length>0){
-        const allRl=[];
-        for(const aid of azIds){
-          const rl=await sb.get('richieste_lavoro',{azienda_fl_id:'eq.'+aid,order:'created_at.desc',limit:'100'});
-          allRl.push(...(rl||[]));
-        }
-        allRl.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-        setRichieste(allRl);
-      }
+      await loadRichieste(allAz||[]);
       setLoading(false);
     })();
     return()=>{if(pollRef.current)clearInterval(pollRef.current);};
   },[inviteCode]);
 
-  // Polling
   useEffect(()=>{
     if(!azienda)return;
-    pollRef.current=setInterval(()=>reloadRichieste(),30000);
+    pollRef.current=setInterval(async()=>{
+      const allAz=await sb.get('aziende_freelance',{nome:'eq.'+azienda.nome,attiva:'eq.true'});
+      await loadRichieste(allAz||[]);
+    },30000);
     return()=>clearInterval(pollRef.current);
   },[azienda]);
 
-  const reloadRichieste=async()=>{
-    if(!azienda)return;
-    const allAz=await sb.get('aziende_freelance',{nome:'eq.'+azienda.nome,attiva:'eq.true'});
-    const allRl=[];
-    for(const a of (allAz||[])){
+  const loadRichieste=async(azList)=>{
+    const all=[];
+    for(const a of azList){
       const rl=await sb.get('richieste_lavoro',{azienda_fl_id:'eq.'+a.id,order:'created_at.desc',limit:'100'});
-      allRl.push(...(rl||[]));
+      all.push(...(rl||[]));
     }
-    allRl.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    setRichieste(allRl);
+    all.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    setRichieste(all);
   };
 
   const openDettaglio=async(r)=>{
     setSelRichiesta(r);setView('dettaglio');
-    // Load docs
-    const docs=await sb.get('documenti_lavoro',{richiesta_id:'eq.'+r.id,order:'created_at.desc'});
-    setDocumenti(docs||[]);
-    // Load candidature marketplace
-    const cands=await sb.get('candidature_marketplace',{richiesta_id:'eq.'+r.id,order:'created_at.desc'});
-    // Enrichi con dati operatore
-    const enriched=[];
-    for(const c of (cands||[])){
-      const op=await sb.get('operatori',{id:'eq.'+c.operatore_id,limit:'1'});
-      enriched.push({...c,operatore:op?.[0]||null});
-    }
-    setCandidature(enriched);
-    // Load montaggio data
+    const [docs,cands,fat,cos]=await Promise.all([
+      sb.get('documenti_lavoro',{richiesta_id:'eq.'+r.id,order:'created_at.desc'}),
+      sb.get('candidature_marketplace',{richiesta_id:'eq.'+r.id,order:'created_at.desc'}),
+      sb.get('fatture_freelance',{richiesta_id:'eq.'+r.id,order:'data_emissione.desc'}),
+      sb.get('costi_commessa',{richiesta_id:'eq.'+r.id,order:'data.desc'}),
+    ]);
+    let montaggi=[],fotoFasi=[],firme=[];
     if(r.commessa_id){
       const [mt,ft,fm]=await Promise.all([
         sb.get('montaggi',{commessa_id:'eq.'+r.commessa_id,limit:'10'}),
         sb.get('allegati_vano',{select:'*',limit:'50'}),
         sb.get('firma_collaudo',{select:'*',limit:'10'}),
       ]);
-      setMontaggi(mt||[]);setFotoFasi((ft||[]).filter(f=>f.fase));setFirme(fm||[]);
-    } else {setMontaggi([]);setFotoFasi([]);setFirme([]);}
-    // Load fatture e costi
-    const [fat,cos]=await Promise.all([
-      sb.get('fatture_freelance',{richiesta_id:'eq.'+r.id,order:'data_emissione.desc'}),
-      sb.get('costi_commessa',{richiesta_id:'eq.'+r.id,order:'data.desc'}),
-    ]);
-    setFatture(fat||[]);setCosti(cos||[]);
+      montaggi=mt||[];fotoFasi=(ft||[]).filter(f=>f.fase);firme=fm||[];
+    }
+    // Enrich candidature
+    const enriched=[];
+    for(const c of(cands||[])){
+      const op=await sb.get('operatori',{id:'eq.'+c.operatore_id,limit:'1'});
+      enriched.push({...c,operatore:op?.[0]||null});
+    }
+    setDettaglio({montaggi,fotoFasi,firme,fatture:fat||[],costi:cos||[],documenti:docs||[],candidature:enriched});
   };
 
-  const getFreelancerName=(opId)=>{const f=freelancers.find(x=>x.id===opId);return f?`${f.nome} ${f.cognome}`:'—';};
-  const richiestePerFreelancer=(opId)=>richieste.filter(r=>r.operatore_id===opId);
+  const getName=(opId)=>{const f=freelancers.find(x=>x.id===opId);return f?`${f.nome} ${f.cognome}`:'—';};
+  const richPerFreel=(opId)=>richieste.filter(r=>r.operatore_id===opId);
 
-  // KPI globali
-  const nuove=richieste.filter(r=>['nuova','vista'].includes(r.stato)).length;
-  const attivi=richieste.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
-  const completati=richieste.filter(r=>r.stato==='completata').length;
-  const totBudget=richieste.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(r.budget||0),0);
+  // KPI
+  const kNuove=richieste.filter(r=>['nuova','vista'].includes(r.stato)).length;
+  const kAttivi=richieste.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
+  const kComp=richieste.filter(r=>r.stato==='completata').length;
+  const kBudget=richieste.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(r.budget||0),0);
 
-  const filtered=filtro==='tutti'?richieste:filtro==='attivi'?richieste.filter(r=>['nuova','vista','accettata','in_corso'].includes(r.stato)):filtro==='completati'?richieste.filter(r=>r.stato==='completata'):richieste.filter(r=>r.stato===filtro);
+  const filtered=filtro==='tutti'?richieste:filtro==='attivi'?richieste.filter(r=>['nuova','vista','accettata','in_corso'].includes(r.stato)):filtro==='completati'?richieste.filter(r=>r.stato==='completata'):richieste;
 
-  if(loading)return<Full><Spinner/><P c={DS.textMid}>Caricamento portale...</P></Full>;
-  if(notFound)return<Full><IC bg="#FEE2E2"><XS c={DS.red} s={32}/></IC><P c={DS.text} w={700} s={20} mt={16}>Link non valido</P><P c={DS.textMid} mt={8}>Contatta il montatore per un nuovo link.</P></Full>;
+  // ─── LOADING ────────────────────────────────────────────────────────────────
+  if(loading)return(
+    <Shell><GlobalCSS/>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100vh',gap:16}}>
+        <div style={{width:48,height:48,borderRadius:'50%',border:`3px solid ${C.border}`,borderTopColor:C.teal,animation:'spin 1s linear infinite'}}/>
+        <div style={{color:C.t2,fontSize:14,fontFamily:FONT}}>Caricamento portale...</div>
+      </div>
+    </Shell>
+  );
 
-  // ─── TOPBAR ─────────────────────────────────────────────────────────────────
-  const Top=()=>(
-    <div style={{background:DS.topbar,padding:'14px 20px',position:'sticky',top:0,zIndex:100,borderBottom:'1px solid rgba(40,160,160,0.15)'}}>
-      <div style={{display:'flex',alignItems:'center',gap:12}}>
-        {view!=='dashboard'&&<button onClick={()=>{setView('dashboard');setSelFreelancer(null);setSelRichiesta(null);}} style={{background:'none',border:'none',cursor:'pointer',padding:4}}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>}
-        <div style={{width:40,height:40,borderRadius:12,background:azienda?.colore||DS.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:'#fff'}}>{(azienda?.nome||'?')[0]}</div>
-        <div style={{flex:1}}>
-          <div style={{color:'#fff',fontWeight:700,fontSize:15}}>{azienda?.nome}</div>
-          <div style={{color:DS.textLight,fontSize:11}}>{freelancers.length} serramentist{freelancers.length===1?'a':'i'} collegat{freelancers.length===1?'o':'i'}</div>
+  if(notFound)return(
+    <Shell><GlobalCSS/>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100vh',gap:20,padding:32}}>
+        <div style={{width:80,height:80,borderRadius:24,background:C.redBg,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
         </div>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:24,fontWeight:800,color:C.t1,fontFamily:FONT,marginBottom:8}}>Link non valido</div>
+          <div style={{fontSize:14,color:C.t2,maxWidth:320,lineHeight:1.5}}>Questo link di invito non esiste o è stato disattivato. Contatta il tuo montatore per un nuovo link.</div>
+        </div>
+      </div>
+    </Shell>
+  );
+
+  // ─── NAV ────────────────────────────────────────────────────────────────────
+  const goBack=()=>{setView('dashboard');setSelRichiesta(null);setSelFreelancer(null);};
+
+  const TopBar=()=>(
+    <div className="glass" style={{position:'sticky',top:0,zIndex:100,padding:'14px 20px',borderBottom:`1px solid ${C.border}`}}>
+      <div style={{maxWidth:900,margin:'0 auto',display:'flex',alignItems:'center',gap:14}}>
+        {view!=='dashboard'&&<button onClick={goBack} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.t2} strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>}
+        <div style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${azienda?.colore||C.teal},${C.tealDark})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'#fff',fontFamily:FONT,flexShrink:0,boxShadow:`0 4px 16px ${azienda?.colore||C.teal}33`}}>
+          {(azienda?.nome||'?')[0]}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{color:C.t1,fontWeight:700,fontSize:16,fontFamily:FONT,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{azienda?.nome}</div>
+          <div style={{color:C.t3,fontSize:12,fontFamily:FONT}}>{freelancers.length} serramentist{freelancers.length===1?'a':'i'}</div>
+        </div>
+        {view==='dashboard'&&kNuove>0&&<div style={{background:`linear-gradient(135deg,${C.amber},#F59E0B)`,color:'#000',borderRadius:20,padding:'4px 12px',fontSize:11,fontWeight:800,fontFamily:FONT,animation:'pulse 2s infinite'}}>{kNuove} nuov{kNuove===1?'o':'i'}</div>}
       </div>
     </div>
   );
 
-  // ─── DASHBOARD ──────────────────────────────────────────────────────────────
+  // ═══ DASHBOARD ══════════════════════════════════════════════════════════════
   if(view==='dashboard')return(
-    <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
-      <Top/>
-      <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 100px'}}>
-        {/* KPI globali */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:16}}>
-          {[{n:nuove,l:'In attesa',c:DS.amber,bg:'#FEF3C7'},{n:attivi,l:'Attivi',c:DS.blue,bg:'#DBEAFE'},{n:completati,l:'Completati',c:DS.green,bg:'#D1FAE5'},{n:totBudget,l:'Totale',c:DS.tealDark,bg:'#E0F2F1',cur:1}].map((k,i)=>(
-            <div key={i} style={{background:k.bg,borderRadius:12,padding:'12px 8px',textAlign:'center'}}>
-              <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:k.cur?15:22,color:k.c}}>{k.cur?'\u20AC'+k.n.toLocaleString('it-IT'):k.n}</div>
-              <div style={{fontSize:9,color:k.c,fontWeight:600,marginTop:2,textTransform:'uppercase',letterSpacing:.3}}>{k.l}</div>
+    <Shell><GlobalCSS/><TopBar/>
+      <div style={{maxWidth:900,margin:'0 auto',padding:'24px 20px 120px'}}>
+
+        {/* KPI Grid — glassmorphism */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:32,animation:'fadeUp .5s ease'}}>
+          {[
+            {n:kNuove,l:'In attesa',c:C.amber,bg:C.amberBg,icon:'M12 8v4l3 3'},
+            {n:kAttivi,l:'Attivi',c:C.blue,bg:C.blueBg,icon:'M13 2L3 14h9l-1 8 10-12h-9l1-8'},
+            {n:kComp,l:'Completati',c:C.green,bg:C.greenBg,icon:'M20 6L9 17l-5-5'},
+            {n:kBudget,l:'Totale',c:C.teal,bg:C.tealBg,cur:true,icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6'},
+          ].map((k,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:'20px 16px',position:'relative',overflow:'hidden',animation:`fadeUp .5s ease ${i*.08}s both`}}>
+              <div style={{position:'absolute',top:12,right:12,width:32,height:32,borderRadius:10,background:k.bg,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={k.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={k.icon}/></svg>
+              </div>
+              <div style={{fontFamily:MONO,fontWeight:700,fontSize:k.cur?20:28,color:C.t1,letterSpacing:'-0.02em'}}>
+                {k.cur?'\u20AC'+k.n.toLocaleString('it-IT'):k.n}
+              </div>
+              <div style={{fontSize:11,color:C.t3,fontWeight:500,marginTop:4,textTransform:'uppercase',letterSpacing:'.08em',fontFamily:FONT}}>{k.l}</div>
             </div>
           ))}
         </div>
 
-        {/* I MIEI SERRAMENTISTI */}
-        <div style={{fontSize:12,fontWeight:700,color:DS.text,marginBottom:8,textTransform:'uppercase',letterSpacing:.5}}>I miei serramentisti</div>
-        <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:12,marginBottom:16}}>
-          {freelancers.map((f)=>{
-            const fRich=richiestePerFreelancer(f.id);
-            const fAtt=fRich.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
-            const fComp=fRich.filter(r=>r.stato==='completata').length;
+        {/* SERRAMENTISTI */}
+        <SectionTitle>I miei serramentisti</SectionTitle>
+        <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(freelancers.length+1,4)},1fr)`,gap:12,marginBottom:32}}>
+          {freelancers.map((f,i)=>{
+            const fR=richPerFreel(f.id);
+            const fA=fR.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
+            const fC=fR.filter(r=>r.stato==='completata').length;
             return(
-              <button key={f.id} onClick={()=>{setSelFreelancer(f);setView('freelancer');}}
-                style={{minWidth:140,background:DS.card,border:`1.5px solid ${DS.border}`,borderRadius:14,padding:14,cursor:'pointer',textAlign:'left',flexShrink:0}}>
-                <div style={{width:36,height:36,borderRadius:10,background:DS.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'#fff',marginBottom:8}}>
-                  {(f.nome||'?')[0]}{(f.cognome||'?')[0]}
+              <button key={f.id} className="card-hover" onClick={()=>{setSelFreelancer(f);setView('freelancer');}}
+                style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:20,cursor:'pointer',textAlign:'left',animation:`fadeUp .5s ease ${i*.06}s both`}}>
+                <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+                  <div style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${C.teal}22,${C.teal}44)`,border:`1.5px solid ${C.tealBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:C.teal,fontFamily:FONT}}>
+                    {(f.nome||'?')[0]}{(f.cognome||'?')[0]}
+                  </div>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:14,color:C.t1,fontFamily:FONT}}>{f.nome} {f.cognome}</div>
+                    <div style={{fontSize:11,color:C.t3,fontFamily:FONT}}>{f.ruolo||'montatore'}</div>
+                  </div>
                 </div>
-                <div style={{fontWeight:700,fontSize:13,color:DS.text}}>{f.nome} {f.cognome}</div>
-                <div style={{fontSize:11,color:DS.textMid,marginTop:2}}>{f.ruolo||'montatore'}</div>
-                <div style={{display:'flex',gap:8,marginTop:8}}>
-                  <span style={{fontSize:10,fontWeight:600,color:DS.blue}}>{fAtt} attivi</span>
-                  <span style={{fontSize:10,fontWeight:600,color:DS.green}}>{fComp} fatti</span>
+                <div style={{display:'flex',gap:12}}>
+                  <div style={{flex:1,background:C.blueBg,borderRadius:10,padding:'8px 10px',textAlign:'center'}}>
+                    <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:C.blue}}>{fA}</div>
+                    <div style={{fontSize:9,color:C.t3,fontWeight:500}}>Attivi</div>
+                  </div>
+                  <div style={{flex:1,background:C.greenBg,borderRadius:10,padding:'8px 10px',textAlign:'center'}}>
+                    <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:C.green}}>{fC}</div>
+                    <div style={{fontSize:9,color:C.t3,fontWeight:500}}>Fatti</div>
+                  </div>
                 </div>
               </button>
             );
           })}
-          {/* Card marketplace */}
-          <button onClick={()=>setView('marketplace')}
-            style={{minWidth:140,background:'linear-gradient(135deg,#0D1F1F,#1a3a3a)',border:'2px solid #28A0A0',borderRadius:14,padding:14,cursor:'pointer',textAlign:'left',flexShrink:0}}>
-            <div style={{width:36,height:36,borderRadius:10,background:'rgba(40,160,160,.2)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          {/* Marketplace card */}
+          <button className="card-hover" onClick={()=>setView('marketplace')}
+            style={{background:`linear-gradient(135deg,${C.card},${C.tealBg})`,border:`1px solid ${C.tealBorder}`,borderRadius:16,padding:20,cursor:'pointer',textAlign:'left'}}>
+            <div style={{width:44,height:44,borderRadius:14,background:C.tealBg,border:`1.5px solid ${C.tealBorder}`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             </div>
-            <div style={{fontWeight:700,fontSize:13,color:'#fff'}}>Marketplace</div>
-            <div style={{fontSize:11,color:'rgba(139,188,188,.6)',marginTop:2}}>Pubblica per tutti</div>
+            <div style={{fontWeight:700,fontSize:14,color:C.teal,fontFamily:FONT}}>Marketplace</div>
+            <div style={{fontSize:12,color:C.t3,marginTop:4,lineHeight:1.4,fontFamily:FONT}}>Pubblica la richiesta a tutti i serramentisti della piattaforma</div>
           </button>
         </div>
 
-        {/* Filtri + lista lavori globale */}
-        <div style={{fontSize:12,fontWeight:700,color:DS.text,marginBottom:8,textTransform:'uppercase',letterSpacing:.5}}>Tutti i lavori</div>
-        <div style={{display:'flex',gap:6,marginBottom:14,overflowX:'auto',paddingBottom:4}}>
-          {[{k:'tutti',l:`Tutti (${richieste.length})`},{k:'attivi',l:`Attivi (${attivi})`},{k:'completati',l:`Completati (${completati})`}].map(f=>(
-            <button key={f.k} onClick={()=>setFiltro(f.k)} style={{background:filtro===f.k?DS.teal:'#fff',color:filtro===f.k?'#fff':DS.textMid,border:`1.5px solid ${filtro===f.k?DS.teal:DS.border}`,borderRadius:20,padding:'6px 14px',fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{f.l}</button>
-          ))}
+        {/* LAVORI */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <SectionTitle style={{marginBottom:0}}>Tutti i lavori</SectionTitle>
+          <div style={{display:'flex',gap:6}}>
+            {[{k:'tutti',l:'Tutti'},{k:'attivi',l:'Attivi'},{k:'completati',l:'Fatti'}].map(f=>(
+              <button key={f.k} onClick={()=>setFiltro(f.k)}
+                style={{background:filtro===f.k?C.tealBg:'transparent',color:filtro===f.k?C.teal:C.t3,border:`1px solid ${filtro===f.k?C.tealBorder:C.border}`,
+                  borderRadius:8,padding:'5px 12px',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:FONT,transition:'.15s'}}>
+                {f.l} ({f.k==='tutti'?richieste.length:f.k==='attivi'?kAttivi:kComp})
+              </button>
+            ))}
+          </div>
         </div>
-        {filtered.length===0?<P c={DS.textLight} s={14} mt={40} align="center">Nessun lavoro</P>:
-        filtered.map(r=><RichiestaCard key={r.id} r={r} freelancerName={getFreelancerName(r.operatore_id)} onClick={()=>openDettaglio(r)}/>)}
+
+        {filtered.length===0?(
+          <div style={{textAlign:'center',padding:'60px 20px',animation:'fadeIn .5s ease'}}>
+            <div style={{width:64,height:64,borderRadius:20,background:C.card,border:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div style={{fontSize:15,fontWeight:600,color:C.t2,fontFamily:FONT}}>Nessun lavoro ancora</div>
+            <div style={{fontSize:13,color:C.t3,marginTop:4,fontFamily:FONT}}>Crea il tuo primo lavoro con il bottone +</div>
+          </div>
+        ):filtered.map((r,i)=>{
+          const st=STATO[r.stato]||STATO.nuova;
+          const nV=(r.vani_json||[]).length;
+          const isMkt=r.tipo_invio==='marketplace';
+          return(
+            <button key={r.id} className="card-hover" onClick={()=>openDettaglio(r)}
+              style={{width:'100%',background:C.card,border:`1px solid ${r.urgente?`${C.red}44`:C.border}`,borderRadius:14,padding:'16px 18px',marginBottom:10,cursor:'pointer',textAlign:'left',display:'block',animation:`fadeUp .4s ease ${i*.04}s both`}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                <div style={{flex:1,paddingRight:12}}>
+                  <div style={{fontWeight:700,fontSize:15,color:C.t1,fontFamily:FONT}}>{r.cliente}</div>
+                  <div style={{fontSize:12,color:C.t3,marginTop:3,fontFamily:FONT}}>{r.indirizzo}</div>
+                </div>
+                <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
+                  {isMkt&&<span style={{fontSize:9,fontWeight:700,color:C.purple,background:'rgba(167,139,250,0.1)',borderRadius:6,padding:'3px 8px',fontFamily:FONT}}>MKT</span>}
+                  <div style={{display:'flex',alignItems:'center',gap:5,background:st.bg,borderRadius:8,padding:'4px 10px'}}>
+                    <div style={{width:6,height:6,borderRadius:'50%',background:st.dot}}/>
+                    <span style={{fontSize:11,fontWeight:600,color:st.c,fontFamily:FONT}}>{st.l}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{display:'flex',gap:16,alignItems:'center'}}>
+                <Chip icon="M4 4h16v16H4z" text={`${nV} vani`}/>
+                {r.budget&&<Chip icon="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" text={`\u20AC${r.budget}`} accent/>}
+                <span style={{fontSize:11,color:C.t3,fontFamily:FONT}}>{getName(r.operatore_id)}</span>
+                {r.urgente&&<span style={{fontSize:10,fontWeight:700,color:C.red,fontFamily:FONT}}>URGENTE</span>}
+              </div>
+            </button>
+          );
+        })}
 
         {/* FAB */}
-        <div style={{position:'fixed',bottom:16,right:16,display:'flex',flexDirection:'column',gap:8,zIndex:100}}>
-          <button onClick={()=>setView('marketplace')} style={{width:52,height:52,borderRadius:16,background:'#0D1F1F',border:`2px solid ${DS.teal}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,.3)'}}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <div style={{position:'fixed',bottom:24,right:24,display:'flex',flexDirection:'column',gap:10,zIndex:100}}>
+          <button className="btn-glow" onClick={()=>setView('marketplace')}
+            style={{width:52,height:52,borderRadius:16,background:C.card,border:`1px solid ${C.tealBorder}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',animation:'fadeUp .5s ease .3s both'}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </button>
-          <button onClick={()=>setView('nuovo')} style={{width:52,height:52,borderRadius:16,background:DS.teal,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(40,160,160,.4)'}}>
+          <button className="btn-glow" onClick={()=>setView('nuovo')}
+            style={{width:56,height:56,borderRadius:18,background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 4px 24px ${C.teal}44`,animation:'fadeUp .5s ease .4s both'}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
       </div>
-    </div>
+    </Shell>
   );
 
-  // ─── VISTA SINGOLO FREELANCER ───────────────────────────────────────────────
+  // ═══ VISTA FREELANCER ═══════════════════════════════════════════════════════
   if(view==='freelancer'&&selFreelancer){
-    const fRich=richiestePerFreelancer(selFreelancer.id);
-    const fAtt=fRich.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
-    const fComp=fRich.filter(r=>r.stato==='completata').length;
-    const fBudget=fRich.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(r.budget||0),0);
+    const fR=richPerFreel(selFreelancer.id);
+    const fA=fR.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
+    const fC=fR.filter(r=>r.stato==='completata').length;
+    const fB=fR.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(r.budget||0),0);
     return(
-      <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
-        <Top/>
-        <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 100px'}}>
-          {/* Profilo freelancer */}
-          <div style={{background:'linear-gradient(135deg,#0D1F1F,#1a3a3a)',borderRadius:16,padding:20,marginBottom:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:14}}>
-              <div style={{width:52,height:52,borderRadius:14,background:DS.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:800,color:'#fff'}}>
+      <Shell><GlobalCSS/><TopBar/>
+        <div style={{maxWidth:900,margin:'0 auto',padding:'24px 20px 120px'}}>
+          {/* Hero */}
+          <div style={{background:`linear-gradient(135deg,${C.card},${C.tealBg})`,border:`1px solid ${C.tealBorder}`,borderRadius:20,padding:28,marginBottom:24,animation:'fadeUp .5s ease'}}>
+            <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
+              <div style={{width:60,height:60,borderRadius:18,background:`linear-gradient(135deg,${C.teal}22,${C.teal}44)`,border:`2px solid ${C.tealBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:800,color:C.teal,fontFamily:FONT}}>
                 {(selFreelancer.nome||'?')[0]}{(selFreelancer.cognome||'?')[0]}
               </div>
               <div>
-                <div style={{fontWeight:800,fontSize:18,color:'#fff'}}>{selFreelancer.nome} {selFreelancer.cognome}</div>
-                <div style={{fontSize:12,color:'rgba(139,188,188,.6)',marginTop:2}}>{selFreelancer.ruolo||'Montatore'}</div>
+                <div style={{fontWeight:800,fontSize:22,color:C.t1,fontFamily:FONT}}>{selFreelancer.nome} {selFreelancer.cognome}</div>
+                <div style={{fontSize:13,color:C.t3,fontFamily:FONT,marginTop:2}}>{selFreelancer.ruolo||'Montatore'}</div>
               </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:16}}>
-              {[{n:fAtt,l:'Attivi',c:DS.blue},{n:fComp,l:'Completati',c:DS.green},{n:fBudget,l:'Totale \u20AC',c:'#F2F1EC',cur:1}].map((k,i)=>(
-                <div key={i} style={{textAlign:'center'}}>
-                  <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:k.cur?16:22,color:k.c}}>{k.cur?'\u20AC'+k.n.toLocaleString('it-IT'):k.n}</div>
-                  <div style={{fontSize:9,color:'rgba(139,188,188,.5)',fontWeight:600,textTransform:'uppercase'}}>{k.l}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+              {[{n:fA,l:'Attivi',c:C.blue},{n:fC,l:'Completati',c:C.green},{n:fB,l:'Totale \u20AC',c:C.teal,cur:true}].map((k,i)=>(
+                <div key={i} style={{background:'rgba(0,0,0,.2)',borderRadius:12,padding:'14px 12px',textAlign:'center'}}>
+                  <div style={{fontFamily:MONO,fontWeight:700,fontSize:k.cur?18:24,color:k.c}}>{k.cur?'\u20AC'+k.n.toLocaleString('it-IT'):k.n}</div>
+                  <div style={{fontSize:10,color:C.t3,fontWeight:500,marginTop:2,fontFamily:FONT}}>{k.l}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Lavori di questo freelancer */}
-          <div style={{fontSize:12,fontWeight:700,color:DS.text,marginBottom:8,textTransform:'uppercase',letterSpacing:.5}}>Lavori ({fRich.length})</div>
-          {fRich.length===0?<P c={DS.textLight} s={14}>Nessun lavoro ancora</P>:
-          fRich.map(r=><RichiestaCard key={r.id} r={r} onClick={()=>openDettaglio(r)}/>)}
+          <SectionTitle>Lavori ({fR.length})</SectionTitle>
+          {fR.length===0?<div style={{textAlign:'center',padding:40,color:C.t3,fontSize:14,fontFamily:FONT}}>Nessun lavoro ancora</div>:
+          fR.map((r,i)=>{
+            const st=STATO[r.stato]||STATO.nuova;const nV=(r.vani_json||[]).length;
+            return(
+              <button key={r.id} className="card-hover" onClick={()=>openDettaglio(r)}
+                style={{width:'100%',background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px 18px',marginBottom:10,cursor:'pointer',textAlign:'left',display:'block',animation:`fadeUp .4s ease ${i*.04}s both`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <span style={{fontWeight:700,fontSize:15,color:C.t1,fontFamily:FONT}}>{r.cliente}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:5,background:st.bg,borderRadius:8,padding:'4px 10px'}}>
+                    <div style={{width:6,height:6,borderRadius:'50%',background:st.dot}}/>
+                    <span style={{fontSize:11,fontWeight:600,color:st.c,fontFamily:FONT}}>{st.l}</span>
+                  </div>
+                </div>
+                <div style={{fontSize:12,color:C.t3,fontFamily:FONT}}>{r.indirizzo} · {nV} vani{r.budget?` · \u20AC${r.budget}`:''}</div>
+              </button>
+            );
+          })}
 
-          {/* Bottone invia lavoro a questo freelancer */}
-          <button onClick={()=>{setView('nuovo');}} style={{position:'fixed',bottom:16,left:16,right:16,maxWidth:568,margin:'0 auto',background:DS.teal,color:'#fff',border:'none',borderRadius:14,padding:'16px 0',fontSize:16,fontWeight:800,cursor:'pointer',zIndex:100,boxShadow:'0 4px 20px rgba(40,160,160,.4)'}}>
-            Invia lavoro a {selFreelancer.nome}
-          </button>
+          <FixedBtn onClick={()=>setView('nuovo')} label={`Invia lavoro a ${selFreelancer.nome}`}/>
         </div>
-      </div>
+      </Shell>
     );
   }
 
-  // ─── DETTAGLIO LAVORO ───────────────────────────────────────────────────────
+  // ═══ DETTAGLIO ══════════════════════════════════════════════════════════════
   if(view==='dettaglio'&&selRichiesta){
-    const r=selRichiesta;
-    const st=STATO_CFG[r.stato]||STATO_CFG.nuova;
-    const vani=r.vani_json||[];
-    const allegati=r.allegati_json||[];
-    const montaggio=montaggi[0];
-    const fotoPerFase=fase=>fotoFasi.filter(f=>f.fase===fase);
-    const firma=firme[0];
-    const isMarketplace=r.tipo_invio==='marketplace';
+    const r=selRichiesta;const st=STATO[r.stato]||STATO.nuova;
+    const vani=r.vani_json||[];const allegati=r.allegati_json||[];
+    const {montaggi,fotoFasi,firme,fatture,costi,documenti,candidature}=dettaglio;
+    const montaggio=montaggi[0];const firma=firme[0];
+    const isMkt=r.tipo_invio==='marketplace';
+    const totCosti=costi.reduce((s,c)=>s+(c.totale||c.importo||0),0);
+    const totFatt=fatture.reduce((s,f)=>s+(f.totale||f.importo||0),0);
+    const totPagato=fatture.filter(f=>f.stato==='pagata').reduce((s,f)=>s+(f.totale||f.importo||0),0);
 
     return(
-      <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
-        <Top/>
-        <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 40px'}}>
-          {/* Header */}
-          <div style={{background:`linear-gradient(135deg,${st.bg},#fff)`,borderRadius:16,border:`2px solid ${st.c}22`,padding:16,marginBottom:14}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+      <Shell><GlobalCSS/><TopBar/>
+        <div style={{maxWidth:900,margin:'0 auto',padding:'24px 20px 40px'}}>
+
+          {/* Hero header */}
+          <div style={{background:`linear-gradient(135deg,${C.card},${st.bg})`,border:`1px solid ${st.c}22`,borderRadius:20,padding:24,marginBottom:20,animation:'scaleIn .4s ease'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
               <div>
-                <div style={{fontWeight:800,fontSize:20,color:DS.text}}>{r.cliente}</div>
-                <div style={{fontSize:13,color:DS.textMid,marginTop:4}}>{r.indirizzo}</div>
-                {r.telefono_cliente&&<div style={{fontSize:12,color:DS.textMid,marginTop:2}}>Tel: {r.telefono_cliente}</div>}
-                <div style={{fontSize:11,color:DS.teal,marginTop:4,fontWeight:600}}>Assegnato a: {getFreelancerName(r.operatore_id)}</div>
+                <div style={{fontWeight:800,fontSize:24,color:C.t1,fontFamily:FONT,letterSpacing:'-0.02em'}}>{r.cliente}</div>
+                <div style={{fontSize:14,color:C.t2,marginTop:6,fontFamily:FONT}}>{r.indirizzo}</div>
+                {r.telefono_cliente&&<div style={{fontSize:13,color:C.t3,marginTop:2,fontFamily:FONT}}>Tel: {r.telefono_cliente}</div>}
+                <div style={{fontSize:12,color:C.teal,marginTop:6,fontWeight:600,fontFamily:FONT}}>Assegnato a: {getName(r.operatore_id)}</div>
               </div>
-              <div style={{background:st.bg,borderRadius:12,padding:'6px 14px',border:`1.5px solid ${st.c}33`}}>
-                <div style={{fontSize:12,fontWeight:800,color:st.c}}>{st.l}</div>
+              <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,background:st.bg,border:`1px solid ${st.c}33`,borderRadius:10,padding:'6px 14px'}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:st.dot}}/>
+                  <span style={{fontSize:13,fontWeight:700,color:st.c,fontFamily:FONT}}>{st.l}</span>
+                </div>
+                {r.urgente&&<span style={{fontSize:11,fontWeight:700,color:C.red,background:C.redBg,borderRadius:6,padding:'3px 10px',fontFamily:FONT}}>URGENTE</span>}
+                {isMkt&&<span style={{fontSize:11,fontWeight:700,color:C.purple,background:'rgba(167,139,250,0.1)',borderRadius:6,padding:'3px 10px',fontFamily:FONT}}>MARKETPLACE</span>}
               </div>
             </div>
-            {r.urgente&&<div style={{marginTop:10,background:'#FEE2E2',borderRadius:8,padding:'6px 12px',display:'inline-flex',alignItems:'center',gap:6}}><span style={{fontSize:12,fontWeight:700,color:DS.red}}>URGENTE</span></div>}
-            {isMarketplace&&<div style={{marginTop:6,background:'#E0F2FE',borderRadius:8,padding:'4px 10px',display:'inline-flex',alignItems:'center',gap:4}}><span style={{fontSize:11,fontWeight:700,color:DS.blue}}>MARKETPLACE</span></div>}
-          </div>
 
-          {/* Timeline */}
-          <Cd t="Avanzamento">
-            <div style={{display:'flex',gap:4,marginBottom:8}}>
+            {/* Progress bar */}
+            <div style={{display:'flex',gap:4,marginTop:8}}>
               {['nuova','accettata','in_corso','completata'].map((s,i)=>{
                 const idx=['nuova','vista','accettata','in_corso','completata'].indexOf(r.stato);
-                return(<div key={s} style={{flex:1,textAlign:'center'}}>
-                  <div style={{width:'100%',height:4,borderRadius:2,background:idx>=i?DS.teal:'#E5E7EB',marginBottom:4}}/>
-                  <div style={{fontSize:9,color:idx>=i?DS.teal:DS.textLight,fontWeight:r.stato===s?800:400}}>{s==='nuova'?'Inviata':s==='accettata'?'Accettata':s==='in_corso'?'In corso':'Completata'}</div>
+                const active=idx>=i;
+                return(<div key={s} style={{flex:1}}>
+                  <div style={{height:4,borderRadius:2,background:active?C.teal:`${C.t3}33`,transition:'.3s'}}/>
+                  <div style={{fontSize:9,color:active?C.teal:C.t3,fontWeight:600,marginTop:4,textAlign:'center',fontFamily:FONT}}>
+                    {s==='nuova'?'Inviata':s==='accettata'?'Accettata':s==='in_corso'?'In corso':'Completata'}
+                  </div>
                 </div>);
               })}
             </div>
-          </Cd>
+          </div>
 
-          {/* Info */}
-          <Cd t="Dettagli">
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              <IR l="Data" v={r.data_preferita?new Date(r.data_preferita).toLocaleDateString('it-IT'):'N/D'}/>
-              <IR l="Ora" v={r.ora_preferita?.slice(0,5)||'N/D'}/>
-              <IR l="Budget" v={r.budget?`\u20AC${r.budget}`:'N/D'}/>
-              <IR l="Vani" v={`${vani.length}`}/>
-            </div>
-            {r.note&&<div style={{marginTop:10,background:'#F4FAFA',borderRadius:8,padding:'8px 12px'}}><div style={{fontSize:11,fontWeight:600,color:DS.teal,marginBottom:2}}>Note</div><div style={{fontSize:13,color:DS.text,lineHeight:1.4}}>{r.note}</div></div>}
-          </Cd>
+          {/* Info grid */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12,marginBottom:20}}>
+            {[
+              {l:'Data',v:r.data_preferita?new Date(r.data_preferita).toLocaleDateString('it-IT'):'N/D'},
+              {l:'Ora',v:r.ora_preferita?.slice(0,5)||'N/D'},
+              {l:'Budget',v:r.budget?`\u20AC${r.budget}`:'N/D'},
+              {l:'Vani',v:`${vani.length}`},
+            ].map((d,i)=>(
+              <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:'12px 14px'}}>
+                <div style={{fontSize:10,color:C.t3,fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em',fontFamily:FONT}}>{d.l}</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.t1,marginTop:4,fontFamily:FONT}}>{d.v}</div>
+              </div>
+            ))}
+          </div>
 
-          {/* Candidature marketplace */}
-          {isMarketplace&&candidature.length>0&&<Cd t={`Candidature (${candidature.length})`}>
-            {candidature.map(c=>(
-              <div key={c.id} style={{background:'#F4FAFA',borderRadius:10,padding:12,marginBottom:8,border:`1.5px solid ${c.stato==='accettata'?DS.green:DS.border}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                  <div>
-                    <span style={{fontWeight:700,fontSize:13,color:DS.text}}>{c.operatore?`${c.operatore.nome} ${c.operatore.cognome}`:'—'}</span>
-                    {c.prezzo_proposto&&<span style={{fontSize:12,fontWeight:700,color:DS.teal,marginLeft:8}}>{'\u20AC'}{c.prezzo_proposto}</span>}
+          {r.note&&<Cd t="Note"><div style={{fontSize:14,color:C.t2,lineHeight:1.6,fontFamily:FONT}}>{r.note}</div></Cd>}
+
+          {/* Vani */}
+          {vani.length>0&&<Cd t={`Vani (${vani.length})`}>
+            {vani.map((v,i)=>(
+              <div key={i} style={{background:C.surface,borderRadius:10,padding:'12px 14px',marginBottom:8,border:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <span style={{fontWeight:700,fontSize:13,color:C.t1,fontFamily:FONT}}>Vano {i+1} — {v.tipo}</span>
+                  <div style={{display:'flex',gap:10,marginTop:4}}>
+                    <span style={{fontSize:11,color:C.teal,fontWeight:600,background:C.tealBg,borderRadius:4,padding:'1px 8px',fontFamily:FONT}}>{v.materiale}</span>
+                    {v.stanza&&<span style={{fontSize:11,color:C.t3,fontFamily:FONT}}>{v.stanza}</span>}
+                    {v.piano&&<span style={{fontSize:11,color:C.t3,fontFamily:FONT}}>P.{v.piano}</span>}
                   </div>
-                  <span style={{fontSize:10,fontWeight:700,color:c.stato==='accettata'?DS.green:c.stato==='rifiutata'?DS.red:DS.amber,background:c.stato==='accettata'?'#D1FAE5':c.stato==='rifiutata'?'#FEE2E2':'#FEF3C7',borderRadius:4,padding:'2px 8px'}}>
-                    {c.stato==='candidata'?'In attesa':c.stato==='accettata'?'Scelto':c.stato}
-                  </span>
                 </div>
-                {c.messaggio&&<div style={{fontSize:12,color:DS.textMid,marginTop:4}}>{c.messaggio}</div>}
-                {c.stato==='candidata'&&(
-                  <div style={{display:'flex',gap:8,marginTop:8}}>
-                    <button onClick={async()=>{
-                      await sb.patch('candidature_marketplace',c.id,{stato:'accettata',accettata_il:new Date().toISOString()});
-                      await sb.patch('richieste_lavoro',r.id,{stato:'accettata',operatore_id:c.operatore_id,accettata_il:new Date().toISOString(),marketplace_aperta:false});
-                      setCandidature(prev=>prev.map(x=>x.id===c.id?{...x,stato:'accettata'}:x.stato==='candidata'?{...x,stato:'rifiutata'}:x));
-                    }} style={{flex:1,background:DS.green,color:'#fff',border:'none',borderRadius:8,padding:'8px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>Scegli questo</button>
-                    <button onClick={async()=>{
-                      await sb.patch('candidature_marketplace',c.id,{stato:'rifiutata'});
-                      setCandidature(prev=>prev.map(x=>x.id===c.id?{...x,stato:'rifiutata'}:x));
-                    }} style={{background:'#FEE2E2',color:DS.red,border:'none',borderRadius:8,padding:'8px 12px',fontSize:12,fontWeight:700,cursor:'pointer'}}>No</button>
-                  </div>
-                )}
+                <span style={{fontFamily:MONO,fontSize:13,fontWeight:700,color:C.t2}}>{v.larghezza&&v.altezza?`${v.larghezza}\u00D7${v.altezza}`:'\u2014'}</span>
               </div>
             ))}
           </Cd>}
 
-          {/* Vani */}
-          {vani.length>0&&<Cd t={`Vani (${vani.length})`}>{vani.map((v,i)=><VanoRow key={i} v={v} i={i}/>)}</Cd>}
-
           {/* Ore lavoro */}
           {montaggio&&<Cd t="Ore lavoro">
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,textAlign:'center'}}>
-              <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:20,color:DS.teal}}>{montaggio.ore_preventivate||'\u2014'}</div><div style={{fontSize:10,color:DS.textMid}}>Prev.</div></div>
-              <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:20,color:montaggio.ore_reali>montaggio.ore_preventivate?DS.red:DS.green}}>{montaggio.ore_reali?montaggio.ore_reali.toFixed(1):'\u2014'}</div><div style={{fontSize:10,color:DS.textMid}}>Reali</div></div>
-              <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:20,color:DS.text}}>{montaggio.stato||'\u2014'}</div><div style={{fontSize:10,color:DS.textMid}}>Stato</div></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+              {[
+                {n:montaggio.ore_preventivate||'\u2014',l:'Preventivate',c:C.t1},
+                {n:montaggio.ore_reali?montaggio.ore_reali.toFixed(1):'\u2014',l:'Reali',c:montaggio.ore_reali>montaggio.ore_preventivate?C.red:C.green},
+                {n:montaggio.stato||'\u2014',l:'Stato',c:C.teal},
+              ].map((k,i)=>(
+                <div key={i} style={{background:C.surface,borderRadius:10,padding:14,textAlign:'center'}}>
+                  <div style={{fontFamily:MONO,fontWeight:700,fontSize:20,color:k.c}}>{k.n}</div>
+                  <div style={{fontSize:10,color:C.t3,fontWeight:500,marginTop:2,fontFamily:FONT}}>{k.l}</div>
+                </div>
+              ))}
             </div>
           </Cd>}
 
-          {/* Documenti */}
-          <DocSection richiesta_id={r.id} documenti={documenti} onReload={async()=>{const d=await sb.get('documenti_lavoro',{richiesta_id:'eq.'+r.id,order:'created_at.desc'});setDocumenti(d||[]);}}/>
+          {/* Fatture */}
+          {fatture.length>0&&<Cd t={`Fatture (${fatture.length})`}>
+            {fatture.map(f=>{
+              const fSt=f.stato==='pagata'?{c:C.green,bg:C.greenBg}:f.stato==='scaduta'?{c:C.red,bg:C.redBg}:{c:C.amber,bg:C.amberBg};
+              return(
+                <div key={f.id} style={{background:C.surface,borderRadius:10,padding:'12px 14px',marginBottom:8,border:`1px solid ${C.border}`}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <span style={{fontWeight:700,fontSize:14,color:C.t1,fontFamily:FONT}}>N. {f.numero}</span>
+                      <span style={{fontSize:11,color:C.t3,marginLeft:8,fontFamily:FONT}}>{new Date(f.data_emissione).toLocaleDateString('it-IT')}</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:C.teal}}>{'\u20AC'}{f.totale||f.importo}</span>
+                      <span style={{fontSize:10,fontWeight:700,color:fSt.c,background:fSt.bg,borderRadius:6,padding:'3px 8px',fontFamily:FONT}}>{f.stato}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:8}}>
+              <div style={{background:C.surface,borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+                <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:C.t1}}>{'\u20AC'}{totFatt.toFixed(0)}</div>
+                <div style={{fontSize:9,color:C.t3,fontFamily:FONT}}>Fatturato</div>
+              </div>
+              <div style={{background:C.surface,borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+                <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:C.green}}>{'\u20AC'}{totPagato.toFixed(0)}</div>
+                <div style={{fontSize:9,color:C.t3,fontFamily:FONT}}>Pagato</div>
+              </div>
+              <div style={{background:C.surface,borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+                <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:(totFatt-totPagato)>0?C.red:C.green}}>{'\u20AC'}{(totFatt-totPagato).toFixed(0)}</div>
+                <div style={{fontSize:9,color:C.t3,fontFamily:FONT}}>Da pagare</div>
+              </div>
+            </div>
+          </Cd>}
+
+          {/* Costi */}
+          {costi.length>0&&<Cd t={`Costi (${costi.length})`}>
+            {costi.map(c=>(
+              <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:`1px solid ${C.border}`}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:C.t1,fontFamily:FONT}}>{c.descrizione}</div>
+                  <div style={{fontSize:10,color:C.t3,fontFamily:FONT}}>{c.tipo} · {new Date(c.data).toLocaleDateString('it-IT')}</div>
+                </div>
+                <span style={{fontFamily:MONO,fontWeight:700,fontSize:14,color:C.t1}}>{'\u20AC'}{c.totale||c.importo}</span>
+              </div>
+            ))}
+            <div style={{display:'flex',justifyContent:'space-between',paddingTop:12,marginTop:4}}>
+              <span style={{fontSize:13,fontWeight:700,color:C.t1,fontFamily:FONT}}>Totale</span>
+              <span style={{fontFamily:MONO,fontWeight:800,fontSize:18,color:C.teal}}>{'\u20AC'}{totCosti.toFixed(2)}</span>
+            </div>
+          </Cd>}
+
+          {/* Riepilogo economico */}
+          {(fatture.length>0||costi.length>0||montaggio)&&<Cd t="Riepilogo economico">
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:10}}>
+              {[
+                {n:r.budget||0,l:'Budget',c:C.t1,pre:'\u20AC'},
+                {n:totCosti,l:'Costi',c:totCosti>(r.budget||0)?C.red:C.green,pre:'\u20AC',fix:0},
+                {n:montaggio?.ore_reali||0,l:'Ore',c:C.t1,suf:'h',fix:1},
+                {n:montaggio?.ore_reali>0?totCosti/montaggio.ore_reali:0,l:'\u20AC/ora',c:C.t1,pre:'\u20AC',fix:0},
+              ].map((k,i)=>(
+                <div key={i} style={{background:C.surface,borderRadius:10,padding:12,textAlign:'center'}}>
+                  <div style={{fontFamily:MONO,fontWeight:700,fontSize:16,color:k.c}}>{k.pre||''}{typeof k.n==='number'?k.n.toFixed(k.fix??0):k.n}{k.suf||''}</div>
+                  <div style={{fontSize:9,color:C.t3,fontFamily:FONT,marginTop:2}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+          </Cd>}
 
           {/* Foto fasi */}
           {fotoFasi.length>0&&<Cd t="Documentazione fotografica">
             {['prima','durante','dopo'].map(fase=>{
-              const fotos=fotoPerFase(fase);if(!fotos.length)return null;
-              return(<div key={fase} style={{marginBottom:12}}>
-                <div style={{fontSize:11,fontWeight:700,color:DS.teal,textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>{fase==='prima'?'Prima':fase==='durante'?'Durante':'Dopo'} ({fotos.length})</div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>{fotos.map((f,i)=><img key={i} src={f.file_url||f.url} alt="" style={{width:'100%',height:80,objectFit:'cover',borderRadius:8,border:`1px solid ${DS.border}`}}/>)}</div>
+              const fotos=fotoFasi.filter(f=>f.fase===fase);if(!fotos.length)return null;
+              return(<div key={fase} style={{marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.teal,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8,fontFamily:FONT}}>
+                  {fase==='prima'?'Prima dei lavori':fase==='durante'?'Durante':' Dopo'} ({fotos.length})
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+                  {fotos.map((f,i)=><img key={i} src={f.file_url||f.url} alt="" style={{width:'100%',height:90,objectFit:'cover',borderRadius:10,border:`1px solid ${C.border}`}}/>)}
+                </div>
               </div>);
             })}
           </Cd>}
 
           {/* Firma */}
-          {firma&&<Cd t="Firma collaudo"><div style={{textAlign:'center'}}><img src={firma.firma_url} alt="Firma" style={{maxWidth:'100%',maxHeight:150,border:`1px solid ${DS.border}`,borderRadius:8}}/><div style={{fontSize:11,color:DS.textMid,marginTop:6}}>Firmato da {firma.firmato_da}</div></div></Cd>}
+          {firma&&<Cd t="Firma collaudo"><div style={{textAlign:'center'}}><img src={firma.firma_url} alt="Firma" style={{maxWidth:'100%',maxHeight:160,border:`1px solid ${C.border}`,borderRadius:12}}/><div style={{fontSize:12,color:C.t3,marginTop:8,fontFamily:FONT}}>Firmato da {firma.firmato_da}</div></div></Cd>}
 
-          {/* FATTURE */}
-          {fatture.length>0&&<Cd t={`Fatture (${fatture.length})`}>
-            {fatture.map(f=>{
-              const stCol=f.stato==='pagata'?DS.green:f.stato==='scaduta'?DS.red:f.stato==='emessa'||f.stato==='inviata'?DS.amber:'#6B7280';
-              const stBg=f.stato==='pagata'?'#D1FAE5':f.stato==='scaduta'?'#FEE2E2':f.stato==='emessa'||f.stato==='inviata'?'#FEF3C7':'#F3F4F6';
-              return(
-                <div key={f.id} style={{background:'#F4FAFA',borderRadius:10,padding:12,marginBottom:8,border:`1px solid ${DS.border}`}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                    <div>
-                      <span style={{fontWeight:700,fontSize:14,color:DS.text}}>N. {f.numero}</span>
-                      <span style={{fontSize:11,color:DS.textMid,marginLeft:8}}>{new Date(f.data_emissione).toLocaleDateString('it-IT')}</span>
-                    </div>
-                    <span style={{fontSize:10,fontWeight:700,color:stCol,background:stBg,borderRadius:4,padding:'2px 8px'}}>
-                      {f.stato==='pagata'?'Pagata':f.stato==='scaduta'?'Scaduta':f.stato==='emessa'?'Emessa':f.stato==='inviata'?'Inviata':f.stato}
-                    </span>
-                  </div>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div style={{fontSize:12,color:DS.textMid}}>
-                      Imponibile {'\u20AC'}{f.importo} + IVA {f.iva_pct}%
-                    </div>
-                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:16,color:DS.teal}}>{'\u20AC'}{f.totale||f.importo}</div>
-                  </div>
-                  {f.data_scadenza&&<div style={{fontSize:11,color:f.stato==='scaduta'?DS.red:DS.textLight,marginTop:4}}>Scadenza: {new Date(f.data_scadenza).toLocaleDateString('it-IT')}</div>}
-                  {f.pdf_url&&<a href={f.pdf_url} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,marginTop:6,fontSize:11,color:DS.teal,fontWeight:600,textDecoration:'none'}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    Scarica PDF
-                  </a>}
-                </div>
-              );
-            })}
-            {(()=>{
-              const totFatt=fatture.reduce((s,f)=>s+(f.totale||f.importo||0),0);
-              const totPagato=fatture.filter(f=>f.stato==='pagata').reduce((s,f)=>s+(f.totale||f.importo||0),0);
-              const daPagare=totFatt-totPagato;
-              return(
-                <div style={{background:'#E0F2F1',borderRadius:8,padding:'10px 14px',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center',marginTop:4}}>
-                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:DS.tealDark}}>{'\u20AC'}{totFatt.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Totale</div></div>
-                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:DS.green}}>{'\u20AC'}{totPagato.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Pagato</div></div>
-                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:daPagare>0?DS.red:DS.green}}>{'\u20AC'}{daPagare.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Da pagare</div></div>
-                </div>
-              );
-            })()}
-          </Cd>}
-
-          {/* COSTI COMMESSA */}
-          {costi.length>0&&<Cd t={`Dettaglio costi (${costi.length})`}>
-            {costi.map(c=>(
-              <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${DS.border}`}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600,color:DS.text}}>{c.descrizione}</div>
-                  <div style={{fontSize:10,color:DS.textLight}}>{c.tipo} · {new Date(c.data).toLocaleDateString('it-IT')}{c.quantita>1?` · x${c.quantita}`:''}</div>
-                </div>
-                <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:700,fontSize:13,color:DS.text}}>{'\u20AC'}{c.totale||c.importo}</div>
-              </div>
-            ))}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,marginTop:4}}>
-              <span style={{fontSize:12,fontWeight:700,color:DS.text}}>Totale costi</span>
-              <span style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:16,color:DS.teal}}>{'\u20AC'}{costi.reduce((s,c)=>s+(c.totale||c.importo||0),0).toFixed(2)}</span>
-            </div>
-          </Cd>}
-
-          {/* RIEPILOGO ECONOMICO */}
-          {(fatture.length>0||costi.length>0||montaggio)&&<Cd t="Riepilogo economico">
-            {(()=>{
-              const budgetOrig=r.budget||0;
-              const totCosti=costi.reduce((s,c)=>s+(c.totale||c.importo||0),0);
-              const totFatturato=fatture.reduce((s,f)=>s+(f.totale||f.importo||0),0);
-              const oreReali=montaggio?.ore_reali||0;
-              const orePrev=montaggio?.ore_preventivate||0;
-              const costoOrario=oreReali>0?totCosti/oreReali:0;
-              return(
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
-                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.teal}}>{'\u20AC'}{budgetOrig}</div>
-                    <div style={{fontSize:10,color:DS.textMid}}>Budget accordato</div>
-                  </div>
-                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
-                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:totCosti>budgetOrig?DS.red:DS.green}}>{'\u20AC'}{totCosti.toFixed(0)}</div>
-                    <div style={{fontSize:10,color:DS.textMid}}>Costo effettivo</div>
-                  </div>
-                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
-                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.text}}>{oreReali?oreReali.toFixed(1):'\u2014'}h</div>
-                    <div style={{fontSize:10,color:DS.textMid}}>Ore reali{orePrev?` / ${orePrev}h prev.`:''}</div>
-                  </div>
-                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
-                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.text}}>{costoOrario>0?`\u20AC${costoOrario.toFixed(0)}/h`:'\u2014'}</div>
-                    <div style={{fontSize:10,color:DS.textMid}}>Costo orario eff.</div>
-                  </div>
-                </div>
-              );
-            })()}
-          </Cd>}
-
-          {/* EXPORT REPORT */}
+          {/* Report */}
           <Cd t="Report">
-            <button onClick={()=>{
-              // Genera report testuale da stampare/salvare come PDF dal browser
-              const w=window.open('','_blank');
-              if(!w) return;
-              const vani=r.vani_json||[];
-              const totCosti=costi.reduce((s,c)=>s+(c.totale||c.importo||0),0);
-              w.document.write(`<html><head><title>Report ${r.cliente}</title><style>body{font-family:system-ui;padding:40px;max-width:800px;margin:0 auto}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}th{background:#f0f0f0;font-weight:700}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}.kpi{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:16px 0}.kpi div{text-align:center;padding:12px;background:#f8f8f8;border-radius:8px}.kpi .n{font-size:20px;font-weight:800}.kpi .l{font-size:10px;color:#666}</style></head><body>`);
-              w.document.write(`<div class="header"><div><h1 style="margin:0">Report Commessa</h1><p style="color:#666">${r.cliente} — ${r.indirizzo}</p><p style="color:#999;font-size:12px">Generato il ${new Date().toLocaleDateString('it-IT')}</p></div></div>`);
+            <button className="btn-glow" onClick={()=>{
+              const w=window.open('','_blank');if(!w)return;
+              w.document.write(`<html><head><title>Report ${r.cliente}</title><style>*{margin:0;box-sizing:border-box}body{font-family:'DM Sans',system-ui;padding:40px;max-width:800px;margin:0 auto;color:#1a1a1a}h1{font-size:28px;font-weight:800;margin-bottom:4px}h3{font-size:16px;font-weight:700;margin:24px 0 12px;color:#0D9488}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #e5e5e5;padding:10px 12px;text-align:left;font-size:13px}th{background:#f8f8f8;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666}.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}.kpi>div{text-align:center;padding:16px;background:#f0fafa;border-radius:12px;border:1px solid #e0f0f0}.kpi .n{font-size:22px;font-weight:800;color:#0D9488}.kpi .l{font-size:10px;color:#888;margin-top:4px;text-transform:uppercase}p.sub{color:#999;font-size:12px;margin-top:4px}</style></head><body>`);
+              w.document.write(`<h1>${r.cliente}</h1><p class="sub">${r.indirizzo} \u2014 Report generato il ${new Date().toLocaleDateString('it-IT')}</p>`);
               w.document.write(`<div class="kpi"><div><div class="n">${vani.length}</div><div class="l">Vani</div></div><div><div class="n">\u20AC${r.budget||0}</div><div class="l">Budget</div></div><div><div class="n">\u20AC${totCosti.toFixed(0)}</div><div class="l">Costi</div></div><div><div class="n">${montaggio?.ore_reali?montaggio.ore_reali.toFixed(1)+'h':'\u2014'}</div><div class="l">Ore</div></div></div>`);
-              if(vani.length>0){
-                w.document.write(`<h3>Vani</h3><table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th><th>Note</th></tr>`);
-                vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'x'+v.altezza:'\u2014'}</td><td>${v.stanza||'\u2014'}</td><td>${v.note||''}</td></tr>`));
-                w.document.write(`</table>`);
-              }
-              if(costi.length>0){
-                w.document.write(`<h3>Dettaglio costi</h3><table><tr><th>Descrizione</th><th>Tipo</th><th>Data</th><th>Importo</th></tr>`);
-                costi.forEach(c=>w.document.write(`<tr><td>${c.descrizione}</td><td>${c.tipo}</td><td>${new Date(c.data).toLocaleDateString('it-IT')}</td><td>\u20AC${c.totale||c.importo}</td></tr>`));
-                w.document.write(`<tr><td colspan="3" style="font-weight:700;text-align:right">Totale</td><td style="font-weight:700">\u20AC${totCosti.toFixed(2)}</td></tr></table>`);
-              }
-              if(fatture.length>0){
-                w.document.write(`<h3>Fatture</h3><table><tr><th>N.</th><th>Data</th><th>Importo</th><th>Stato</th></tr>`);
-                fatture.forEach(f=>w.document.write(`<tr><td>${f.numero}</td><td>${new Date(f.data_emissione).toLocaleDateString('it-IT')}</td><td>\u20AC${f.totale||f.importo}</td><td>${f.stato}</td></tr>`));
-                w.document.write(`</table>`);
-              }
-              w.document.write(`<p style="margin-top:40px;color:#999;font-size:11px">Report generato da MASTRO Suite — mastro-montaggi.vercel.app</p></body></html>`);
-              w.document.close();
-              w.print();
-            }} style={{width:'100%',background:'linear-gradient(135deg,#0D1F1F,#1a3a3a)',color:'#fff',border:'none',borderRadius:12,padding:'14px 0',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              if(vani.length){w.document.write(`<h3>Vani</h3><table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th></tr>`);vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'\u00D7'+v.altezza:'\u2014'}</td><td>${v.stanza||'\u2014'}</td></tr>`));w.document.write('</table>');}
+              if(costi.length){w.document.write(`<h3>Costi</h3><table><tr><th>Descrizione</th><th>Tipo</th><th>Data</th><th>Importo</th></tr>`);costi.forEach(c=>w.document.write(`<tr><td>${c.descrizione}</td><td>${c.tipo}</td><td>${new Date(c.data).toLocaleDateString('it-IT')}</td><td>\u20AC${c.totale||c.importo}</td></tr>`));w.document.write(`<tr><td colspan="3" style="text-align:right;font-weight:700">Totale</td><td style="font-weight:700">\u20AC${totCosti.toFixed(2)}</td></tr></table>`);}
+              if(fatture.length){w.document.write(`<h3>Fatture</h3><table><tr><th>N.</th><th>Data</th><th>Totale</th><th>Stato</th></tr>`);fatture.forEach(f=>w.document.write(`<tr><td>${f.numero}</td><td>${new Date(f.data_emissione).toLocaleDateString('it-IT')}</td><td>\u20AC${f.totale||f.importo}</td><td>${f.stato}</td></tr>`));w.document.write('</table>');}
+              w.document.write(`<p style="margin-top:40px;color:#ccc;font-size:10px">Generato da MASTRO Suite \u2014 fliwoX Montaggi</p></body></html>`);
+              w.document.close();w.print();
+            }} style={{width:'100%',background:`linear-gradient(135deg,${C.card},${C.tealBg})`,color:C.teal,border:`1px solid ${C.tealBorder}`,borderRadius:12,padding:'14px 0',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Stampa / Salva report PDF
             </button>
           </Cd>
         </div>
-      </div>
+      </Shell>
     );
   }
 
-  // ─── MARKETPLACE ────────────────────────────────────────────────────────────
-  if(view==='marketplace')return <MarketplaceView azienda={azienda} onBack={()=>setView('dashboard')} onSent={()=>{reloadRichieste();setView('dashboard');}}/>;
-
-  // ─── NUOVO LAVORO DIRETTO ───────────────────────────────────────────────────
-  if(view==='nuovo')return <NuovoForm azienda={azienda} freelancers={freelancers} selFreelancer={selFreelancer} inviteCode={inviteCode} onSent={()=>{reloadRichieste();setView('dashboard');}} onBack={()=>setView(selFreelancer?'freelancer':'dashboard')}/>;
+  // ═══ MARKETPLACE + NUOVO → placeholder per ora, stessa logica di prima ═════
+  if(view==='marketplace'||view==='nuovo'){
+    return(
+      <Shell><GlobalCSS/><TopBar/>
+        <div style={{maxWidth:600,margin:'0 auto',padding:'24px 20px 120px'}}>
+          <NuovoLavoroFormPremium
+            azienda={azienda}
+            freelancers={freelancers}
+            selFreelancer={selFreelancer}
+            inviteCode={inviteCode}
+            isMarketplace={view==='marketplace'}
+            onSent={async()=>{
+              const allAz=await sb.get('aziende_freelance',{nome:'eq.'+azienda.nome,attiva:'eq.true'});
+              await loadRichieste(allAz||[]);
+              setView('dashboard');
+            }}
+            onBack={()=>setView('dashboard')}
+          />
+        </div>
+      </Shell>
+    );
+  }
 
   return null;
 }
 
-// ─── DOCUMENTO SECTION (upload + lista) ───────────────────────────────────────
-function DocSection({richiesta_id,documenti,onReload}){
-  const [uploading,setUploading]=useState(false);
-  const [tipoDoc,setTipoDoc]=useState('foto');
-  const fileRef=useRef(null);
-
-  const handleUpload=async(e)=>{
-    const files=e.target.files;if(!files)return;
-    setUploading(true);
-    for(let i=0;i<files.length;i++){
-      const f=files[i];
-      const path=`docs/${richiesta_id}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
-      const url=await sb.upload(path,f);
-      if(url){
-        await sb.post('documenti_lavoro',{richiesta_id,caricato_da:'azienda',tipo:tipoDoc,nome:f.name,url});
-      }
-    }
-    setUploading(false);
-    e.target.value='';
-    onReload();
-  };
-
-  return(
-    <Cd t={`Documenti (${documenti.length})`}>
-      {documenti.length>0&&<div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
-        {documenti.map(d=>(
-          <a key={d.id} href={d.url} target="_blank" rel="noopener noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'#F4FAFA',borderRadius:8,padding:'8px 12px',border:`1px solid ${DS.border}`,textDecoration:'none'}}>
-            <div style={{width:32,height:32,borderRadius:8,background:d.caricato_da==='azienda'?'#DBEAFE':'#D1FAE5',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={d.caricato_da==='azienda'?DS.blue:DS.green} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:12,fontWeight:600,color:DS.text}}>{d.nome}</div>
-              <div style={{fontSize:10,color:DS.textMid}}>{d.tipo} · {d.caricato_da} · {new Date(d.created_at).toLocaleDateString('it-IT')}</div>
-            </div>
-          </a>
-        ))}
-      </div>}
-      <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.xlsx,.dwg" multiple style={{display:'none'}} onChange={handleUpload}/>
-      <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap'}}>
-        {['foto','planimetria','specifiche','contratto','certificato','altro'].map(t=>(
-          <button key={t} onClick={()=>setTipoDoc(t)} style={{fontSize:10,fontWeight:600,padding:'4px 10px',borderRadius:20,border:`1px solid ${tipoDoc===t?DS.teal:DS.border}`,background:tipoDoc===t?'#EEF8F8':'#fff',color:tipoDoc===t?DS.teal:DS.textMid,cursor:'pointer'}}>{t}</button>
-        ))}
-      </div>
-      <button onClick={()=>fileRef.current?.click()} disabled={uploading} style={{width:'100%',border:`2px dashed ${DS.border}`,background:'transparent',borderRadius:10,padding:'12px 0',cursor:'pointer',color:DS.teal,fontWeight:700,fontSize:13,opacity:uploading?.5:1}}>
-        {uploading?'Caricamento...':'+ Carica documento'}
-      </button>
-    </Cd>
-  );
-}
-
-// ─── MARKETPLACE VIEW ─────────────────────────────────────────────────────────
-function MarketplaceView({azienda,onBack,onSent}){
-  const [cliente,setCliente]=useState('');
-  const [indirizzo,setIndirizzo]=useState('');
-  const [budget,setBudget]=useState('');
-  const [note,setNote]=useState('');
-  const [vani,setVani]=useState([{id:1,tipo:'Finestra',materiale:'PVC',larghezza:'',altezza:'',stanza:'',piano:'PT',note:''}]);
-  const [urgente,setUrgente]=useState(false);
-  const [dataP,setDataP]=useState('');
-  const [sending,setSending]=useState(false);
-  const [sent,setSent]=useState(false);
-
-  const addV=()=>setVani(v=>[...v,{id:v.length+1,tipo:'Finestra',materiale:'PVC',larghezza:'',altezza:'',stanza:'',piano:'PT',note:''}]);
-  const rmV=id=>setVani(v=>v.filter(x=>x.id!==id));
-  const upV=(id,f,val)=>setVani(v=>v.map(x=>x.id===id?{...x,[f]:val}:x));
-
-  const pubblica=async()=>{
-    if(!cliente.trim()||!indirizzo.trim())return;
-    setSending(true);
-    await sb.post('richieste_lavoro',{
-      azienda_fl_id:azienda.id,
-      operatore_id:azienda.operatore_id, // inizialmente associato al primo freelance, poi cambiato quando si sceglie
-      cliente:cliente.trim(),indirizzo:indirizzo.trim(),
-      data_preferita:dataP||null,urgente,
-      budget:budget?parseFloat(budget):null,note,
-      vani_json:vani.map(v=>({tipo:v.tipo,materiale:v.materiale,larghezza:v.larghezza?parseInt(v.larghezza):null,altezza:v.altezza?parseInt(v.altezza):null,stanza:v.stanza,piano:v.piano,note:v.note})),
-      tipo_invio:'marketplace',marketplace_aperta:true,stato:'nuova',
-    });
-    setSending(false);setSent(true);setTimeout(()=>onSent(),1500);
-  };
-
-  if(sent)return<Full><IC bg="#D1FAE5"><CS c={DS.green}/></IC><P c={DS.text} w={800} s={22} mt={16}>Pubblicato!</P><P c={DS.textMid} mt={8}>Tutti i serramentisti vedranno la richiesta</P></Full>;
-
-  return(
-    <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
-      <div style={{background:DS.topbar,padding:'14px 20px',position:'sticky',top:0,zIndex:100}}>
-        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,color:DS.teal,fontWeight:700,fontSize:13,padding:0,marginBottom:6}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>Dashboard
-        </button>
-        <div style={{fontWeight:800,fontSize:18,color:'#fff'}}>Pubblica sul Marketplace</div>
-        <div style={{fontSize:12,color:'rgba(139,188,188,.6)',marginTop:2}}>Tutti i serramentisti freelance potranno candidarsi</div>
-      </div>
-      <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 100px',display:'flex',flexDirection:'column',gap:12}}>
-        <Cd t="Dati cliente">
-          <In l="Nome cliente *" v={cliente} o={setCliente} p="Mario Rossi"/>
-          <In l="Indirizzo cantiere *" v={indirizzo} o={setIndirizzo} p="Via Roma 45, Cosenza"/>
-        </Cd>
-        <Cd t="Tempistiche">
-          <In l="Data preferita" v={dataP} o={setDataP} t="date"/>
-          <Tog v={urgente} o={()=>setUrgente(!urgente)} l="Urgente"/>
-        </Cd>
-        <Cd t={`Vani (${vani.length})`}>
-          {vani.map((v,i)=><VanoForm key={v.id} v={v} i={i} onUpdate={upV} onRemove={rmV} canRemove={vani.length>1}/>)}
-          <button onClick={addV} style={{width:'100%',border:`2px dashed ${DS.border}`,background:'transparent',borderRadius:10,padding:'10px 0',cursor:'pointer',color:DS.teal,fontWeight:700,fontSize:13}}>+ Aggiungi vano</button>
-        </Cd>
-        <Cd t="Budget"><In l="Budget indicativo (\u20AC)" v={budget} o={setBudget} p="350" t="number"/></Cd>
-        <Cd t="Note"><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Descrivi il lavoro..." style={{width:'100%',minHeight:80,border:`1.5px solid ${DS.border}`,borderRadius:10,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical',outline:'none',boxSizing:'border-box'}}/></Cd>
-      </div>
-      <button onClick={pubblica} disabled={!cliente.trim()||!indirizzo.trim()||sending}
-        style={{position:'fixed',bottom:16,left:16,right:16,maxWidth:568,margin:'0 auto',background:(!cliente.trim()||!indirizzo.trim())?'#9CA3AF':'#0D1F1F',color:'#fff',border:`2px solid ${DS.teal}`,borderRadius:14,padding:'16px 0',fontSize:16,fontWeight:800,cursor:'pointer',zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.3)',opacity:sending?.6:1}}>
-        {sending?'Pubblicazione...':'Pubblica sul Marketplace'}
-      </button>
-    </div>
-  );
-}
-
-// ─── FORM NUOVO LAVORO DIRETTO ────────────────────────────────────────────────
-function NuovoForm({azienda,freelancers,selFreelancer,inviteCode,onSent,onBack}){
+// ═══ FORM NUOVO LAVORO PREMIUM ═══════════════════════════════════════════════
+function NuovoLavoroFormPremium({azienda,freelancers,selFreelancer,inviteCode,isMarketplace,onSent,onBack}){
   const [target,setTarget]=useState(selFreelancer?.id||freelancers[0]?.id||'');
-  const [cliente,setCliente]=useState('');
-  const [indirizzo,setIndirizzo]=useState('');
+  const [cliente,setCliente]=useState('');const [indirizzo,setIndirizzo]=useState('');
   const [telC,setTelC]=useState('');const [emailC,setEmailC]=useState('');
   const [dataP,setDataP]=useState('');const [oraP,setOraP]=useState('');
   const [urgente,setUrgente]=useState(false);const [budget,setBudget]=useState('');const [note,setNote]=useState('');
   const [vani,setVani]=useState([{id:1,tipo:'Finestra',materiale:'PVC',larghezza:'',altezza:'',stanza:'',piano:'PT',note:''}]);
   const [allegati,setAllegati]=useState([]);const [uploading,setUploading]=useState(false);
   const [sending,setSending]=useState(false);const [sent,setSent]=useState(false);
+  const [showImport,setShowImport]=useState(false);
   const fileRef=useRef(null);
 
-  const addV=()=>setVani(v=>[...v,{id:v.length+1,tipo:'Finestra',materiale:'PVC',larghezza:'',altezza:'',stanza:'',piano:'PT',note:''}]);
+  const addV=()=>setVani(v=>[...v,{id:Date.now(),tipo:'Finestra',materiale:'PVC',larghezza:'',altezza:'',stanza:'',piano:'PT',note:''}]);
   const rmV=id=>setVani(v=>v.filter(x=>x.id!==id));
   const upV=(id,f,val)=>setVani(v=>v.map(x=>x.id===id?{...x,[f]:val}:x));
 
   const handleUp=async e=>{const files=e.target.files;if(!files)return;setUploading(true);for(let i=0;i<files.length;i++){const f=files[i];const path=`portale/${inviteCode}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const url=await sb.upload(path,f);if(url)setAllegati(p=>[...p,{nome:f.name,url,tipo:f.type.startsWith('image')?'img':'file'}]);}setUploading(false);e.target.value='';};
 
+  // Import handler
+  const handleImportFile=async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      const text=await file.text();
+      // Simple XML/CSV auto-detect and parse
+      const isXml=text.trim().startsWith('<?xml')||text.trim().startsWith('<');
+      const isCsv=!isXml&&(text.includes(';')||text.includes(',')||text.includes('\t'));
+      if(isXml){
+        const parser=new DOMParser();const doc=parser.parseFromString(text,'text/xml');
+        const nodes=[...doc.getElementsByTagName('Vano'),...doc.getElementsByTagName('Serramento'),...doc.getElementsByTagName('Window'),...doc.getElementsByTagName('Element'),...doc.getElementsByTagName('Finestra'),...doc.getElementsByTagName('Posizione'),...doc.getElementsByTagName('Door'),...doc.getElementsByTagName('Item'),...doc.getElementsByTagName('VANO'),...doc.getElementsByTagName('SERRAMENTO'),...doc.getElementsByTagName('Riga')];
+        const gt=(el,tags)=>{for(const t of tags){const n=el.getElementsByTagName(t)[0];if(n?.textContent?.trim())return n.textContent.trim();}return '';};
+        const gn=(el,tags)=>{const v=gt(el,tags);const n=parseFloat(v);return isNaN(n)?null:n;};
+        // Client info
+        const root=doc.documentElement;
+        const cl=gt(root,['Cliente','CLIENTE','NomeCliente','Committente','RagioneSociale','Customer'])||'';
+        const ind=gt(root,['Indirizzo','INDIRIZZO','IndirizzoCantiere','Via','Address'])||'';
+        if(cl)setCliente(cl);if(ind)setIndirizzo(ind);
+        if(nodes.length>0){
+          setVani(nodes.map((v,i)=>({
+            id:Date.now()+i,
+            tipo:mapTipo(gt(v,['Tipo','TIPO','Type','TipoSerramento','Tipologia'])||v.tagName||'Finestra'),
+            materiale:mapMat(gt(v,['Materiale','MATERIALE','Material','Sistema','Profilo','System','Profile'])||'PVC'),
+            larghezza:String(gn(v,['Larghezza','LARGHEZZA','Width','W','L','Base'])||''),
+            altezza:String(gn(v,['Altezza','ALTEZZA','Height','H','Alt'])||''),
+            stanza:gt(v,['Stanza','Locale','LOCALE','Room','Location','Ambiente'])||'',
+            piano:gt(v,['Piano','PIANO','Floor','Level'])||'PT',
+            note:[gt(v,['Note','NOTE','Notes']),gt(v,['ColoreInterno','COLORE_INT','ColorInt'])?'Int:'+gt(v,['ColoreInterno','COLORE_INT','ColorInt']):'',gt(v,['Vetro','VETRO','Glass'])?'Vetro:'+gt(v,['Vetro','VETRO','Glass']):''].filter(Boolean).join(' · '),
+          })));
+        }
+      } else if(isCsv){
+        const sep=text.includes(';')?';':text.includes('\t')?'\t':',';
+        const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+        if(lines.length>=2){
+          const heads=lines[0].split(sep).map(h=>h.replace(/['"]/g,'').trim().toLowerCase());
+          const fi=(aliases)=>{for(const a of aliases){const i=heads.indexOf(a);if(i>=0)return i;}return -1;};
+          const cols={nome:fi(['nome','name','descrizione','vano','codice']),tipo:fi(['tipo','type','tipologia']),mat:fi(['materiale','material','profilo','sistema']),l:fi(['larghezza','width','l','base']),h:fi(['altezza','height','h']),stanza:fi(['stanza','room','locale','ambiente']),piano:fi(['piano','floor']),note:fi(['note','notes']),cliente:fi(['cliente','customer','committente']),indirizzo:fi(['indirizzo','address','via'])};
+          const firstRow=lines[1].split(sep).map(c=>c.replace(/['"]/g,'').trim());
+          if(cols.cliente>=0&&firstRow[cols.cliente])setCliente(firstRow[cols.cliente]);
+          if(cols.indirizzo>=0&&firstRow[cols.indirizzo])setIndirizzo(firstRow[cols.indirizzo]);
+          const newVani=[];
+          for(let i=1;i<lines.length;i++){
+            const cs=lines[i].split(sep).map(c=>c.replace(/['"]/g,'').trim());
+            if(cs.length<2)continue;
+            const gv=idx=>idx>=0?(cs[idx]||''):'';
+            newVani.push({id:Date.now()+i,tipo:mapTipo(gv(cols.tipo)||'Finestra'),materiale:mapMat(gv(cols.mat)||'PVC'),larghezza:gv(cols.l),altezza:gv(cols.h),stanza:gv(cols.stanza),piano:gv(cols.piano)||'PT',note:gv(cols.note)});
+          }
+          if(newVani.length>0)setVani(newVani);
+        }
+      }
+    }catch(err){console.error('Import error',err);}
+    e.target.value='';
+  };
+
   const invia=async()=>{
-    if(!cliente.trim()||!indirizzo.trim()||!target)return;
+    if(!cliente.trim()||!indirizzo.trim())return;
     setSending(true);
-    // Trova l'azienda_freelance per questo operatore
-    const azfl=await sb.get('aziende_freelance',{operatore_id:'eq.'+target,nome:'eq.'+azienda.nome,limit:'1'});
-    const azFlId=azfl?.[0]?.id||azienda.id;
+    const opId=isMarketplace?azienda.operatore_id:target;
+    const azfl=isMarketplace?[{id:azienda.id}]:await sb.get('aziende_freelance',{operatore_id:'eq.'+opId,nome:'eq.'+azienda.nome,limit:'1'});
     await sb.post('richieste_lavoro',{
-      azienda_fl_id:azFlId,operatore_id:target,
+      azienda_fl_id:azfl?.[0]?.id||azienda.id,operatore_id:opId,
       cliente:cliente.trim(),indirizzo:indirizzo.trim(),telefono_cliente:telC,email_cliente:emailC,
       data_preferita:dataP||null,ora_preferita:oraP||null,urgente,
       budget:budget?parseFloat(budget):null,note,
       vani_json:vani.map(v=>({tipo:v.tipo,materiale:v.materiale,larghezza:v.larghezza?parseInt(v.larghezza):null,altezza:v.altezza?parseInt(v.altezza):null,stanza:v.stanza,piano:v.piano,note:v.note})),
-      allegati_json:allegati,tipo_invio:'diretto',stato:'nuova',
+      allegati_json:allegati,tipo_invio:isMarketplace?'marketplace':'diretto',marketplace_aperta:isMarketplace,stato:'nuova',
     });
     setSending(false);setSent(true);setTimeout(()=>onSent(),1500);
   };
 
-  const targetName=freelancers.find(f=>f.id===target);
-  const [showImport,setShowImport]=useState(false);
+  if(sent)return(
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'60vh',gap:16,animation:'scaleIn .4s ease'}}>
+      <div style={{width:72,height:72,borderRadius:22,background:C.greenBg,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style={{fontSize:24,fontWeight:800,color:C.t1,fontFamily:FONT}}>{isMarketplace?'Pubblicato!':'Inviata!'}</div>
+      <div style={{fontSize:14,color:C.t2,fontFamily:FONT}}>{isMarketplace?'Tutti i serramentisti vedranno la richiesta':'Il montatore riceverà una notifica'}</div>
+    </div>
+  );
 
-  const handleImport=(data)=>{
-    if(data.cliente) setCliente(data.cliente);
-    if(data.indirizzo) setIndirizzo(data.indirizzo);
-    if(data.telefono) setTelC(data.telefono);
-    if(data.email) setEmailC(data.email);
-    if(data.note) setNote(data.note);
-    if(data.vani?.length>0){
-      setVani(data.vani.map((v,i)=>({id:i+1,tipo:v.tipo||'Finestra',materiale:v.materiale||'PVC',larghezza:v.larghezza?String(v.larghezza):'',altezza:v.altezza?String(v.altezza):'',stanza:v.stanza||'',piano:v.piano||'PT',note:[v.note,v.colore_int?'Int:'+v.colore_int:'',v.colore_est?'Est:'+v.colore_est:'',v.vetro?'Vetro:'+v.vetro:'',v.sistema?'Sistema:'+v.sistema:''].filter(Boolean).join(' · ')})));
-    }
-    setShowImport(false);
-  };
-
-  if(sent)return<Full><IC bg="#D1FAE5"><CS c={DS.green}/></IC><P c={DS.text} w={800} s={22} mt={16}>Inviata!</P><P c={DS.textMid} mt={8}>{targetName?`${targetName.nome} ${targetName.cognome}`:'Il montatore'} riceverà una notifica</P></Full>;
+  const importRef=useRef(null);
 
   return(
-    <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
-      {showImport&&<ImportaCommessa onImport={handleImport} onClose={()=>setShowImport(false)}/>}
-      <div style={{background:DS.topbar,padding:'14px 20px',position:'sticky',top:0,zIndex:100}}>
-        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,color:DS.teal,fontWeight:700,fontSize:13,padding:0,marginBottom:6}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>Indietro
+    <>
+      <input ref={importRef} type="file" accept=".xml,.ope,.fpp,.csv,.xlsx,.xls,.tsv" style={{display:'none'}} onChange={handleImportFile}/>
+
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+        <div>
+          <div style={{fontWeight:800,fontSize:22,color:C.t1,fontFamily:FONT}}>{isMarketplace?'Pubblica sul Marketplace':'Nuovo lavoro'}</div>
+          {isMarketplace&&<div style={{fontSize:13,color:C.t3,marginTop:4,fontFamily:FONT}}>Tutti i serramentisti potranno candidarsi</div>}
+        </div>
+        <button className="btn-glow" onClick={()=>importRef.current?.click()}
+          style={{background:`linear-gradient(135deg,${C.card},rgba(96,165,250,0.08))`,border:`1px solid rgba(96,165,250,0.3)`,borderRadius:12,padding:'10px 18px',cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style={{textAlign:'left'}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.blue,fontFamily:FONT}}>Importa</div>
+            <div style={{fontSize:9,color:C.t3,fontFamily:FONT}}>Opera, FpPro, Excel, CSV</div>
+          </div>
         </button>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div style={{fontWeight:800,fontSize:18,color:'#fff'}}>Nuovo lavoro</div>
-          <button onClick={()=>setShowImport(true)} style={{background:'rgba(40,160,160,.15)',border:`1.5px solid ${DS.teal}`,borderRadius:10,padding:'6px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span style={{fontSize:12,fontWeight:700,color:DS.teal}}>Importa</span>
+      </div>
+
+      {/* Scegli freelancer */}
+      {!isMarketplace&&freelancers.length>1&&<Cd t="Assegna a">
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {freelancers.map(f=>(
+            <button key={f.id} onClick={()=>setTarget(f.id)}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'10px 16px',borderRadius:12,border:`1.5px solid ${target===f.id?C.teal:C.border}`,background:target===f.id?C.tealBg:C.surface,cursor:'pointer',transition:'.15s'}}>
+              <div style={{width:30,height:30,borderRadius:10,background:target===f.id?`${C.teal}33`:C.card,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:target===f.id?C.teal:C.t2,fontFamily:FONT}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
+              <span style={{fontSize:13,fontWeight:target===f.id?700:500,color:target===f.id?C.teal:C.t2,fontFamily:FONT}}>{f.nome} {f.cognome}</span>
+            </button>
+          ))}
+        </div>
+      </Cd>}
+
+      <Cd t="Cliente">
+        <In l="Nome cliente *" v={cliente} o={setCliente} p="Mario Rossi"/>
+        <In l="Indirizzo cantiere *" v={indirizzo} o={setIndirizzo} p="Via Roma 45, Cosenza"/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <In l="Telefono" v={telC} o={setTelC} p="333 1234567"/>
+          <In l="Email" v={emailC} o={setEmailC} p="mario@email.it"/>
+        </div>
+      </Cd>
+
+      <Cd t="Tempistiche">
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <In l="Data preferita" v={dataP} o={setDataP} t="date"/>
+          <In l="Ora preferita" v={oraP} o={setOraP} t="time"/>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10}}>
+          <button onClick={()=>setUrgente(!urgente)} style={{width:46,height:26,borderRadius:13,border:'none',cursor:'pointer',position:'relative',background:urgente?C.red:`${C.t3}44`,transition:'.2s'}}>
+            <div style={{width:22,height:22,borderRadius:11,background:'#fff',position:'absolute',top:2,left:urgente?22:2,transition:'.2s',boxShadow:'0 1px 4px rgba(0,0,0,.3)'}}/>
           </button>
+          <span style={{fontSize:13,fontWeight:urgente?700:500,color:urgente?C.red:C.t3,fontFamily:FONT}}>{urgente?'URGENTE':'Urgente'}</span>
         </div>
-      </div>
-      <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 100px',display:'flex',flexDirection:'column',gap:12}}>
-        {/* Scegli freelancer */}
-        {freelancers.length>1&&<Cd t="Assegna a">
-          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {freelancers.map(f=>(
-              <button key={f.id} onClick={()=>setTarget(f.id)}
-                style={{display:'flex',alignItems:'center',gap:8,padding:'8px 14px',borderRadius:10,border:`2px solid ${target===f.id?DS.teal:DS.border}`,background:target===f.id?'#EEF8F8':'#fff',cursor:'pointer'}}>
-                <div style={{width:28,height:28,borderRadius:8,background:DS.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'#fff'}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
-                <span style={{fontSize:13,fontWeight:target===f.id?700:400,color:target===f.id?DS.teal:DS.text}}>{f.nome} {f.cognome}</span>
-              </button>
-            ))}
+      </Cd>
+
+      <Cd t={`Vani (${vani.length})`}>
+        {vani.map((v,i)=>(
+          <div key={v.id} style={{background:C.surface,borderRadius:12,padding:14,marginBottom:10,border:`1px solid ${C.border}`,position:'relative',animation:'fadeUp .3s ease'}}>
+            {vani.length>1&&<button onClick={()=>rmV(v.id)} style={{position:'absolute',top:10,right:10,background:C.redBg,border:'none',borderRadius:8,width:28,height:28,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>}
+            <div style={{fontSize:12,fontWeight:700,color:C.teal,marginBottom:10,fontFamily:FONT}}>Vano {i+1}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <Sl l="Tipo" v={v.tipo} o={val=>upV(v.id,'tipo',val)} opts={TIPI_VANO}/>
+              <Sl l="Materiale" v={v.materiale} o={val=>upV(v.id,'materiale',val)} opts={MAT_OPT}/>
+              <In l="Larghezza mm" v={v.larghezza} o={val=>upV(v.id,'larghezza',val)} p="1200" t="number"/>
+              <In l="Altezza mm" v={v.altezza} o={val=>upV(v.id,'altezza',val)} p="1400" t="number"/>
+              <In l="Stanza" v={v.stanza} o={val=>upV(v.id,'stanza',val)} p="Soggiorno"/>
+              <Sl l="Piano" v={v.piano} o={val=>upV(v.id,'piano',val)} opts={['PT','1','2','3','4','5','Interrato']}/>
+            </div>
+            <In l="Note" v={v.note} o={val=>upV(v.id,'note',val)} p="Controtelaio, davanzale..."/>
           </div>
-        </Cd>}
-        <Cd t="Dati cliente">
-          <In l="Nome cliente *" v={cliente} o={setCliente} p="Mario Rossi"/>
-          <In l="Indirizzo cantiere *" v={indirizzo} o={setIndirizzo} p="Via Roma 45, Cosenza"/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <In l="Telefono" v={telC} o={setTelC} p="333 1234567" t="tel"/>
-            <In l="Email" v={emailC} o={setEmailC} p="mario@email.it" t="email"/>
-          </div>
-        </Cd>
-        <Cd t="Tempistiche">
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <In l="Data preferita" v={dataP} o={setDataP} t="date"/>
-            <In l="Ora preferita" v={oraP} o={setOraP} t="time"/>
-          </div>
-          <Tog v={urgente} o={()=>setUrgente(!urgente)} l="Urgente"/>
-        </Cd>
-        <Cd t={`Vani (${vani.length})`}>
-          {vani.map((v,i)=><VanoForm key={v.id} v={v} i={i} onUpdate={upV} onRemove={rmV} canRemove={vani.length>1}/>)}
-          <button onClick={addV} style={{width:'100%',border:`2px dashed ${DS.border}`,background:'transparent',borderRadius:10,padding:'10px 0',cursor:'pointer',color:DS.teal,fontWeight:700,fontSize:13}}>+ Aggiungi vano</button>
-        </Cd>
-        <Cd t="Budget"><In l="Budget indicativo (\u20AC)" v={budget} o={setBudget} p="350" t="number"/></Cd>
-        <Cd t={`Allegati (${allegati.length})`}>
-          <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx" multiple style={{display:'none'}} onChange={handleUp}/>
-          {allegati.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:10}}>{allegati.map((a,i)=>(<div key={i} style={{position:'relative',borderRadius:8,overflow:'hidden',border:`1px solid ${DS.border}`}}>{a.tipo==='img'?<img src={a.url} alt="" style={{width:'100%',height:80,objectFit:'cover',display:'block'}}/>:<div style={{height:80,display:'flex',alignItems:'center',justifyContent:'center',background:'#F4FAFA'}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>}<button onClick={()=>setAllegati(p=>p.filter((_,j)=>j!==i))} style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:'50%',background:'rgba(0,0,0,.5)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><XS c="#fff" s={10}/></button></div>))}</div>}
-          <button onClick={()=>fileRef.current?.click()} disabled={uploading} style={{width:'100%',border:`2px dashed ${DS.border}`,background:'transparent',borderRadius:10,padding:'14px 0',cursor:'pointer',color:DS.teal,fontWeight:700,fontSize:13,opacity:uploading?.5:1}}>{uploading?'Caricamento...':'+ Foto, planimetrie, documenti'}</button>
-        </Cd>
-        <Cd t="Note"><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Descrivi il lavoro..." style={{width:'100%',minHeight:80,border:`1.5px solid ${DS.border}`,borderRadius:10,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical',outline:'none',boxSizing:'border-box'}}/></Cd>
-      </div>
-      <button onClick={invia} disabled={!cliente.trim()||!indirizzo.trim()||sending}
-        style={{position:'fixed',bottom:16,left:16,right:16,maxWidth:568,margin:'0 auto',background:(!cliente.trim()||!indirizzo.trim())?'#9CA3AF':DS.teal,color:'#fff',border:'none',borderRadius:14,padding:'16px 0',fontSize:16,fontWeight:800,cursor:'pointer',zIndex:100,boxShadow:'0 4px 20px rgba(40,160,160,.4)',opacity:sending?.6:1}}>
-        {sending?'Invio...':'Invia lavoro'}
+        ))}
+        <button onClick={addV} style={{width:'100%',border:`2px dashed ${C.border}`,background:'transparent',borderRadius:12,padding:'12px 0',cursor:'pointer',color:C.teal,fontWeight:700,fontSize:13,fontFamily:FONT,transition:'.15s'}}>+ Aggiungi vano</button>
+      </Cd>
+
+      <Cd t="Budget"><In l="Budget indicativo (\u20AC)" v={budget} o={setBudget} p="350" t="number"/></Cd>
+
+      <Cd t={`Allegati (${allegati.length})`}>
+        <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx" multiple style={{display:'none'}} onChange={handleUp}/>
+        {allegati.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
+          {allegati.map((a,i)=>(<div key={i} style={{position:'relative',borderRadius:10,overflow:'hidden',border:`1px solid ${C.border}`}}>
+            {a.tipo==='img'?<img src={a.url} alt="" style={{width:'100%',height:80,objectFit:'cover',display:'block'}}/>:
+            <div style={{height:80,display:'flex',alignItems:'center',justifyContent:'center',background:C.surface}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>}
+            <button onClick={()=>setAllegati(p=>p.filter((_,j)=>j!==i))} style={{position:'absolute',top:4,right:4,width:22,height:22,borderRadius:6,background:'rgba(0,0,0,.6)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>))}
+        </div>}
+        <button onClick={()=>fileRef.current?.click()} disabled={uploading} style={{width:'100%',border:`2px dashed ${C.border}`,background:'transparent',borderRadius:12,padding:'14px 0',cursor:'pointer',color:C.teal,fontWeight:700,fontSize:13,fontFamily:FONT,opacity:uploading?.5:1}}>
+          {uploading?'Caricamento...':'+ Foto, planimetrie, documenti'}
+        </button>
+      </Cd>
+
+      <Cd t="Note"><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Descrivi il lavoro, accesso cantiere..." style={{width:'100%',minHeight:80,background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px 14px',fontSize:14,color:C.t1,fontFamily:FONT,resize:'vertical',outline:'none',boxSizing:'border-box'}}/></Cd>
+
+      {/* Submit */}
+      <button className="btn-glow" onClick={invia} disabled={!cliente.trim()||!indirizzo.trim()||sending}
+        style={{width:'100%',background:(!cliente.trim()||!indirizzo.trim())?C.t3:`linear-gradient(135deg,${C.teal},${C.tealDark})`,color:'#fff',border:'none',borderRadius:14,padding:'16px 0',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:FONT,marginTop:8,opacity:sending?.6:1,boxShadow:`0 4px 24px ${C.teal}33`}}>
+        {sending?'Invio in corso...':(isMarketplace?'Pubblica sul Marketplace':'Invia lavoro')}
       </button>
-    </div>
+    </>
   );
 }
 
-// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
-function RichiestaCard({r,freelancerName,onClick}){
-  const st=STATO_CFG[r.stato]||STATO_CFG.nuova;const nV=(r.vani_json||[]).length;
-  const isMkt=r.tipo_invio==='marketplace';
-  return(
-    <button onClick={onClick} style={{width:'100%',background:'#fff',border:`1.5px solid ${r.urgente?'#DC4444':'#C8E4E4'}`,borderRadius:14,padding:'14px 16px',marginBottom:10,cursor:'pointer',textAlign:'left',display:'block'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
-        <div style={{flex:1,paddingRight:10}}>
-          <div style={{fontWeight:700,fontSize:15,color:'#0D1F1F'}}>{r.cliente}</div>
-          <div style={{fontSize:12,color:'#4A7070',marginTop:2}}>{r.indirizzo}</div>
-        </div>
-        <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}}>
-          <div style={{background:st.bg,borderRadius:20,padding:'3px 10px'}}><span style={{fontSize:10,fontWeight:700,color:st.c}}>{st.l}</span></div>
-          {isMkt&&<span style={{fontSize:9,fontWeight:700,color:'#3B7FE0',background:'#DBEAFE',borderRadius:4,padding:'1px 6px'}}>MKT</span>}
-        </div>
-      </div>
-      <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
-        <span style={{fontSize:12,color:'#4A7070'}}>{nV} vani</span>
-        {r.budget&&<span style={{fontSize:12,fontWeight:700,color:'#28A0A0'}}>{'\u20AC'}{r.budget}</span>}
-        {freelancerName&&<span style={{fontSize:11,color:'#8BBCBC'}}>{freelancerName}</span>}
-        {r.urgente&&<span style={{fontSize:10,fontWeight:700,color:'#DC4444',background:'#FEE2E2',borderRadius:4,padding:'1px 6px'}}>URGENTE</span>}
-      </div>
-    </button>
-  );
-}
+// ═══ MAPPERS ══════════════════════════════════════════════════════════════════
+function mapTipo(r){r=(r||'').toLowerCase();if(r.includes('portafinestra')||r.includes('balcon'))return'Portafinestra';if(r.includes('porta')||r.includes('door'))return'Porta';if(r.includes('scorr')||r.includes('slid'))return'Scorrevole';if(r.includes('velux')||r.includes('tetto'))return'Velux';if(r.includes('persian'))return'Persiana';if(r.includes('zanzar'))return'Zanzariera';if(r.includes('casson'))return'Cassonetto';return'Finestra';}
+function mapMat(r){r=(r||'').toLowerCase();if(r.includes('allum')||r.includes('alu'))return'Alluminio';if(r.includes('legno')||r.includes('wood'))return'Legno';if(r.includes('acciaio')||r.includes('steel'))return'Acciaio';return'PVC';}
 
-function VanoRow({v,i}){return<div style={{background:'#F4FAFA',borderRadius:10,padding:12,marginBottom:8,border:'1px solid #C8E4E4'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}><span style={{fontWeight:700,fontSize:13,color:'#0D1F1F'}}>Vano {i+1} — {v.tipo}</span><span style={{fontSize:11,fontWeight:600,color:'#28A0A0',background:'#EEF8F8',borderRadius:4,padding:'1px 8px'}}>{v.materiale}</span></div><div style={{display:'flex',gap:12,fontSize:12,color:'#4A7070'}}>{v.larghezza&&v.altezza&&<span>{v.larghezza}x{v.altezza} mm</span>}{v.stanza&&<span>{v.stanza}</span>}{v.piano&&<span>P. {v.piano}</span>}</div>{v.note&&<div style={{fontSize:12,color:'#4A7070',marginTop:4,fontStyle:'italic'}}>{v.note}</div>}</div>;}
-
-function VanoForm({v,i,onUpdate,onRemove,canRemove}){
-  return(<div style={{background:'#F4FAFA',borderRadius:10,padding:12,marginBottom:10,border:'1px solid #C8E4E4',position:'relative'}}>
-    {canRemove&&<button onClick={()=>onRemove(v.id)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',cursor:'pointer',padding:4}}><XS c="#DC4444" s={16}/></button>}
-    <div style={{fontSize:12,fontWeight:700,color:'#28A0A0',marginBottom:8}}>Vano {i+1}</div>
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-      <Sl l="Tipo" v={v.tipo} o={val=>onUpdate(v.id,'tipo',val)} opts={TIPI_VANO}/>
-      <Sl l="Materiale" v={v.materiale} o={val=>onUpdate(v.id,'materiale',val)} opts={MAT_OPT}/>
-      <In l="Larghezza mm" v={v.larghezza} o={val=>onUpdate(v.id,'larghezza',val)} p="1200" t="number"/>
-      <In l="Altezza mm" v={v.altezza} o={val=>onUpdate(v.id,'altezza',val)} p="1400" t="number"/>
-      <In l="Stanza" v={v.stanza} o={val=>onUpdate(v.id,'stanza',val)} p="Soggiorno"/>
-      <Sl l="Piano" v={v.piano} o={val=>onUpdate(v.id,'piano',val)} opts={['PT','1','2','3','4','5','Interrato']}/>
-    </div>
-    <In l="Note" v={v.note} o={val=>onUpdate(v.id,'note',val)} p="Controtelaio, davanzale..."/>
-  </div>);
-}
-
-function Tog({v,o,l}){return<div style={{display:'flex',alignItems:'center',gap:10,marginTop:8}}><button onClick={o} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',position:'relative',background:v?'#DC4444':'#D1D5DB',transition:'.2s'}}><div style={{width:20,height:20,borderRadius:10,background:'#fff',position:'absolute',top:2,left:v?22:2,transition:'.2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}}/></button><span style={{fontSize:13,fontWeight:v?700:400,color:v?'#DC4444':'#4A7070'}}>{v?l.toUpperCase():l}</span></div>;}
-
-// Primitives
-function Full({children}){return<div style={{minHeight:'100vh',background:'#E8F4F4',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}>{children}</div>;}
-function Spinner(){return<><div style={{width:40,height:40,border:'3px solid #C8E4E4',borderTop:'3px solid #28A0A0',borderRadius:'50%',animation:'spin 1s linear infinite'}}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></>;}
-function IC({bg,children}){return<div style={{width:64,height:64,borderRadius:'50%',background:bg,display:'flex',alignItems:'center',justifyContent:'center'}}>{children}</div>;}
-function CS({c}){return<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>;}
-function XS({c,s=16}){return<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;}
-function P({c,w,s,mt,align,children}){return<div style={{color:c,fontWeight:w||400,fontSize:s||14,marginTop:mt||0,textAlign:align||'left'}}>{children}</div>;}
-function Cd({t,children}){return<div style={{background:'#fff',borderRadius:14,border:'1.5px solid #C8E4E4',padding:'14px 16px',marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:'#0D1F1F',marginBottom:10,textTransform:'uppercase',letterSpacing:.5}}>{t}</div>{children}</div>;}
-function In({l,v,o,p,t}){return<div style={{marginBottom:8}}><div style={{fontSize:11,fontWeight:600,color:'#4A7070',marginBottom:4}}>{l}</div><input value={v} onChange={e=>o(e.target.value)} placeholder={p} type={t||'text'} style={{width:'100%',border:'1.5px solid #C8E4E4',borderRadius:8,padding:'9px 12px',fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/></div>;}
-function Sl({l,v,o,opts}){return<div style={{marginBottom:8}}><div style={{fontSize:11,fontWeight:600,color:'#4A7070',marginBottom:4}}>{l}</div><select value={v} onChange={e=>o(e.target.value)} style={{width:'100%',border:'1.5px solid #C8E4E4',borderRadius:8,padding:'9px 12px',fontSize:14,fontFamily:'inherit',outline:'none',background:'#fff',boxSizing:'border-box'}}>{opts.map(x=><option key={x} value={x}>{x}</option>)}</select></div>;}
-function IR({l,v}){return<div><div style={{fontSize:10,fontWeight:600,color:'#8BBCBC',marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:600,color:'#0D1F1F'}}>{v}</div></div>;}
+// ═══ PRIMITIVES ══════════════════════════════════════════════════════════════
+function Shell({children}){return<div style={{minHeight:'100vh',background:C.bg,fontFamily:FONT}}>{children}</div>;}
+function SectionTitle({children,style={}}){return<div style={{fontSize:12,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.08em',marginBottom:14,fontFamily:FONT,...style}}>{children}</div>;}
+function Cd({t,children}){return<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:'18px 20px',marginBottom:14}}><div style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12,fontFamily:FONT}}>{t}</div>{children}</div>;}
+function In({l,v,o,p,t}){return<div style={{marginBottom:8}}><div style={{fontSize:11,fontWeight:500,color:C.t3,marginBottom:4,fontFamily:FONT}}>{l}</div><input value={v} onChange={e=>o(e.target.value)} placeholder={p} type={t||'text'} style={{width:'100%',background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px 14px',fontSize:14,color:C.t1,fontFamily:FONT,outline:'none',boxSizing:'border-box',transition:'.15s'}} onFocus={e=>e.target.style.borderColor=C.teal} onBlur={e=>e.target.style.borderColor=C.border}/></div>;}
+function Sl({l,v,o,opts}){return<div style={{marginBottom:8}}><div style={{fontSize:11,fontWeight:500,color:C.t3,marginBottom:4,fontFamily:FONT}}>{l}</div><select value={v} onChange={e=>o(e.target.value)} style={{width:'100%',background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px 14px',fontSize:14,color:C.t1,fontFamily:FONT,outline:'none',boxSizing:'border-box',appearance:'none',backgroundImage:`url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,backgroundRepeat:'no-repeat',backgroundPosition:'right 14px center'}}>{opts.map(x=><option key={x} value={x}>{x}</option>)}</select></div>;}
+function Chip({icon,text,accent}){return<div style={{display:'flex',alignItems:'center',gap:4}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent?C.teal:C.t3} strokeWidth="1.5"><path d={icon}/></svg><span style={{fontSize:11,color:accent?C.teal:C.t3,fontWeight:accent?600:400,fontFamily:FONT}}>{text}</span></div>;}
+function FixedBtn({onClick,label}){return<button className="btn-glow" onClick={onClick} style={{position:'fixed',bottom:20,left:20,right:20,maxWidth:560,margin:'0 auto',background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,color:'#fff',border:'none',borderRadius:14,padding:'16px 0',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:FONT,zIndex:100,boxShadow:`0 4px 24px ${C.teal}33`}}>{label}</button>;}
