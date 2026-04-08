@@ -208,30 +208,244 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
 
           {/* ═══ CALENDARIO ═══ */}
           {page==='calendario'&&(()=>{
-            const oggi=new Date();
-            const days=Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(oggi.getDate()+i-3);return d;});
+            const [calView,setCalView]=React.useState('mese'); // mese|settimana
+            const [calDate,setCalDate]=React.useState(new Date());
+            const oggi=new Date();const oggiStr=oggi.toISOString().slice(0,10);
+
+            // Colors per serramentista (stable hash)
+            const FL_COLORS=['#2DD4BF','#60A5FA','#A78BFA','#F87171','#FBBF24','#34D399','#F472B6','#38BDF8','#818CF8','#FB923C','#4ADE80'];
+            const flColor=(opId)=>{const idx=freelancers.findIndex(f=>f.id===opId);return FL_COLORS[idx%FL_COLORS.length];};
+
+            // Mese navigation
+            const prevMonth=()=>{const d=new Date(calDate);d.setMonth(d.getMonth()-1);setCalDate(d);};
+            const nextMonth=()=>{const d=new Date(calDate);d.setMonth(d.getMonth()+1);setCalDate(d);};
+            const goToday=()=>setCalDate(new Date());
+
+            // Genera griglia mese
+            const year=calDate.getFullYear();const month=calDate.getMonth();
+            const firstDay=new Date(year,month,1);
+            const lastDay=new Date(year,month+1,0);
+            const startOffset=(firstDay.getDay()+6)%7; // Lunedì = 0
+            const totalDays=lastDay.getDate();
+            const gridDays=[];
+            // Giorni mese precedente
+            const prevMonthLast=new Date(year,month,0).getDate();
+            for(let i=startOffset-1;i>=0;i--) gridDays.push({day:prevMonthLast-i,month:month-1,year,isOtherMonth:true});
+            // Giorni mese corrente
+            for(let i=1;i<=totalDays;i++) gridDays.push({day:i,month,year,isOtherMonth:false});
+            // Giorni mese successivo
+            const remaining=42-gridDays.length;
+            for(let i=1;i<=remaining;i++) gridDays.push({day:i,month:month+1,year,isOtherMonth:true});
+
+            const monthName=calDate.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+
+            // Week view
+            const weekStart=new Date(calDate);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+            const weekDays=Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;});
+            const hours=Array.from({length:12},(_,i)=>7+i); // 7:00 - 18:00
+
+            // Stats sidebar
+            const thisMonthRL=richieste.filter(r=>{if(!r.data_preferita)return false;const d=new Date(r.data_preferita);return d.getMonth()===month&&d.getFullYear()===year;});
+            const monthByFL=freelancers.map(f=>({...f,count:thisMonthRL.filter(r=>r.operatore_id===f.id).length})).filter(f=>f.count>0).sort((a,b)=>b.count-a.count);
+
+            const [hoverEvent,setHoverEvent]=React.useState(null);
+            const [hoverPos,setHoverPos]=React.useState({x:0,y:0});
+
             return(
-              <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:8}}>
-                {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d=><div key={d} style={{fontSize:10,color:C.t3,fontWeight:600,textAlign:'center',padding:'4px 0',textTransform:'uppercase'}}>{d}</div>)}
-                {days.map((d,i)=>{
-                  const ds=d.toISOString().slice(0,10);
-                  const dayRL=richieste.filter(r=>r.data_preferita===ds);
-                  const isToday=ds===oggi.toISOString().slice(0,10);
-                  return(
-                    <div key={i} style={{background:isToday?C.tBg:C.cd,border:`1px solid ${isToday?C.tBd:C.bd}`,borderRadius:10,padding:10,minHeight:90}}>
-                      <div style={{fontSize:13,fontWeight:isToday?800:600,color:isToday?C.teal:C.t1,marginBottom:6}}>{d.getDate()}<span style={{fontSize:10,color:C.t3,marginLeft:4}}>{d.toLocaleDateString('it-IT',{month:'short'})}</span></div>
-                      {dayRL.map(r=>{
-                        const st=ST[r.stato]||ST.nuova;
+              <div style={{display:'grid',gridTemplateColumns:'1fr 240px',gap:16,height:'calc(100vh - 80px)'}}>
+                {/* MAIN CALENDAR */}
+                <div style={{display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                  {/* Header */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexShrink:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      <div style={{display:'flex',gap:2}}>
+                        <button onClick={prevMonth} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:'8px 0 0 8px',padding:'8px 12px',cursor:'pointer',display:'flex',alignItems:'center'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.t2} strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button onClick={nextMonth} style={{background:C.cd,border:`1px solid ${C.bd}`,borderLeft:'none',borderRadius:'0 8px 8px 0',padding:'8px 12px',cursor:'pointer',display:'flex',alignItems:'center'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.t2} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                      </div>
+                      <div style={{fontSize:20,fontWeight:800,color:C.t1,textTransform:'capitalize'}}>{monthName}</div>
+                      <button onClick={goToday} style={{background:C.tBg,border:`1px solid ${C.tBd}`,borderRadius:8,padding:'6px 14px',fontSize:11,fontWeight:700,color:C.teal,cursor:'pointer'}}>Oggi</button>
+                    </div>
+                    <div style={{display:'flex',gap:2}}>
+                      {['mese','settimana'].map(v=>(
+                        <button key={v} onClick={()=>setCalView(v)} style={{background:calView===v?C.tBg:'transparent',color:calView===v?C.teal:C.t3,border:`1px solid ${calView===v?C.tBd:C.bd}`,borderRadius:8,padding:'6px 14px',fontSize:11,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{v}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* MONTH VIEW */}
+                  {calView==='mese'&&<div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                    {/* Day headers */}
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:1,marginBottom:4}}>
+                      {['LUN','MAR','MER','GIO','VEN','SAB','DOM'].map((d,i)=>(
+                        <div key={d} style={{fontSize:10,color:i>=5?C.amb:C.t3,fontWeight:700,textAlign:'center',padding:'6px 0',letterSpacing:'.1em'}}>{d}</div>
+                      ))}
+                    </div>
+                    {/* Grid */}
+                    <div style={{flex:1,display:'grid',gridTemplateColumns:'repeat(7,1fr)',gridTemplateRows:'repeat(6,1fr)',gap:1}}>
+                      {gridDays.map((gd,i)=>{
+                        const actualMonth=gd.month<0?gd.month+12:gd.month>11?gd.month-12:gd.month;
+                        const actualYear=gd.month<0?gd.year-1:gd.month>11?gd.year+1:gd.year;
+                        const ds=`${actualYear}-${String(actualMonth+1).padStart(2,'0')}-${String(gd.day).padStart(2,'0')}`;
+                        const dayRL=(selFL?richieste.filter(r=>r.operatore_id===selFL.id):richieste).filter(r=>r.data_preferita===ds);
+                        const isToday=ds===oggiStr;
+                        const isWeekend=i%7>=5;
                         return(
-                          <div key={r.id} onClick={()=>openDet(r)} style={{background:st.bg,borderRadius:5,padding:'3px 6px',marginBottom:3,cursor:'pointer',borderLeft:`3px solid ${st.c}`}}>
-                            <div style={{fontSize:10,fontWeight:600,color:st.c,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.cliente}</div>
-                            <div style={{fontSize:9,color:C.t3}}>{gn(r.operatore_id)}</div>
+                          <div key={i} style={{background:isToday?`${C.teal}11`:gd.isOtherMonth?C.bg:isWeekend?`${C.cd}88`:C.cd,border:`1px solid ${isToday?C.tBd:C.bd}`,borderRadius:6,padding:'4px 6px',overflow:'hidden',minHeight:0,display:'flex',flexDirection:'column'}}>
+                            <div style={{fontSize:12,fontWeight:isToday?800:gd.isOtherMonth?400:600,color:isToday?C.teal:gd.isOtherMonth?C.t3:C.t1,marginBottom:3,display:'flex',alignItems:'center',gap:4}}>
+                              {isToday&&<div style={{width:5,height:5,borderRadius:'50%',background:C.teal}}/>}
+                              {gd.day}
+                            </div>
+                            <div style={{flex:1,overflow:'auto',display:'flex',flexDirection:'column',gap:2}}>
+                              {dayRL.slice(0,3).map(r=>{
+                                const st=ST[r.stato]||ST.nuova;const fc=flColor(r.operatore_id);
+                                return(
+                                  <div key={r.id} onClick={(e)=>{e.stopPropagation();openDet(r);}}
+                                    onMouseEnter={(e)=>{setHoverEvent(r);setHoverPos({x:e.clientX,y:e.clientY});}}
+                                    onMouseLeave={()=>setHoverEvent(null)}
+                                    style={{background:`${fc}15`,borderLeft:`3px solid ${fc}`,borderRadius:'0 4px 4px 0',padding:'2px 5px',cursor:'pointer',transition:'.1s'}}>
+                                    <div style={{fontSize:10,fontWeight:600,color:C.t1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.cliente}</div>
+                                    <div style={{fontSize:8,color:fc,fontWeight:600}}>{gn(r.operatore_id).split(' ')[0]}</div>
+                                  </div>
+                                );
+                              })}
+                              {dayRL.length>3&&<div style={{fontSize:9,color:C.teal,fontWeight:700,textAlign:'center'}}>+{dayRL.length-3} altri</div>}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
+                  </div>}
+
+                  {/* WEEK VIEW */}
+                  {calView==='settimana'&&<div style={{flex:1,overflow:'auto'}}>
+                    <div style={{display:'grid',gridTemplateColumns:'50px repeat(7,1fr)',gap:0}}>
+                      {/* Header */}
+                      <div style={{borderBottom:`1px solid ${C.bd}`,padding:4}}/>
+                      {weekDays.map((d,i)=>{
+                        const ds=d.toISOString().slice(0,10);const isT=ds===oggiStr;
+                        return(
+                          <div key={i} style={{borderBottom:`1px solid ${C.bd}`,borderLeft:`1px solid ${C.bd}`,padding:'8px 6px',textAlign:'center',background:isT?`${C.teal}08`:'transparent'}}>
+                            <div style={{fontSize:10,color:i>=5?C.amb:C.t3,fontWeight:600,textTransform:'uppercase'}}>{d.toLocaleDateString('it-IT',{weekday:'short'})}</div>
+                            <div style={{fontSize:18,fontWeight:isT?800:600,color:isT?C.teal:C.t1}}>{d.getDate()}</div>
+                          </div>
+                        );
+                      })}
+                      {/* Time slots */}
+                      {hours.map(h=><React.Fragment key={h}>
+                        <div style={{padding:'4px 6px',fontSize:10,color:C.t3,fontFamily:M,borderBottom:`1px solid ${C.bd}`,textAlign:'right'}}>{String(h).padStart(2,'0')}:00</div>
+                        {weekDays.map((d,di)=>{
+                          const ds=d.toISOString().slice(0,10);
+                          const dayRL=(selFL?richieste.filter(r=>r.operatore_id===selFL.id):richieste).filter(r=>r.data_preferita===ds);
+                          // Show events at their preferred hour, or spread them
+                          const eventsThisHour=dayRL.filter(r=>{
+                            const oh=r.ora_preferita?parseInt(r.ora_preferita.slice(0,2)):8;
+                            return oh===h;
+                          });
+                          return(
+                            <div key={di} style={{borderBottom:`1px solid ${C.bd}`,borderLeft:`1px solid ${C.bd}`,padding:2,minHeight:40,background:ds===oggiStr?`${C.teal}05`:'transparent'}}>
+                              {eventsThisHour.map(r=>{
+                                const fc=flColor(r.operatore_id);const st=ST[r.stato]||ST.nuova;
+                                return(
+                                  <div key={r.id} onClick={()=>openDet(r)}
+                                    onMouseEnter={(e)=>{setHoverEvent(r);setHoverPos({x:e.clientX,y:e.clientY});}}
+                                    onMouseLeave={()=>setHoverEvent(null)}
+                                    style={{background:`${fc}20`,border:`1px solid ${fc}44`,borderLeft:`3px solid ${fc}`,borderRadius:4,padding:'3px 6px',marginBottom:2,cursor:'pointer'}}>
+                                    <div style={{fontSize:10,fontWeight:600,color:C.t1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.cliente}</div>
+                                    <div style={{fontSize:8,color:fc}}>{gn(r.operatore_id).split(' ')[0]} · {(r.vani_json||[]).length}v</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </React.Fragment>)}
+                    </div>
+                  </div>}
+                </div>
+
+                {/* RIGHT SIDEBAR — stats */}
+                <div style={{borderLeft:`1px solid ${C.bd}`,paddingLeft:16,overflowY:'auto'}}>
+                  {/* Month summary */}
+                  <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14,marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Questo mese</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                      <div style={{background:C.sf,borderRadius:8,padding:'10px 8px',textAlign:'center'}}>
+                        <div style={{fontFamily:M,fontWeight:700,fontSize:22,color:C.t1}}>{thisMonthRL.length}</div>
+                        <div style={{fontSize:9,color:C.t3}}>Lavori</div>
+                      </div>
+                      <div style={{background:C.sf,borderRadius:8,padding:'10px 8px',textAlign:'center'}}>
+                        <div style={{fontFamily:M,fontWeight:700,fontSize:16,color:C.teal}}>{'\u20AC'}{thisMonthRL.reduce((s,r)=>s+(parseFloat(r.budget)||0),0).toLocaleString('it-IT',{maximumFractionDigits:0})}</div>
+                        <div style={{fontSize:9,color:C.t3}}>Volume</div>
+                      </div>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginTop:8}}>
+                      {[
+                        {l:'Attesa',n:thisMonthRL.filter(r=>['nuova','vista'].includes(r.stato)).length,c:C.amb},
+                        {l:'Attivi',n:thisMonthRL.filter(r=>['accettata','in_corso'].includes(r.stato)).length,c:C.blu},
+                        {l:'Fatti',n:thisMonthRL.filter(r=>r.stato==='completata').length,c:C.grn},
+                      ].map(k=>(
+                        <div key={k.l} style={{textAlign:'center'}}>
+                          <div style={{fontFamily:M,fontWeight:700,fontSize:16,color:k.c}}>{k.n}</div>
+                          <div style={{fontSize:8,color:C.t3}}>{k.l}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Per serramentista */}
+                  <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14,marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Per serramentista</div>
+                    {monthByFL.length===0?<div style={{fontSize:11,color:C.t3,padding:'8px 0'}}>Nessun lavoro questo mese</div>:
+                    monthByFL.map(f=>{
+                      const fc=flColor(f.id);
+                      return(
+                        <div key={f.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:`1px solid ${C.bd}`}}>
+                          <div style={{width:4,height:24,borderRadius:2,background:fc}}/>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:11,fontWeight:600,color:C.t1}}>{f.nome} {f.cognome}</div>
+                          </div>
+                          <div style={{fontFamily:M,fontWeight:700,fontSize:13,color:fc}}>{f.count}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Legenda colori */}
+                  <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Legenda stati</div>
+                    {Object.entries(ST).filter(([k])=>k!=='annullata').map(([k,v])=>(
+                      <div key={k} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 0'}}>
+                        <div style={{width:8,height:8,borderRadius:'50%',background:v.c}}/>
+                        <span style={{fontSize:11,color:C.t2}}>{v.l}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* HOVER TOOLTIP */}
+                {hoverEvent&&(()=>{
+                  const r=hoverEvent;const st=ST[r.stato]||ST.nuova;const nV=(r.vani_json||[]).length;
+                  return(
+                    <div style={{position:'fixed',left:hoverPos.x+16,top:hoverPos.y-10,background:C.sf,border:`1px solid ${C.bd}`,borderRadius:12,padding:'14px 16px',zIndex:1000,boxShadow:'0 8px 32px rgba(0,0,0,.5)',maxWidth:300,pointerEvents:'none'}}>
+                      <div style={{fontWeight:700,fontSize:14,color:C.t1,marginBottom:4}}>{r.cliente}</div>
+                      <div style={{fontSize:11,color:C.t2,marginBottom:6}}>{r.indirizzo}</div>
+                      <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:6}}>
+                        <span style={{display:'inline-flex',alignItems:'center',gap:3,background:st.bg,borderRadius:5,padding:'2px 8px'}}><div style={{width:5,height:5,borderRadius:'50%',background:st.c}}/><span style={{fontSize:10,fontWeight:600,color:st.c}}>{st.l}</span></span>
+                        {r.urgente&&<span style={{fontSize:9,fontWeight:700,color:C.red}}>URGENTE</span>}
+                      </div>
+                      <div style={{display:'flex',gap:12,fontSize:11,color:C.t3}}>
+                        <span>{nV} vani</span>
+                        {r.budget&&<span style={{color:C.teal,fontWeight:600}}>{'\u20AC'}{parseFloat(r.budget).toLocaleString('it-IT')}</span>}
+                        <span>{gn(r.operatore_id)}</span>
+                      </div>
+                      {r.note&&<div style={{fontSize:10,color:C.t3,marginTop:6,lineHeight:1.3,maxHeight:40,overflow:'hidden'}}>{r.note}</div>}
+                    </div>
                   );
-                })}
+                })()}
               </div>
             );
           })()}
