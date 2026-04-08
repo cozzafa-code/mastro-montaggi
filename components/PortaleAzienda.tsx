@@ -818,99 +818,18 @@ export default function PortaleAzienda() {
         <div onClick={() => setShowConfronto(!showConfronto)} style={{ marginLeft: "auto", fontSize: 10, fontWeight: 600, color: T.teal, cursor: "pointer", padding: "3px 8px", borderRadius: 4, background: showConfronto ? T.tealLight : "transparent", border: `1px solid ${showConfronto ? T.tealBorder : "transparent"}` }}>
           {showConfronto ? "Lista" : "Confronta"}
         </div>
-        <div onClick={() => setSideView(sideView === "marketplace" ? "operatori" : "marketplace")} style={{ fontSize: 10, fontWeight: 600, color: sideView === "marketplace" ? "#fff" : T.amber, cursor: "pointer", padding: "3px 8px", borderRadius: 4, background: sideView === "marketplace" ? T.amber : "transparent", border: `1px solid ${sideView === "marketplace" ? T.amber : "transparent"}` }}>
+        <div onClick={() => { if (sideView === "marketplace") { setSideView("operatori"); } else { setSideView("marketplace"); setSelOp(null); setSelComm(null); }}} style={{ fontSize: 10, fontWeight: 600, color: sideView === "marketplace" ? "#fff" : T.amber, cursor: "pointer", padding: "3px 8px", borderRadius: 4, background: sideView === "marketplace" ? T.amber : "transparent", border: `1px solid ${sideView === "marketplace" ? T.amber : "transparent"}` }}>
           MKT
         </div>
       </div>
 
       {/* Lista operatori o confronto */}
-      {/* MARKETPLACE VIEW */}
-      {sideView === "marketplace" && (
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {/* Miei lavori pubblicati */}
-          <div style={{ padding: "10px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
-            Miei lavori pubblicati ({MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").length})
-          </div>
-          {MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").map(m => (
-            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: T.amber, fontFamily: T.mono }}>{m.id}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: m.offerte && m.offerte.length > 0 ? T.green : T.muted, background: m.offerte && m.offerte.length > 0 ? T.greenLight : T.lineLight, padding: "1px 6px", borderRadius: 3 }}>
-                  {m.offerte && m.offerte.length > 0 ? `${m.offerte.length} offerte` : "Nessuna offerta"}
-                </span>
-                <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>entro {m.scadenza}</span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
-              <div style={{ fontSize: 10, color: T.sub }}>{m.zona} · Budget {m.budget}</div>
-              {m.offerte && m.offerte.length > 0 && (
-                <div style={{ marginTop: 6, borderTop: `1px solid ${T.lineLight}`, paddingTop: 6 }}>
-                  {m.offerte.map((o, oi) => (
-                    <div key={oi} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0", fontSize: 10 }}>
-                      <span style={{ color: T.ink, fontWeight: 600, flex: 1 }}>{o.da}</span>
-                      <span style={{ color: T.teal, fontWeight: 700, fontFamily: T.mono }}>{"\u20AC"}{o.prezzo}</span>
-                      <span style={{ color: T.amber }}>{o.valutazione}/5</span>
-                      <span style={{ color: T.sub }}>{o.tempoConsegna}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Lavori disponibili nella mia zona */}
-          <div style={{ padding: "14px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
-            Disponibili nella mia zona ({MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").length})
-          </div>
-          {MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").map(m => (
-            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: T.blue, fontFamily: T.mono }}>{m.id}</span>
-                {m.stato === "urgente" && <span style={{ fontSize: 9, fontWeight: 800, color: T.red, background: T.redLight, padding: "1px 5px", borderRadius: 3 }}>URGENTE</span>}
-                <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>{m.distanza}</span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
-              <div style={{ fontSize: 10, color: T.sub, marginBottom: 2 }}>{m.zona} · da {m.azienda}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.green, fontFamily: T.mono }}>{"\u20AC"}{m.budget}</span>
-                <span style={{ fontSize: 10, color: T.muted }}>entro {m.scadenza}</span>
-              </div>
-              <div style={{ fontSize: 10, color: T.sub, marginTop: 3, lineHeight: 1.4 }}>{m.dettagli}</div>
-              <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
-                <div style={{ padding: "5px 12px", borderRadius: 5, background: T.teal, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Fai offerta</div>
-                <div style={{ padding: "5px 12px", borderRadius: 5, background: T.lineLight, color: T.sub, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Dettagli</div>
-              </div>
-            </div>
-          ))}
-
-          {/* Lavori presi */}
-          <div style={{ padding: "14px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
-            Lavori presi ({MARKETPLACE_DEMO.filter(m => m.tipo === "preso").length})
-          </div>
-          {MARKETPLACE_DEMO.filter(m => m.tipo === "preso").map(m => (
-            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{m.id}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: m.stato === "completato" ? T.green : T.amber, background: m.stato === "completato" ? T.greenLight : T.amberLight, padding: "1px 6px", borderRadius: 3 }}>
-                  {m.stato === "completato" ? "Completato" : "In corso"}
-                </span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
-              <div style={{ fontSize: 10, color: T.sub }}>{m.zona} · da {m.azienda}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{"\u20AC"}{m.prezzoAccettato}</span>
-                <span style={{ fontSize: 10, color: T.sub }}>assegnato {m.dataAssegnazione}</span>
-                <span style={{ fontSize: 10, color: T.ink, marginLeft: "auto" }}>{m.operatoreAssegnato}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {sideView === "operatori" && <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto" }}>
         {showConfronto ? <ConfrontoPrestazioni /> : opFiltered.map(o => {
           const sc = statoColor(o.stato);
           const active = o.id === selOp;
           return (
-            <div key={o.id} onClick={() => { setSelOp(o.id); setSelComm(null); setShowConfronto(false); }}
+            <div key={o.id} onClick={() => { setSelOp(o.id); setSelComm(null); setShowConfronto(false); setSideView('operatori'); }}
               style={{ padding: "12px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer", background: active ? T.tealLight : "transparent" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: o.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{o.avatar}</div>
@@ -931,7 +850,7 @@ export default function PortaleAzienda() {
             </div>
           );
         })}
-      </div>}
+      </div>
     </div>
   );
 
@@ -1404,10 +1323,132 @@ export default function PortaleAzienda() {
     );
   };
 
+  // ── MARKETPLACE FULL PANEL ──
+  const MarketplacePanel = () => (
+    <div style={{ flex: 1, overflowY: "auto", background: T.bg }}>
+      {/* Header */}
+      <div style={{ padding: "20px 32px", borderBottom: `1px solid ${T.line}`, display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: T.amberLight, border: `1px solid ${T.amber}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.amber} strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>Marketplace fliwoX</div>
+          <div style={{ fontSize: 12, color: T.sub }}>Borsa lavori tra serramentisti — pubblica, offri, lavora</div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.amber, fontFamily: T.mono }}>{MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").length}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>Pubblicati</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.blue, fontFamily: T.mono }}>{MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").length}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>Disponibili</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{MARKETPLACE_DEMO.filter(m => m.tipo === "preso").length}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>Presi</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: "24px 32px", display: "flex", gap: 24 }}>
+        {/* COLONNA SX — Miei lavori pubblicati */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.amber} strokeWidth="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+            Miei lavori pubblicati
+            <div onClick={() => alert("Pubblica nuovo lavoro — coming soon")} style={{ marginLeft: "auto", padding: "5px 14px", borderRadius: 6, background: T.amber, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>+ Pubblica lavoro</div>
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").map(m => (
+            <div key={m.id} style={{ background: T.bg, border: `1px solid ${T.line}`, borderRadius: 10, padding: "16px 20px", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.amber, fontFamily: T.mono }}>{m.id}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: m.offerte && m.offerte.length > 0 ? T.green : T.muted, background: m.offerte && m.offerte.length > 0 ? T.greenLight : T.lineLight, padding: "2px 8px", borderRadius: 4 }}>
+                  {m.offerte && m.offerte.length > 0 ? `${m.offerte.length} offerte ricevute` : "In attesa di offerte"}
+                </span>
+                <span style={{ fontSize: 11, color: T.muted, marginLeft: "auto" }}>Scadenza: {m.scadenza}</span>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{m.titolo}</div>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 4 }}>{m.zona} · {m.cliente} · Budget {m.budget}</div>
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5, marginBottom: 8 }}>{m.dettagli}</div>
+              {m.offerte && m.offerte.length > 0 && (
+                <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginBottom: 8 }}>Offerte ricevute:</div>
+                  {m.offerte.map((o, oi) => (
+                    <div key={oi} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: oi === 0 ? T.tealLight : "transparent", borderRadius: 6, marginBottom: 4, border: oi === 0 ? `1px solid ${T.tealBorder}` : `1px solid transparent` }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{o.da}</div>
+                        <div style={{ fontSize: 11, color: T.sub }}>{o.nota}</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{"€"}{o.prezzo}</div>
+                        <div style={{ fontSize: 10, color: T.sub }}>{o.valutazione}/5 · {o.tempoConsegna}</div>
+                      </div>
+                      <div onClick={() => alert("Accetti offerta di " + o.da + " a " + o.prezzo + "?")} style={{ padding: "6px 14px", borderRadius: 6, background: T.teal, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Accetta</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Lavori presi */}
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginTop: 20, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.teal} strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Lavori presi
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "preso").map(m => (
+            <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", border: `1px solid ${T.line}`, borderRadius: 8, marginBottom: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{m.id}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: m.stato === "completato" ? T.green : T.amber, background: m.stato === "completato" ? T.greenLight : T.amberLight, padding: "2px 6px", borderRadius: 3 }}>
+                    {m.stato === "completato" ? "Completato" : "In corso"}
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{m.titolo}</div>
+                <div style={{ fontSize: 11, color: T.sub }}>{m.zona} · da {m.azienda} · {m.operatoreAssegnato}</div>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{"€"}{m.prezzoAccettato}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* COLONNA DX — Lavori disponibili */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.blue} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Disponibili nella mia zona
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").map(m => (
+            <div key={m.id} style={{ background: T.bg, border: `1px solid ${m.stato === "urgente" ? T.red : T.line}`, borderRadius: 10, padding: "16px 20px", marginBottom: 12, position: "relative" }}>
+              {m.stato === "urgente" && (
+                <div style={{ position: "absolute", top: -1, right: 16, background: T.red, color: "#fff", fontSize: 10, fontWeight: 800, padding: "2px 10px", borderRadius: "0 0 6px 6px" }}>URGENTE</div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.blue, fontFamily: T.mono }}>{m.id}</span>
+                <span style={{ fontSize: 11, color: T.muted }}>{m.distanza}</span>
+                <span style={{ fontSize: 11, color: T.muted, marginLeft: "auto" }}>Scadenza: {m.scadenza}</span>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{m.titolo}</div>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 2 }}>{m.zona} · da <span style={{ fontWeight: 600, color: T.ink }}>{m.azienda}</span></div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.green, fontFamily: T.mono, marginBottom: 6 }}>{"€"}{m.budget}</div>
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5, marginBottom: 10 }}>{m.dettagli}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div onClick={() => alert("Fai offerta per " + m.titolo)} style={{ padding: "8px 20px", borderRadius: 6, background: T.teal, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fai offerta</div>
+                <div style={{ padding: "8px 20px", borderRadius: 6, background: T.lineLight, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${T.line}` }}>Dettagli completi</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ display: "flex", fontFamily: T.font, color: T.ink, height: "100vh", overflow: "hidden", background: T.bg }}>
       <Sidebar />
-      <DettaglioOp />
+      {sideView === "marketplace" ? <MarketplacePanel /> : <DettaglioOp />}
     </div>
   );
 }
