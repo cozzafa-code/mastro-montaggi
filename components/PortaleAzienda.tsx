@@ -157,6 +157,7 @@ const NAV = [
 
 export default function PortaleAzienda() {
   const [page, setPage] = useState("dashboard");
+  const [sideOpen, setSideOpen] = useState(true);
   const [selOp, setSelOp] = useState(null);
   const [selComm, setSelComm] = useState(null);
   const [tab, setTab] = useState("vani");
@@ -173,22 +174,37 @@ export default function PortaleAzienda() {
 
   /* ═══ SIDEBAR ═══ */
   const Sidebar = () => (
-    <div style={{width:56,background:"#0D1F1F",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:12,gap:4,flexShrink:0}}>
-      <div style={{width:32,height:32,borderRadius:7,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
-        <span style={{color:"#fff",fontSize:14,fontWeight:800}}>f</span>
+    <div style={{width:sideOpen?200:56,background:"#0D1F1F",display:"flex",flexDirection:"column",paddingTop:12,flexShrink:0,transition:"width .2s ease",overflow:"hidden"}}>
+      {/* Logo + toggle */}
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 12px",marginBottom:16}}>
+        <div style={{width:32,height:32,borderRadius:7,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{color:"#fff",fontSize:14,fontWeight:800}}>f</span>
+        </div>
+        {sideOpen&&<span style={{fontSize:15,fontWeight:700,color:"#fff",flex:1}}>fliwoX</span>}
+        <div onClick={()=>setSideOpen(!sideOpen)} style={{width:24,height:24,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"rgba(255,255,255,.4)",flexShrink:0}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{sideOpen?<path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>:<path d="M13 5l7 7-7 7M6 5l7 7-7 7"/>}</svg>
+        </div>
       </div>
-      {NAV.map(n => {
-        const active = page === n.id && !selOp;
-        const badge = n.id==="problemi"?tuttiProb.length:n.id==="spese"?tutteSpese.filter(s=>s.ok==="no").length:0;
-        return (
-          <div key={n.id} onClick={() => {setPage(n.id);setSelOp(null);setSelComm(null);}}
-            style={{width:44,height:44,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:active?"#fff":"rgba(255,255,255,.4)",background:active?"rgba(255,255,255,.1)":"transparent",position:"relative",transition:"all .15s"}}>
-            <NavIcon d={n.icon}/>
-            <span style={{fontSize:7,marginTop:1,fontWeight:active?700:500}}>{n.label}</span>
-            {badge>0&&<span style={{position:"absolute",top:2,right:4,width:14,height:14,borderRadius:"50%",background:T.red,color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{badge}</span>}
-          </div>
-        );
-      })}
+      {/* Nav items */}
+      <div style={{display:"flex",flexDirection:"column",gap:2,padding:"0 8px"}}>
+        {NAV.map(n => {
+          const active = page === n.id && !selOp;
+          const badge = n.id==="problemi"?tuttiProb.length:n.id==="spese"?tutteSpese.filter(s=>s.ok==="no").length:0;
+          return (
+            <div key={n.id} onClick={() => {setPage(n.id);setSelOp(null);setSelComm(null);}}
+              style={{display:"flex",alignItems:"center",gap:10,padding:sideOpen?"8px 10px":"8px 0",borderRadius:6,cursor:"pointer",color:active?"#fff":"rgba(255,255,255,.45)",background:active?"rgba(255,255,255,.1)":"transparent",transition:"all .15s",position:"relative",justifyContent:sideOpen?"flex-start":"center"}}>
+              <div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:20}}><NavIcon d={n.icon}/></div>
+              {sideOpen&&<span style={{fontSize:12,fontWeight:active?700:500,whiteSpace:"nowrap"}}>{n.label}</span>}
+              {badge>0&&<span style={{position:sideOpen?"static":"absolute",top:sideOpen?undefined:2,right:sideOpen?undefined:0,marginLeft:sideOpen?"auto":0,minWidth:18,height:18,borderRadius:9,background:T.red,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{badge}</span>}
+            </div>
+          );
+        })}
+      </div>
+      {/* Footer */}
+      {sideOpen&&<div style={{marginTop:"auto",padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,.08)"}}>
+        <div style={{fontSize:9,color:"rgba(255,255,255,.25)"}}>08 Apr 2026</div>
+        <div style={{fontSize:9,color:"rgba(255,255,255,.25)"}}>{OPERATORI.length} operatori</div>
+      </div>}
     </div>
   );
 
