@@ -109,11 +109,34 @@ const FORMATI: Record<FormatoSerramento, FormatoConfig> = {
   },
 };
 
+// ─── SAFE LOOKUP HELPERS ──────────────────────────────────────────────────────
+function safeMat(m: string | undefined | null): MatConfig {
+  if (!m) return MATERIALI['pvc'];
+  const k = m.toLowerCase().trim() as Materiale;
+  return MATERIALI[k] || MATERIALI['pvc'];
+}
+function safeFmt(f: string | undefined | null): FormatoConfig {
+  if (!f) return FORMATI['finestra'];
+  const k = f.toLowerCase().trim() as FormatoSerramento;
+  return FORMATI[k] || FORMATI['finestra'];
+}
+function safeMatKey(m: string | undefined | null): Materiale {
+  if (!m) return 'pvc';
+  const k = m.toLowerCase().trim() as Materiale;
+  return MATERIALI[k] ? k : 'pvc';
+}
+function safeFmtKey(f: string | undefined | null): FormatoSerramento {
+  if (!f) return 'finestra';
+  const k = f.toLowerCase().trim() as FormatoSerramento;
+  return FORMATI[k] ? k : 'finestra';
+}
+
 // ─── BADGE MATERIALE ──────────────────────────────────────────────────────────
 export function BadgeMateriale({
   materiale, size='md',
-}: { materiale: Materiale; size?: 'sm'|'md'|'lg' }) {
-  const m = MATERIALI[materiale];
+}: { materiale: string; size?: 'sm'|'md'|'lg' }) {
+  const mk = safeMatKey(materiale);
+  const m = MATERIALI[mk];
   const sizes = { sm:{px:'4px 7px',fontSize:10,br:5}, md:{px:'5px 10px',fontSize:12,br:6}, lg:{px:'6px 13px',fontSize:14,br:8} };
   const s = sizes[size];
   return (
@@ -122,31 +145,32 @@ export function BadgeMateriale({
       background:m.bg, border:`1.5px solid ${m.border}`, borderRadius:s.br,
       padding:s.px, flexShrink:0,
     }}>
-      <MateriIcon materiale={materiale} size={size==='sm'?10:size==='md'?12:14}/>
+      <MateriIcon materiale={mk} size={size==='sm'?10:size==='md'?12:14}/>
       <span style={{fontSize:s.fontSize, fontWeight:700, color:m.color, fontFamily:'system-ui'}}>{m.label}</span>
     </div>
   );
 }
 
 // ─── ICONA MATERIALE ──────────────────────────────────────────────────────────
-export function MateriIcon({ materiale, size=14 }: { materiale:Materiale; size?:number }) {
-  const m = MATERIALI[materiale];
+export function MateriIcon({ materiale, size=14 }: { materiale:string; size?:number }) {
+  const mk = safeMatKey(materiale);
+  const m = MATERIALI[mk];
   // Rendering SVG specifico per materiale
-  if (materiale === 'pvc') return (
+  if (mk === 'pvc') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <rect x="3" y="4" width="8" height="6" rx="1" fill={m.color} opacity="0.25"/>
       <rect x="4" y="5" width="6" height="4" rx="0.5" stroke={m.color} strokeWidth="1" fill="none"/>
     </svg>
   );
-  if (materiale === 'alluminio') return (
+  if (mk === 'alluminio') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <path d="M4 10 L7 4 L10 10" stroke={m.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       <line x1="5" y1="8" x2="9" y2="8" stroke={m.color} strokeWidth="1.2"/>
     </svg>
   );
-  if (materiale === 'legno') return (
+  if (mk === 'legno') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <path d="M3 5 Q7 4 11 5" stroke={m.color} strokeWidth="1" strokeLinecap="round" fill="none"/>
@@ -154,21 +178,21 @@ export function MateriIcon({ materiale, size=14 }: { materiale:Materiale; size?:
       <path d="M3 9 Q7 9.5 11 9" stroke={m.color} strokeWidth="1" strokeLinecap="round" fill="none"/>
     </svg>
   );
-  if (materiale === 'vetro') return (
+  if (mk === 'vetro') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <path d="M4 4 L10 10" stroke={m.color} strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
       <path d="M5 3 L11 9" stroke={m.color} strokeWidth="0.8" strokeLinecap="round" opacity="0.3"/>
     </svg>
   );
-  if (materiale === 'zanzariera') return (
+  if (mk === 'zanzariera') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <path d="M3 3 L11 11 M3 7 L7 11 M7 3 L11 7" stroke={m.color} strokeWidth="0.8"/>
       <path d="M11 3 L3 11 M11 7 L7 11 M7 3 L3 7" stroke={m.color} strokeWidth="0.8"/>
     </svg>
   );
-  if (materiale === 'persiana') return (
+  if (mk === 'persiana') return (
     <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2" fill={m.bg} stroke={m.border} strokeWidth="1.5"/>
       <line x1="3" y1="5" x2="11" y2="5" stroke={m.color} strokeWidth="1.5" strokeLinecap="round"/>
@@ -187,10 +211,10 @@ export function MateriIcon({ materiale, size=14 }: { materiale:Materiale; size?:
 
 // ─── ICONA FORMATO ────────────────────────────────────────────────────────────
 export function FormatoIcon({ formato, materiale, size='md' }: {
-  formato: FormatoSerramento; materiale?: Materiale; size?:'sm'|'md'|'lg';
+  formato: string; materiale?: string; size?:'sm'|'md'|'lg';
 }) {
-  const m = materiale ? MATERIALI[materiale] : { color:'#475569', bg:'#F1F5F9', border:'#CBD5E1' };
-  const f = FORMATI[formato];
+  const m = materiale ? safeMat(materiale) : { color:'#475569', bg:'#F1F5F9', border:'#CBD5E1' };
+  const f = safeFmt(formato);
   const scale = size==='sm'?0.75:size==='lg'?1.25:1;
   return (
     <div title={f.label} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',transform:`scale(${scale})`}}>
@@ -203,9 +227,9 @@ export function FormatoIcon({ formato, materiale, size='md' }: {
 interface VanoIndicatoreProps {
   nome: string;
   tipo: string;
-  materiale?: Materiale;
-  formato?: FormatoSerramento;
-  stato: 'completato'|'in_corso'|'da_fare';
+  materiale?: string;
+  formato?: string;
+  stato: string;
   dimensioni?: string;
   children?: React.ReactNode;
 }
@@ -217,8 +241,10 @@ const STATO_COLORI = {
 };
 
 export function CardVanoIndicatori({ nome, tipo, materiale, formato, stato, dimensioni, children }: VanoIndicatoreProps) {
-  const sc = STATO_COLORI[stato];
-  const mat = materiale ? MATERIALI[materiale] : null;
+  const sc = STATO_COLORI[stato] || STATO_COLORI['da_fare'];
+  const mk = materiale ? safeMatKey(materiale) : null;
+  const mat = mk ? MATERIALI[mk] : null;
+  const fk = formato ? safeFmtKey(formato) : null;
 
   return (
     <div style={{
@@ -240,8 +266,8 @@ export function CardVanoIndicatori({ nome, tipo, materiale, formato, stato, dime
         <div style={{flex:1}}>
           {/* Nome + formato icon */}
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-            {formato && materiale && (
-              <FormatoIcon formato={formato} materiale={materiale} size="sm"/>
+            {fk && mk && (
+              <FormatoIcon formato={fk} materiale={mk} size="sm"/>
             )}
             <span style={{fontWeight:700,color:'#0D1F1F',fontSize:15}}>{nome}</span>
           </div>
@@ -249,7 +275,7 @@ export function CardVanoIndicatori({ nome, tipo, materiale, formato, stato, dime
           <div style={{color:'#4A7070',fontSize:12,marginBottom:6}}>{tipo}</div>
           {/* Badge materiale + dimensioni */}
           <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-            {materiale && <BadgeMateriale materiale={materiale} size="sm"/>}
+            {mk && <BadgeMateriale materiale={mk} size="sm"/>}
             {dimensioni && (
               <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:11,color:'#4A7070',background:'#f3f4f6',borderRadius:5,padding:'2px 7px'}}>
                 {dimensioni}
@@ -271,18 +297,20 @@ export function CardVanoIndicatori({ nome, tipo, materiale, formato, stato, dime
 }
 
 // ─── MINI BADGE FORMATO (per liste compatte) ──────────────────────────────────
-export function MiniVanoBadge({ materiale, formato }: { materiale?:Materiale; formato?:FormatoSerramento }) {
+export function MiniVanoBadge({ materiale, formato }: { materiale?:string; formato?:string }) {
   if (!materiale && !formato) return null;
-  const mat = materiale ? MATERIALI[materiale] : null;
+  const mk = materiale ? safeMatKey(materiale) : null;
+  const mat = mk ? MATERIALI[mk] : null;
+  const fk = formato ? safeFmtKey(formato) : null;
   return (
     <div style={{display:'flex',gap:4,alignItems:'center'}}>
-      {formato && materiale && <FormatoIcon formato={formato} materiale={materiale} size="sm"/>}
-      {materiale && (
+      {fk && mk && <FormatoIcon formato={fk} materiale={mk} size="sm"/>}
+      {mat && (
         <span style={{
-          fontSize:9, fontWeight:700, color:mat!.color,
-          background:mat!.bg, border:`1px solid ${mat!.border}`,
+          fontSize:9, fontWeight:700, color:mat.color,
+          background:mat.bg, border:`1px solid ${mat.border}`,
           borderRadius:4, padding:'1px 5px', fontFamily:'system-ui',
-        }}>{mat!.label.toUpperCase()}</span>
+        }}>{mat.label.toUpperCase()}</span>
       )}
     </div>
   );
