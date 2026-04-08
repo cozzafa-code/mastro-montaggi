@@ -162,6 +162,7 @@ export default function PortaleAzienda() {
   const [selComm, setSelComm] = useState(null);
   const [tab, setTab] = useState("vani");
   const [expandedDays, setExpandedDays] = useState({});
+  const [expandedRow, setExpandedRow] = useState(null);
 
   const op = selOp ? OPERATORI.find(o => o.id === selOp) : null;
   const comm = op && selComm ? op.commesse.find(c => c.id === selComm) : null;
@@ -340,13 +341,75 @@ export default function PortaleAzienda() {
                     {isOpen&&<div style={{padding:"8px 0"}}>
                       {attivi.map(o => {
                         const ag = (o.agenda||[])[day.idx];
+                        const rowKey = day.g+"-"+o.id;
+                        const isExp = expandedRow === rowKey;
+                        const commRef = ag.c ? o.commesse.find(c=>c.id.includes(ag.c.replace("COM-","COM-2024-").replace("RIL-","RIL-2024-"))) : null;
                         return (
-                          <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:6,background:`${ag.col||T.muted}08`,borderLeft:`3px solid ${ag.col||T.muted}`,marginBottom:4}}>
-                            <div style={{width:26,height:26,borderRadius:6,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:9,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-                            <span style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:70}}>{o.nome.split(" ")[0]}</span>
-                            <span style={{fontSize:11,color:T.sub,flex:1}}>{ag.a}</span>
-                            {ag.c&&<span style={{fontSize:10,fontWeight:700,color:ag.col||T.teal,fontFamily:T.mono}}>{ag.c}</span>}
-                            {ag.h&&<span style={{fontSize:10,color:T.muted}}>{ag.h}</span>}
+                          <div key={o.id} style={{marginBottom:4}}>
+                            <div onClick={()=>setExpandedRow(isExp?null:rowKey)}
+                              style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:isExp?"6px 6px 0 0":6,background:`${ag.col||T.muted}08`,borderLeft:`3px solid ${ag.col||T.muted}`,cursor:"pointer"}}>
+                              <div style={{width:26,height:26,borderRadius:6,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:9,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+                              <span style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:70}}>{o.nome.split(" ")[0]}</span>
+                              <span style={{fontSize:11,color:T.sub,flex:1}}>{ag.a}</span>
+                              {ag.c&&<span style={{fontSize:10,fontWeight:700,color:ag.col||T.teal,fontFamily:T.mono}}>{ag.c}</span>}
+                              {ag.h&&<span style={{fontSize:10,color:T.muted}}>{ag.h}</span>}
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2" style={{transform:isExp?"rotate(180deg)":"rotate(0deg)",transition:"transform .15s"}}><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
+                            {isExp&&<div style={{background:`${ag.col||T.muted}05`,borderLeft:`3px solid ${ag.col||T.muted}`,borderRadius:"0 0 6px 0",padding:"10px 14px 12px"}}>
+                              {/* Dettagli operatore per quel giorno */}
+                              <div style={{display:"flex",gap:16,marginBottom:8}}>
+                                <div><div style={{fontSize:9,color:T.muted}}>Telefono</div><div style={{fontSize:11,fontWeight:600}}>{o.telefono}</div></div>
+                                <div><div style={{fontSize:9,color:T.muted}}>Mezzo</div><div style={{fontSize:11,fontWeight:600}}>{o.automezzo}</div></div>
+                                <div><div style={{fontSize:9,color:T.muted}}>Ruolo</div><div style={{fontSize:11,fontWeight:600}}>{o.ruolo}</div></div>
+                                <div><div style={{fontSize:9,color:T.muted}}>Voto</div><div style={{fontSize:11,fontWeight:600}}>{o.kpi.voto}/5</div></div>
+                              </div>
+                              {commRef&&<>
+                                <div style={{borderTop:`1px solid ${T.lineLight}`,paddingTop:8,marginBottom:6}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                                    <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{commRef.id}</span>
+                                    <span style={{fontSize:12,fontWeight:600}}>{commRef.cliente}</span>
+                                    {commRef.prio==="alta"&&<span style={{fontSize:8,fontWeight:700,color:T.red,background:T.redLight,padding:"1px 5px",borderRadius:3}}>ALTA</span>}
+                                  </div>
+                                  <div style={{fontSize:11,color:T.sub}}>{commRef.tipo} · {commRef.indirizzo}</div>
+                                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                                    <div style={{flex:1,height:4,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${commRef.avanz}%`,height:"100%",borderRadius:2,background:T.teal}}/></div>
+                                    <span style={{fontSize:11,fontWeight:700,fontFamily:T.mono}}>{commRef.avanz}%</span>
+                                  </div>
+                                </div>
+                                {/* Vani */}
+                                <div style={{marginTop:8}}>
+                                  <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>VANI ({commRef.vani.length})</div>
+                                  {commRef.vani.map(v=>{
+                                    const vc={montato:T.green,in_corso:T.amber,da_fare:T.muted}[v.stato]||T.muted;
+                                    return <div key={v.id} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:`1px solid ${T.lineLight}`}}>
+                                      <span style={{width:5,height:5,borderRadius:"50%",background:vc,flexShrink:0}}/>
+                                      <span style={{fontSize:10,fontWeight:600,minWidth:24}}>{v.id}</span>
+                                      <span style={{fontSize:10,flex:1}}>{v.nome} · {v.tipo}</span>
+                                      <span style={{fontSize:9,color:T.sub}}>{v.dim}</span>
+                                      <span style={{fontSize:9,color:T.sub,fontFamily:T.mono}}>{v.oreR>0?v.oreR.toFixed(1)+"h":"—"}/{v.oreP}h</span>
+                                    </div>;
+                                  })}
+                                </div>
+                                {/* Materiali */}
+                                {commRef.materiali.length>0&&<div style={{marginTop:8}}>
+                                  <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>MATERIALI</div>
+                                  {commRef.materiali.map((m,mi)=><div key={mi} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",fontSize:10}}>
+                                    <span style={{flex:1}}>{m.n}</span>
+                                    <span style={{fontFamily:T.mono,color:T.sub}}>{m.u}/{m.q} {m.um}</span>
+                                  </div>)}
+                                </div>}
+                                {/* Problemi */}
+                                {(commRef.problemi||[]).filter(p=>p.stato==="aperto").length>0&&<div style={{marginTop:8}}>
+                                  <div style={{fontSize:10,fontWeight:700,color:T.red,marginBottom:4}}>PROBLEMI APERTI</div>
+                                  {(commRef.problemi||[]).filter(p=>p.stato==="aperto").map((p,pi)=><div key={pi} style={{fontSize:10,color:T.red,padding:"3px 0"}}>{p.tit}</div>)}
+                                </div>}
+                              </>}
+                              {!commRef&&!ag.c&&<div style={{fontSize:10,color:T.sub}}>{ag.a}</div>}
+                              <div style={{marginTop:8,display:"flex",gap:6}}>
+                                <a href={`tel:${o.telefono.replace(/\s/g,"")}`} style={{padding:"4px 10px",borderRadius:4,background:T.greenLight,color:T.green,fontSize:9,fontWeight:700,textDecoration:"none"}}>Chiama</a>
+                                <a href={`https://wa.me/${o.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"4px 10px",borderRadius:4,background:"#DCF8C6",color:"#128C7E",fontSize:9,fontWeight:700,textDecoration:"none"}}>WA</a>
+                              </div>
+                            </div>}
                           </div>
                         );
                       })}
