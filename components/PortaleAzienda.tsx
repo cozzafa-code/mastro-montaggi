@@ -29,6 +29,10 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
   const [filtro,setFiltro]=useState('tutti');
   const [det,setDet]=useState({montaggi:[],fotoFasi:[],firme:[],fatture:[],costi:[],documenti:[],candidature:[],timeline:[],chat:[],valutazione:null});
   const [search,setSearch]=useState('');
+  const [calView,setCalView]=useState('mese');
+  const [calDate,setCalDate]=useState(()=>new Date());
+  const [hoverEvent,setHoverEvent]=useState(null);
+  const [hoverPos,setHoverPos]=useState({x:0,y:0});
   const [notifiche,setNotifiche]=useState([]);
   const [valutazioni,setValutazioni]=useState([]);
   const [chatMsg,setChatMsg]=useState('');
@@ -208,8 +212,6 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
 
           {/* ═══ CALENDARIO ═══ */}
           {page==='calendario'&&(()=>{
-            const [calView,setCalView]=React.useState('mese'); // mese|settimana
-            const [calDate,setCalDate]=React.useState(new Date());
             const oggi=new Date();const oggiStr=oggi.toISOString().slice(0,10);
 
             // Colors per serramentista (stable hash)
@@ -247,9 +249,6 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
             // Stats sidebar
             const thisMonthRL=richieste.filter(r=>{if(!r.data_preferita)return false;const d=new Date(r.data_preferita);return d.getMonth()===month&&d.getFullYear()===year;});
             const monthByFL=freelancers.map(f=>({...f,count:thisMonthRL.filter(r=>r.operatore_id===f.id).length})).filter(f=>f.count>0).sort((a,b)=>b.count-a.count);
-
-            const [hoverEvent,setHoverEvent]=React.useState(null);
-            const [hoverPos,setHoverPos]=React.useState({x:0,y:0});
 
             return(
               <div style={{display:'grid',gridTemplateColumns:'1fr 240px',gap:16,height:'calc(100vh - 80px)'}}>
