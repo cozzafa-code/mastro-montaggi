@@ -120,7 +120,7 @@ function useMontaggiData(operatorePin: string) {
           const cmVani = (vaniRes||[]).filter((v:any)=>v.commessa_id===cmOggi.id);
           if (cmVani.length > 0) {
             COM.vani = cmVani.map((v:any,i:number) => ({
-              id:i+1, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
+              id:i+1, dbId:v.id, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
               stato:'da_fare' as const, materiale:(v.sistema||'pvc').toLowerCase() as any,
               formato:'finestra' as any, dimensioni:'',
             }));
@@ -158,6 +158,8 @@ import AgendaView from './AgendaView';
 import ReportCommessa from './ReportCommessa';
 import GalassiaAI from './GalassiaAI';
 import MagazzinoWow from './MagazzinoWow';
+import FotoFasi from './FotoFasi';
+import FirmaCliente from './FirmaCliente';
 
 const DS = {
   bg:'#E8F4F4', topbar:'#0D1F1F', teal:'#28A0A0', tealDark:'#156060',
@@ -3033,6 +3035,14 @@ function TabVani({onCad,vanoImgs}:{onCad:(n:string,id:number)=>void;vanoImgs:Rec
                 <ShoppingCart size={13}/> Ordina
               </button>
             </div>
+            <FotoFasi
+              vanoId={v.dbId||v.id?.toString()||''}
+              vanoNome={v.nome}
+              commessaId={COM.id?.toString()||''}
+              montaggioId={COM.montaggioId||''}
+              operatoreId={OP.id||''}
+              compact={false}
+            />
           </CardVanoIndicatori>
         );
       })}
@@ -3288,7 +3298,7 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
           oraAppuntamento: montOggi?.ora_inizio?.slice(0,5) || '08:00',
           note: '',
           vani: cmVani.length > 0 ? cmVani.map((v:any,i:number) => ({
-            id:i+1, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
+            id:i+1, dbId:v.id, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
             stato:'da_fare' as const, materiale:(v.sistema||'pvc').toLowerCase() as any,
             formato:'finestra' as any, dimensioni:'',
           })) : COM.vani,
@@ -3337,6 +3347,7 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
   };
   
   // Ferma timer quando si apre collaudo
+  const [showFirma, setShowFirma] = useState(false);
   const goToCollaudo = () => {
     if(timer.running) timer.pause();
     setCtab('collaudo');
@@ -3653,6 +3664,27 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
                     <div style={{color:DS.teal,fontSize:12,marginTop:2}}>{comData.id} → {comData.cliente}</div>
                   </div>
                   <ChiudiLavoro commessaId={comData.id} cliente={comData.cliente} onClose={()=>setCtab('info')} inline/>
+                  <button onClick={()=>setShowFirma(true)} style={{
+                    width:'100%',padding:'16px',background:'#1A9E73',color:'#fff',
+                    border:'none',borderRadius:14,cursor:'pointer',fontFamily:'Inter,system-ui,sans-serif',
+                    fontWeight:800,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',gap:10,
+                    boxShadow:'0 5px 0 0 #14805c',marginTop:8,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                    Firma del Cliente
+                  </button>
+                  {showFirma && (
+                    <FirmaCliente
+                      commessaId={comData.id?.toString()||''}
+                      commessaCodice={comData.codice||comData.id?.toString()||''}
+                      clienteNome={comData.cliente||''}
+                      operatoreNome={OP.nome||'Operatore'}
+                      vaniCompletati={comData.vani?.length||0}
+                      vaniTotali={comData.vani?.length||0}
+                      onFirmaSalvata={(url)=>{console.log('Firma salvata:',url);}}
+                      onClose={()=>setShowFirma(false)}
+                    />
+                  )}
                 </div>
               )}
               {/* BOTTONE CHIUDI LAVORO — fisso in fondo */}
