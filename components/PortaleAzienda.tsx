@@ -506,43 +506,213 @@ export default function PortaleAzienda() {
 
 
   /* ═══ CALENDARIO ═══ */
-  const PageCalendario = () => (
+  const PageCalendario = () => {
+    const [calView, setCalView] = useState("settimana");
+    const [calFilter, setCalFilter] = useState("tutti");
+    const [calExpanded, setCalExpanded] = useState(null);
+
+    const giorni = ["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"];
+    const filteredOps = calFilter === "tutti" ? OPERATORI : OPERATORI.filter(o => {
+      if (calFilter === "cantiere") return o.stato === "in_cantiere" || o.stato === "in_sopralluogo";
+      if (calFilter === "liberi") return o.stato === "disponibile" || o.stato === "in_pausa";
+      if (calFilter === "montatori") return o.ruolo === "montatore" || o.ruolo === "apprendista";
+      if (calFilter === "tecnici") return o.ruolo === "tecnico_misure";
+      if (calFilter === "ufficio") return o.ruolo === "ufficio" || o.ruolo === "magazziniere";
+      return true;
+    });
+
+    // Stats per giorno
+    const statsGiorno = giorni.map((g,gi) => {
+      const attivi = OPERATORI.filter(o => {const ag=(o.agenda||[])[gi]; return ag&&ag.a&&!ag.a.includes("Malattia");}).length;
+      const liberi = OPERATORI.filter(o => {const ag=(o.agenda||[])[gi]; return !ag||!ag.a;}).length;
+      const malattia = OPERATORI.filter(o => {const ag=(o.agenda||[])[gi]; return ag&&ag.a&&ag.a.includes("Malattia");}).length;
+      return {attivi,liberi,malattia};
+    });
+
+    // Ore totali per giorno
+    const oreGiorno = giorni.map((g,gi) => {
+      return OPERATORI.reduce((tot,o) => {
+        const ag = (o.agenda||[])[gi];
+        if (!ag || !ag.h) return tot;
+        const parts = ag.h.split("-");
+        if (parts.length === 2) {
+          const h1 = parseFloat(parts[0].replace(":",".")); 
+          const h2 = parseFloat(parts[1].replace(":",".")); 
+          return tot + Math.max(h2 - h1, 0);
+        }
+        return tot + 8;
+      }, 0);
+    });
+
+    return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{padding:"20px 28px 14px",flexShrink:0}}>
-        <div style={{fontSize:20,fontWeight:700}}>Calendario settimana</div>
-        <div style={{fontSize:13,color:T.sub,marginTop:2}}>7-11 Aprile 2026 · {OPERATORI.length} operatori</div>
+      {/* HEADER */}
+      <div style={{padding:"16px 28px",borderBottom:`1px solid ${T.line}`,background:T.bg,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
+          <div style={{fontSize:20,fontWeight:700}}>Calendario</div>
+          <div style={{fontSize:13,color:T.sub}}>Settimana 7-11 Aprile 2026</div>
+          <div style={{display:"flex",gap:2,marginLeft:16}}>
+            {["settimana","giorno"].map(v=>(
+              <div key={v} onClick={()=>setCalView(v)} style={{padding:"5px 14px",borderRadius:5,fontSize:11,fontWeight:calView===v?700:500,color:calView===v?"#fff":T.sub,background:calView===v?T.teal:"transparent",cursor:"pointer",textTransform:"capitalize"}}>{v}</div>
+            ))}
+          </div>
+          <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+            {[{id:"tutti",l:"Tutti"},{id:"cantiere",l:"In campo"},{id:"liberi",l:"Liberi"},{id:"montatori",l:"Montatori"},{id:"tecnici",l:"Tecnici"},{id:"ufficio",l:"Ufficio/Mag."}].map(f=>(
+              <div key={f.id} onClick={()=>setCalFilter(f.id)} style={{padding:"4px 10px",borderRadius:4,fontSize:10,fontWeight:calFilter===f.id?700:500,color:calFilter===f.id?T.teal:T.muted,background:calFilter===f.id?T.tealLight:"transparent",border:`1px solid ${calFilter===f.id?T.tealBorder:"transparent"}`,cursor:"pointer"}}>{f.l}</div>
+            ))}
+          </div>
+        </div>
+        {/* Stats riga */}
+        <div style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",gap:0}}>
+          <div style={{padding:"0 8px"}}>
+            <div style={{fontSize:10,color:T.muted}}>Capacita</div>
+            <div style={{fontSize:12,fontWeight:600}}>{filteredOps.length} persone</div>
+          </div>
+          {giorni.map((g,gi)=>{
+            const st = statsGiorno[gi];
+            const ore = oreGiorno[gi];
+            const carico = st.attivi / Math.max(OPERATORI.length,1);
+            return (
+              <div key={g} style={{padding:"0 8px",borderLeft:`1px solid ${T.lineLight}`,textAlign:"center"}}>
+                <div style={{display:"flex",gap:6,justifyContent:"center",fontSize:10}}>
+                  <span style={{color:T.green,fontWeight:600}}>{st.attivi} att</span>
+                  <span style={{color:T.muted}}>{st.liberi} lib</span>
+                  {st.malattia>0&&<span style={{color:T.red}}>{st.malattia} mal</span>}
+                </div>
+                <div style={{height:3,background:T.lineLight,borderRadius:2,marginTop:4,overflow:"hidden"}}>
+                  <div style={{width:`${carico*100}%`,height:"100%",borderRadius:2,background:carico>0.8?T.green:carico>0.5?T.teal:T.amber}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      {/* GRIGLIA */}
       <div style={{flex:1,overflow:"auto",padding:"0 28px 28px"}}>
         <div style={{background:T.bg,borderRadius:10,border:`1px solid ${T.line}`,overflow:"hidden",minWidth:900}}>
+          {/* Header giorni */}
           <div style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",borderBottom:`2px solid ${T.line}`,position:"sticky",top:0,background:T.bg,zIndex:2}}>
-            <div style={{padding:"14px 16px",fontWeight:700,fontSize:12,color:T.muted}}>Operatore</div>
-            {["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"].map(g=><div key={g} style={{padding:"14px 12px",fontSize:13,fontWeight:700,color:g.includes("08")?T.teal:T.ink,textAlign:"center",borderLeft:`1px solid ${T.line}`,background:g.includes("08")?"rgba(26,158,143,0.05)":"transparent"}}>{g}{g.includes("08")?" OGGI":""}</div>)}
-          </div>
-          {OPERATORI.map((o,oi)=>(
-            <div key={o.id} style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",borderBottom:oi<OPERATORI.length-1?`1px solid ${T.lineLight}`:"none",minHeight:64}}>
-              <div onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-                <div style={{width:32,height:32,borderRadius:7,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-                <div><div style={{fontSize:12,fontWeight:600}}>{o.nome.split(" ")[0]}</div><div style={{fontSize:10,color:T.muted}}>{o.ruolo}</div></div>
-              </div>
-              {(o.agenda||[]).map((g,gi)=>(
-                <div key={gi} style={{padding:"8px 6px",borderLeft:`1px solid ${T.lineLight}`,background:gi===1?"rgba(26,158,143,0.03)":"transparent",display:"flex",alignItems:"stretch"}}>
-                  {g.a?(
-                    <div style={{width:"100%",background:`${g.col||T.muted}12`,borderLeft:`4px solid ${g.col||T.muted}`,borderRadius:"0 6px 6px 0",padding:"8px 10px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                      {g.c&&<div style={{fontSize:10,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono,marginBottom:2}}>{g.c}</div>}
-                      <div style={{fontSize:11,color:T.ink,lineHeight:1.4}}>{g.a}</div>
-                      {g.h&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>{g.h}</div>}
-                    </div>
-                  ):(
-                    <div style={{width:"100%",borderRadius:6,background:T.lineLight,opacity:.15}}/>
-                  )}
-                </div>
-              ))}
+            <div style={{padding:"14px 16px",fontWeight:700,fontSize:12,color:T.muted,display:"flex",alignItems:"center",gap:6}}>
+              Operatore
+              <span style={{fontSize:10,color:T.muted,fontWeight:400}}>({filteredOps.length})</span>
             </div>
+            {giorni.map((g,gi)=>(
+              <div key={g} style={{padding:"10px 12px",textAlign:"center",borderLeft:`1px solid ${T.line}`,background:gi===1?"rgba(26,158,143,0.05)":"transparent"}}>
+                <div style={{fontSize:14,fontWeight:700,color:gi===1?T.teal:T.ink}}>{g}{gi===1?" OGGI":""}</div>
+                <div style={{fontSize:9,color:T.muted,marginTop:2}}>{statsGiorno[gi].attivi}/{OPERATORI.length} operativi</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Righe operatori */}
+          {filteredOps.map((o,oi)=>(
+            <React.Fragment key={o.id}>
+              <div style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",borderBottom:`1px solid ${T.lineLight}`,minHeight:72}}>
+                {/* Nome operatore */}
+                <div onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",borderRight:`1px solid ${T.lineLight}`}}>
+                  <div style={{width:34,height:34,borderRadius:7,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:800,flexShrink:0,position:"relative"}}>
+                    {o.avatar}
+                    <span style={{position:"absolute",bottom:-1,right:-1,width:9,height:9,borderRadius:"50%",background:SC(o.stato).fg,border:"2px solid #fff"}}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600}}>{o.nome.split(" ")[0]}</div>
+                    <div style={{fontSize:9,color:T.muted}}>{o.ruolo}</div>
+                  </div>
+                </div>
+                {/* Celle giorni */}
+                {(o.agenda||[]).map((g,gi)=>{
+                  const cellKey = o.id+"-"+gi;
+                  const isExp = calExpanded === cellKey;
+                  const commRef = g.c ? o.commesse.find(c=>c.id.includes(g.c.replace("COM-","COM-2024-").replace("RIL-","RIL-2024-"))) : null;
+                  return (
+                    <div key={gi} onClick={()=>setCalExpanded(isExp?null:cellKey)}
+                      style={{padding:"6px 6px",borderLeft:`1px solid ${T.lineLight}`,background:gi===1?"rgba(26,158,143,0.03)":"transparent",cursor:g.a?"pointer":"default",display:"flex",alignItems:"stretch"}}>
+                      {g.a?(
+                        <div style={{width:"100%",background:`${g.col||T.muted}10`,borderLeft:`4px solid ${g.col||T.muted}`,borderRadius:"0 6px 6px 0",padding:"8px 10px",display:"flex",flexDirection:"column",justifyContent:"center",position:"relative"}}>
+                          {g.c&&<div style={{fontSize:10,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono,marginBottom:2}}>{g.c}</div>}
+                          <div style={{fontSize:11,color:T.ink,lineHeight:1.4,fontWeight:500}}>{g.a}</div>
+                          {g.h&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>{g.h}</div>}
+                          {commRef&&<div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
+                            <div style={{flex:1,height:3,background:"rgba(0,0,0,.06)",borderRadius:2,overflow:"hidden"}}><div style={{width:`${commRef.avanz}%`,height:"100%",borderRadius:2,background:g.col||T.teal,opacity:.6}}/></div>
+                            <span style={{fontSize:8,fontWeight:600,fontFamily:T.mono,color:T.sub}}>{commRef.avanz}%</span>
+                          </div>}
+                          {g.a.includes("Malattia")&&<div style={{fontSize:9,color:T.red,marginTop:2}}>Certificato ricevuto</div>}
+                        </div>
+                      ):(
+                        <div style={{width:"100%",borderRadius:6,background:T.lineLight,opacity:.12,minHeight:48}}/>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Riga espansa sotto l'operatore */}
+              {calExpanded&&calExpanded.startsWith(o.id+"-")&&(()=>{
+                const gi = parseInt(calExpanded.split("-").pop());
+                const ag = (o.agenda||[])[gi];
+                if (!ag||!ag.a) return null;
+                const commRef = ag.c ? o.commesse.find(c=>c.id.includes(ag.c.replace("COM-","COM-2024-").replace("RIL-","RIL-2024-"))) : null;
+                return (
+                  <div style={{gridColumn:"1/-1",background:`${ag.col||T.muted}06`,borderBottom:`1px solid ${T.line}`,padding:"14px 20px"}}>
+                    <div style={{display:"flex",gap:24}}>
+                      {/* Info base */}
+                      <div style={{minWidth:200}}>
+                        <div style={{fontSize:13,fontWeight:700,color:T.ink,marginBottom:6}}>{o.nome} · {giorni[gi]}</div>
+                        <div style={{display:"flex",gap:12,marginBottom:8}}>
+                          <div><div style={{fontSize:9,color:T.muted}}>Telefono</div><div style={{fontSize:11}}>{o.telefono}</div></div>
+                          <div><div style={{fontSize:9,color:T.muted}}>Mezzo</div><div style={{fontSize:11}}>{o.automezzo}</div></div>
+                        </div>
+                        {commRef&&<>
+                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                            <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{commRef.id}</span>
+                            <span style={{fontSize:12,fontWeight:600}}>{commRef.cliente}</span>
+                            {commRef.prio==="alta"&&<span style={{fontSize:8,fontWeight:700,color:T.red,background:T.redLight,padding:"1px 5px",borderRadius:3}}>ALTA</span>}
+                          </div>
+                          <div style={{fontSize:11,color:T.sub}}>{commRef.tipo} · {commRef.indirizzo}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                            <div style={{flex:1,height:5,background:T.lineLight,borderRadius:3,overflow:"hidden"}}><div style={{width:`${commRef.avanz}%`,height:"100%",borderRadius:3,background:T.teal}}/></div>
+                            <span style={{fontSize:12,fontWeight:700,fontFamily:T.mono}}>{commRef.avanz}%</span>
+                          </div>
+                        </>}
+                        <div style={{marginTop:8,display:"flex",gap:6}}>
+                          <a href={`tel:${o.telefono.replace(/\s/g,"")}`} style={{padding:"5px 12px",borderRadius:5,background:T.greenLight,color:T.green,fontSize:10,fontWeight:700,textDecoration:"none"}}>Chiama</a>
+                          <a href={`https://wa.me/${o.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"5px 12px",borderRadius:5,background:"#DCF8C6",color:"#128C7E",fontSize:10,fontWeight:700,textDecoration:"none"}}>WA</a>
+                          {commRef&&<div onClick={()=>{setSelOp(o.id);setSelComm(commRef.id);setTab("vani");setPage("operatori");}} style={{padding:"5px 12px",borderRadius:5,background:T.tealLight,color:T.teal,fontSize:10,fontWeight:700,cursor:"pointer"}}>Apri</div>}
+                        </div>
+                      </div>
+                      {/* Vani + materiali */}
+                      {commRef&&<div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",gap:16}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>VANI ({commRef.vani.length})</div>
+                            {commRef.vani.map(v=>{const vc={montato:T.green,in_corso:T.amber,da_fare:T.muted}[v.stato]||T.muted;return <div key={v.id} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 0",fontSize:10}}>
+                              <span style={{width:5,height:5,borderRadius:"50%",background:vc}}/><span style={{fontWeight:600,minWidth:22}}>{v.id}</span><span style={{flex:1}}>{v.nome} · {v.tipo}</span><span style={{color:T.sub}}>{v.dim}</span>
+                            </div>;})}
+                          </div>
+                          <div style={{minWidth:160}}>
+                            {commRef.materiali.length>0&&<><div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>MATERIALI</div>
+                            {commRef.materiali.map((m,mi)=><div key={mi} style={{display:"flex",gap:4,padding:"2px 0",fontSize:10}}><span style={{flex:1}}>{m.n}</span><span style={{fontFamily:T.mono,color:T.sub}}>{m.u}/{m.q}</span></div>)}</>}
+                            {commRef.doc.length>0&&<><div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4,marginTop:8}}>DOCUMENTI</div>
+                            {commRef.doc.map((d,di)=><div key={di} style={{display:"flex",gap:4,padding:"2px 0",fontSize:10}}><span style={{width:14,height:14,borderRadius:3,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:6,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t}</span></span><span style={{flex:1}}>{d.n}</span></div>)}</>}
+                          </div>
+                        </div>
+                        {/* Problemi */}
+                        {(commRef.problemi||[]).filter(p=>p.stato==="aperto").length>0&&<div style={{marginTop:8,padding:"6px 10px",background:T.redLight,borderRadius:5,border:`1px solid ${T.red}20`}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.red,marginBottom:2}}>PROBLEMI APERTI</div>
+                          {(commRef.problemi||[]).filter(p=>p.stato==="aperto").map((p,pi)=><div key={pi} style={{fontSize:10,color:T.red}}>{p.tit}</div>)}
+                        </div>}
+                      </div>}
+                    </div>
+                  </div>
+                );
+              })()}
+            </React.Fragment>
           ))}
         </div>
       </div>
     </div>
-  );
+  );};
+
 
   /* ═══ OPERATORI LIST ═══ */
   const PageOperatori = () => {
