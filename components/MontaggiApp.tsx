@@ -219,7 +219,7 @@ type Fase = 'misura'|'preventivo'|'produzione'|'montaggio'|'fattura';
 type ChatMsg = {id:number;autore:string;testo:string;ora:string;proprio:boolean;fase:Fase};
 type OrdineItem = {id:number;desc:string;qty:number;dest:'magazzino'|'fornitore';stato:'bozza'|'inviato'|'confermato'};
 type Task = {id:number;testo:string;urgente:boolean;fatto:boolean};
-type View = 'home'|'agenda'|'commessa'|'chat'|'bacheca'|'commesse_fl'|'fatture'|'ordini_fl'|'magazzino_fl'|'impostazioni_fl';
+type View = 'home'|'agenda'|'commessa'|'chat'|'bacheca'|'commesse_fl'|'fatture'|'ordini_fl'|'magazzino_fl'|'impostazioni_fl'|'invita_azienda';
 type CTab = 'info'|'vani'|'workflow'|'checklist'|'documenti'|'ordini'|'chat'|'collaudo';
 
 // ├ö├Â├ç├ö├Â├ç├ö├Â├ç MOCK ├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç
@@ -2616,6 +2616,235 @@ function HomeFreelanceDashboard({onNav}:{onNav:(v:string)=>void}) {
         {/* Riepilogo configurabile */}
         <RiepilogoWidget commesse={FL_COMMESSE} fatture={FL_FATTURE} spese={[]} aziende={FL_AZIENDE}/>
 
+        {/* INVITA AZIENDA — quick action */}
+        <div style={C}>
+          <div style={{fontSize:11,color:'#28A0A0',fontWeight:700,letterSpacing:0.5,marginBottom:8}}>ESPANDI LA TUA RETE</div>
+          <button
+            onPointerDown={()=>setPressed('invita')}
+            onPointerUp={()=>{setPressed('');onNav('invita_azienda');}}
+            style={{width:'100%',background:'linear-gradient(135deg,#0D1F1F,#1a3a3a)',border:'none',borderRadius:12,padding:'14px 16px',cursor:'pointer',textAlign:'left',
+              boxShadow:pressed==='invita'?'none':'0 5px 0 0 #000',
+              transform:pressed==='invita'?'translateY(4px)':'translateY(0)',
+              transition:'box-shadow 80ms,transform 80ms',
+            }}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:36,height:36,borderRadius:10,background:'rgba(40,160,160,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:14,color:'#fff'}}>Invita un'azienda</div>
+                <div style={{fontSize:11,color:'rgba(139,188,188,0.6)',marginTop:2}}>Genera un link per ricevere lavori</div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ─── INVITA AZIENDA PANEL ─────────────────────────────────────────────────────
+function InvitaAziendaPanel({ operatoreId, onBack }: { operatoreId: string; onBack: () => void }) {
+  const [aziende, setAziende] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [showForm, setShowForm] = React.useState(false);
+  const [nome, setNome] = React.useState('');
+  const [citta, setCitta] = React.useState('');
+  const [tel, setTel] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [copied, setCopied] = React.useState<string | null>(null);
+  const [richieste, setRichieste] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    (async () => {
+      const res = await sbFetch('aziende_freelance', { operatore_id: 'eq.' + operatoreId, order: 'created_at.desc' });
+      setAziende(res || []);
+      // Load richieste
+      const ids = (res || []).map((a: any) => a.id);
+      if (ids.length > 0) {
+        const rl = await sbFetch('richieste_lavoro', { operatore_id: 'eq.' + operatoreId, order: 'created_at.desc', limit: '50' });
+        setRichieste(rl || []);
+      }
+      setLoading(false);
+    })();
+  }, [operatoreId]);
+
+  const creaAzienda = async () => {
+    if (!nome.trim()) return;
+    setSaving(true);
+    const code = nome.trim().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) + '-' + Math.random().toString(36).slice(2, 6);
+    const res = await sbInsert('aziende_freelance', {
+      operatore_id: operatoreId,
+      nome: nome.trim(),
+      citta: citta.trim(),
+      telefono: tel.trim(),
+      email: email.trim(),
+      invite_code: code,
+      colore: ['#28A0A0', '#3B7FE0', '#D08008', '#1A9E73', '#DC4444', '#7C3AED'][Math.floor(Math.random() * 6)],
+    });
+    if (res) {
+      const newList = Array.isArray(res) ? res : [res];
+      setAziende(prev => [...newList, ...prev]);
+      setShowForm(false);
+      setNome(''); setCitta(''); setTel(''); setEmail('');
+    }
+    setSaving(false);
+  };
+
+  const copyLink = (code: string) => {
+    const url = window.location.origin + '/azienda/' + code;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(code);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const shareWhatsApp = (az: any) => {
+    const url = window.location.origin + '/azienda/' + az.invite_code;
+    const msg = `Ciao! Usa questo link per inviarmi richieste di lavoro su MASTRO Montaggi:\n${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const richiestePerAz = (azId: string) => richieste.filter((r: any) => r.azienda_fl_id === azId);
+
+  const STATO_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+    nuova: { bg: '#FEF3C7', color: '#92400E', label: 'Nuova' },
+    vista: { bg: '#DBEAFE', color: '#1E40AF', label: 'Vista' },
+    accettata: { bg: '#D1FAE5', color: '#065F46', label: 'Accettata' },
+    rifiutata: { bg: '#FEE2E2', color: '#991B1B', label: 'Rifiutata' },
+    completata: { bg: '#E0E7FF', color: '#3730A3', label: 'Completata' },
+  };
+
+  const accettaRichiesta = async (r: any) => {
+    await sbPatch('richieste_lavoro', r.id, { stato: 'accettata', accettata_il: new Date().toISOString() });
+    setRichieste(prev => prev.map(x => x.id === r.id ? { ...x, stato: 'accettata' } : x));
+  };
+  const rifiutaRichiesta = async (r: any) => {
+    await sbPatch('richieste_lavoro', r.id, { stato: 'rifiutata' });
+    setRichieste(prev => prev.map(x => x.id === r.id ? { ...x, stato: 'rifiutata' } : x));
+  };
+
+  const nuove = richieste.filter((r: any) => r.stato === 'nuova' || r.stato === 'vista');
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: '#0D1F1F', padding: '12px 16px', flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#28A0A0', fontWeight: 700, fontSize: 13, padding: 0, marginBottom: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
+          Indietro
+        </button>
+        <div style={{ fontWeight: 800, fontSize: 18, color: '#fff' }}>Le mie aziende</div>
+        <div style={{ fontSize: 12, color: 'rgba(139,188,188,0.6)', marginTop: 2 }}>{aziende.length} aziende collegate</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Richieste nuove in evidenza */}
+        {nuove.length > 0 && (
+          <div style={{ background: '#FEF3C7', borderRadius: 14, border: '2px solid #F59E0B', padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#92400E', marginBottom: 10 }}>
+              {nuove.length} NUOVE RICHIESTE
+            </div>
+            {nuove.map((r: any) => {
+              const az = aziende.find((a: any) => a.id === r.azienda_fl_id);
+              const nVani = (r.vani_json || []).length;
+              return (
+                <div key={r.id} style={{ background: '#fff', borderRadius: 10, padding: 12, marginBottom: 8, border: '1.5px solid #C8E4E4' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0D1F1F' }}>{r.cliente}</div>
+                      <div style={{ fontSize: 12, color: '#4A7070' }}>{r.indirizzo}</div>
+                      <div style={{ fontSize: 11, color: '#8BBCBC', marginTop: 2 }}>
+                        da {az?.nome || '?'} · {nVani} vani{r.budget ? ` · €${r.budget}` : ''}{r.urgente ? ' · URGENTE' : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => accettaRichiesta(r)}
+                      style={{ flex: 1, background: '#1A9E73', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                      Accetta
+                    </button>
+                    <button onClick={() => rifiutaRichiesta(r)}
+                      style={{ background: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                      Rifiuta
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Lista aziende */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 32, color: '#8BBCBC' }}>Caricamento...</div>
+        ) : (
+          <>
+            {aziende.map((az: any) => {
+              const azRich = richiestePerAz(az.id);
+              return (
+                <div key={az.id} style={{ background: 'linear-gradient(145deg,#fff,#f4fcfc)', borderRadius: 14, border: '1.5px solid #C8E4E4', padding: 14, boxShadow: '0 2px 8px rgba(40,160,160,.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: az.colore || '#28A0A0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff' }}>
+                      {(az.nome || '?')[0]}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0D1F1F' }}>{az.nome}</div>
+                      <div style={{ fontSize: 11, color: '#4A7070' }}>{az.citta}{az.email ? ' · ' + az.email : ''}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#28A0A0', fontWeight: 700 }}>{azRich.length} lav.</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => copyLink(az.invite_code)}
+                      style={{ flex: 1, background: copied === az.invite_code ? '#D1FAE5' : '#EEF8F8', border: '1.5px solid #C8E4E4', borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700, color: copied === az.invite_code ? '#065F46' : '#28A0A0', cursor: 'pointer' }}>
+                      {copied === az.invite_code ? 'Copiato!' : 'Copia link'}
+                    </button>
+                    <button onClick={() => shareWhatsApp(az)}
+                      style={{ background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      WhatsApp
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Bottone aggiungi */}
+            {!showForm ? (
+              <button onClick={() => setShowForm(true)}
+                style={{ width: '100%', border: '2px dashed #C8E4E4', background: 'transparent', borderRadius: 14, padding: '16px 0', cursor: 'pointer', color: '#28A0A0', fontWeight: 700, fontSize: 14 }}>
+                + Aggiungi azienda
+              </button>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 14, border: '2px solid #28A0A0', padding: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D1F1F', marginBottom: 12 }}>Nuova azienda</div>
+                {[
+                  { l: 'Nome azienda *', v: nome, s: setNome, p: 'Walter Cozza Serramenti' },
+                  { l: 'Città', v: citta, s: setCitta, p: 'Cosenza' },
+                  { l: 'Telefono', v: tel, s: setTel, p: '333 1234567' },
+                  { l: 'Email', v: email, s: setEmail, p: 'info@azienda.it' },
+                ].map(f => (
+                  <div key={f.l} style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#4A7070', marginBottom: 3 }}>{f.l}</div>
+                    <input value={f.v} onChange={e => f.s(e.target.value)} placeholder={f.p}
+                      style={{ width: '100%', border: '1.5px solid #C8E4E4', borderRadius: 8, padding: '9px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button onClick={creaAzienda} disabled={!nome.trim() || saving}
+                    style={{ flex: 1, background: '#28A0A0', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                    {saving ? 'Salvataggio...' : 'Crea e genera link'}
+                  </button>
+                  <button onClick={() => setShowForm(false)}
+                    style={{ background: '#F3F4F6', color: '#4B5563', border: 'none', borderRadius: 10, padding: '10px 16px', fontSize: 14, cursor: 'pointer' }}>
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -3937,6 +4166,7 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
         {view==='commesse_fl'&&<CommesseFreelance/>}
         {view==='fatture'&&<ContabilitaFreelance/>}
         {view==='impostazioni_fl'&&<ImpostazioniFreelance/>}
+        {view==='invita_azienda'&&<InvitaAziendaPanel operatoreId={dbOperatore?.id||''} onBack={goBack}/>}
         {view==='chat'&&(
           <div style={{display:'flex',flexDirection:'column',flex:1}}>
             <div style={{background:DS.topbar,display:'flex',padding:'0 8px',flexShrink:0}}>
