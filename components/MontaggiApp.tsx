@@ -61,6 +61,28 @@ async function sbPatch(table: string, id: string, body: object): Promise<void> {
   }
 }
 
+// ─── UPLOAD FILE A SUPABASE STORAGE ───────────────────────────────────────────
+async function sbUpload(bucket: string, path: string, file: File): Promise<string|null> {
+  try {
+    const r = await fetch(`${SB_URL}/storage/v1/object/${bucket}/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': file.type,
+        'x-upsert': 'true',
+      },
+      body: file,
+    });
+    if (!r.ok) { const t = await r.text(); console.error('[sbUpload]', t); return null; }
+    // URL pubblico
+    return `${SB_URL}/storage/v1/object/public/${bucket}/${path}`;
+  } catch (e) {
+    console.error('[sbUpload]', e);
+    return null;
+  }
+}
+
 // ═══ DATI REALI DA SUPABASE ═══════════════════════════════════════
 function useMontaggiData(operatorePin: string) {
   const [dbCommesse, setDbCommesse] = React.useState<any[]>([]);
@@ -161,6 +183,7 @@ import MagazzinoWow from './MagazzinoWow';
 import FotoFasi from './FotoFasi';
 import FirmaCliente from './FirmaCliente';
 import { OfflineBanner } from '../hooks/useOffline';
+import { PushPermissionBanner } from '../hooks/usePushNotifications';
 
 const DS = {
   bg:'#E8F4F4', topbar:'#0D1F1F', teal:'#28A0A0', tealDark:'#156060',
@@ -713,10 +736,15 @@ function DettaglioLavoro({lavoro, onBack, offerta, setOfferta, nota, setNota, on
     setIsRecording(false);
   };
 
-  const handleFile = (e:React.ChangeEvent<HTMLInputElement>, tipo:string) => {
+  const handleFile = async (e:React.ChangeEvent<HTMLInputElement>, tipo:string) => {
     const file = e.target.files?.[0];
     if(!file) return;
-    const url = URL.createObjectURL(file);
+    // Upload a Supabase Storage
+    const ts = Date.now();
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `chat/${ts}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const publicUrl = await sbUpload('foto-vani', path, file);
+    const url = publicUrl || URL.createObjectURL(file); // fallback locale se upload fallisce
     onInviaChat({testo:'', tipo, fileUrl:url, fileName:file.name, fileSize:Math.round(file.size/1024)+'kb'});
     e.target.value = '';
   };
@@ -4055,6 +4083,7 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
       </div>
 
       <OfflineBanner />
+      <PushPermissionBanner operatoreId={dbOperatore?.id} />
 
     </div>
   );

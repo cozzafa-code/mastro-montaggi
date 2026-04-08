@@ -156,6 +156,44 @@ async function removeFromQueue(id) {
   return new Promise((resolve) => { tx.oncomplete = resolve; });
 }
 
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────────────────────
+self.addEventListener('push', (e) => {
+  let data = { title: 'MASTRO Montaggi', body: 'Nuova notifica', icon: '/icon-192.png', tag: 'mastro' };
+  try {
+    if (e.data) data = { ...data, ...e.data.json() };
+  } catch { /* fallback defaults */ }
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon || '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: data.tag || 'mastro',
+      vibrate: [200, 100, 200],
+      data: data,
+      actions: [
+        { action: 'open', title: 'Apri' },
+        { action: 'dismiss', title: 'Chiudi' },
+      ],
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  if (e.action === 'dismiss') return;
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      if (clients.length > 0) {
+        clients[0].focus();
+        clients[0].postMessage({ type: 'PUSH_CLICKED', data: e.notification.data });
+      } else {
+        self.clients.openWindow('/');
+      }
+    })
+  );
+});
+
 // ─── SYNC quando torna online ─────────────────────────────────────────────────
 self.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'SYNC_QUEUE') {
