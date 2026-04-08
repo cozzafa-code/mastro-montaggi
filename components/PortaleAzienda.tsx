@@ -45,6 +45,30 @@ const PROBLEMI_DEMO = [
   { id: "p5", op: "Salvatore Morelli", opId: "op5", commessa: "COM-2024-096", vano: "V2", data: "08/04 09:40", titolo: "Cassonetto cucina troppo piccolo per motore", desc: "Il cassonetto esistente della cucina ha solo 14cm di spazio, il motore Somfy iO richiede minimo 16cm. Serve adattatore o riduzione cassonetto.", priorita: "alta", stato: "aperto", foto: "cassonetto_cucina.jpg" },
 ];
 
+const MARKETPLACE_DEMO = [
+  // I MIEI LAVORI PUBBLICATI
+  { id: "MKT-001", tipo: "pubblicato", titolo: "Sostituzione 8 finestre PVC piano terra", zona: "Rende (CS)", cliente: "Cond. Via Marconi", budget: "da 2.800", scadenza: "15/04/2026", dettagli: "8 finestre 1 anta + ribalta, PVC bianco, misure standard. Materiali inclusi. Accesso facile piano terra.", offerte: [
+    { da: "Infissi Calabria SRL", prezzo: 3200, valutazione: 4.6, tempoConsegna: "5 giorni", nota: "Disponibili dal 16/04" },
+    { da: "Montatori Cosenza", prezzo: 2900, valutazione: 4.2, tempoConsegna: "3 giorni", nota: "Possiamo iniziare subito" },
+    { da: "F.lli Ferraro", prezzo: 3400, valutazione: 4.8, tempoConsegna: "7 giorni", nota: "Inclusa garanzia 5 anni posa" },
+  ], stato: "offerte_ricevute" },
+  { id: "MKT-002", tipo: "pubblicato", titolo: "Montaggio persiane alluminio x6 secondo piano", zona: "Cosenza centro", cliente: "Palazzo Corso Mazzini", budget: "da 1.500", scadenza: "20/04/2026", dettagli: "6 persiane 2 ante alluminio CX55 gia in magazzino. Serve solo manodopera + ponteggio. Secondo piano, altezza 6mt.", offerte: [], stato: "aperto" },
+  { id: "MKT-003", tipo: "pubblicato", titolo: "Installazione porta blindata + 2 porte interne", zona: "Castrolibero (CS)", cliente: "Sig. Ferraro", budget: "da 800", scadenza: "25/04/2026", dettagli: "Porta blindata Dierre classe 3 + 2 porte interne laminato. Materiali gia consegnati al cliente.", offerte: [
+    { da: "Sicurezza Casa SAS", prezzo: 950, valutazione: 4.4, tempoConsegna: "2 giorni", nota: "Specializzati porte blindate" },
+  ], stato: "offerte_ricevute" },
+
+  // LAVORI DISPONIBILI CHE POSSO PRENDERE
+  { id: "MKT-101", tipo: "disponibile", titolo: "Sostituzione 12 finestre alluminio taglio termico", zona: "Montalto Uffugo (CS)", azienda: "Serramenti Ferraro SRL", budget: "4.500 - 5.500", scadenza: "18/04/2026", dettagli: "12 finestre alluminio TT serie 65, demolizione vecchi infissi inclusa. Appartamento 3o piano con ascensore. Materiali forniti dal committente.", distanza: "12 km", stato: "aperto" },
+  { id: "MKT-102", tipo: "disponibile", titolo: "Montaggio 4 vetrate scorrevoli villa", zona: "Cetraro (CS)", azienda: "Vetro Design di Russo", budget: "2.200 - 2.800", scadenza: "22/04/2026", dettagli: "4 vetrate scorrevoli alzanti Schuco ASS 70 HI, dimensioni max 3000x2400. Villa fronte mare, accesso carrabile. Serve esperienza con alzanti.", distanza: "65 km", stato: "aperto" },
+  { id: "MKT-103", tipo: "disponibile", titolo: "Posa 20 zanzariere a rullo", zona: "Cosenza (CS)", azienda: "Casa Clima Calabria", budget: "1.000 - 1.400", scadenza: "30/04/2026", dettagli: "20 zanzariere a rullo laterale, misure gia rilevate. Condominio 4 piani con ascensore. Lavoro da completare in 2-3 giorni.", distanza: "3 km", stato: "aperto" },
+  { id: "MKT-104", tipo: "disponibile", titolo: "Riparazione serranda commerciale urgente", zona: "Rende (CS)", azienda: "Ferramenta Mancuso", budget: "300 - 500", scadenza: "09/04/2026", dettagli: "Serranda avvolgibile bloccata, motore da verificare. Negozio chiuso, urgente. Serve entro domani.", distanza: "5 km", stato: "urgente" },
+
+  // ASSEGNATI / COMPLETATI
+  { id: "MKT-201", tipo: "preso", titolo: "Sostituzione 5 tapparelle motorizzate", zona: "Rende (CS)", azienda: "Edilcomfort SRL", prezzoAccettato: 1800, dataAssegnazione: "02/04/2026", stato: "in_corso", operatoreAssegnato: "Salvatore Morelli" },
+  { id: "MKT-202", tipo: "preso", titolo: "Montaggio inferriata di sicurezza x3", zona: "Cosenza (CS)", azienda: "Sicurezza Totale", prezzoAccettato: 650, dataAssegnazione: "25/03/2026", stato: "completato", operatoreAssegnato: "Roberto Mazza" },
+];
+
+
 const OPERATORI = [
   {
     id: "op1", nome: "Marco Ferretti", ruolo: "montatore", stato: "in_cantiere",
@@ -729,6 +753,7 @@ export default function PortaleAzienda() {
   const [problemi, setProblemi] = useState(PROBLEMI_DEMO);
   const [showConfronto, setShowConfronto] = useState(false);
   const [showAlerts, setShowAlerts] = useState(true);
+  const [sideView, setSideView] = useState("operatori"); // operatori | marketplace
 
   const opFiltered = useMemo(() => {
     if (!search) return OPERATORI;
@@ -793,10 +818,94 @@ export default function PortaleAzienda() {
         <div onClick={() => setShowConfronto(!showConfronto)} style={{ marginLeft: "auto", fontSize: 10, fontWeight: 600, color: T.teal, cursor: "pointer", padding: "3px 8px", borderRadius: 4, background: showConfronto ? T.tealLight : "transparent", border: `1px solid ${showConfronto ? T.tealBorder : "transparent"}` }}>
           {showConfronto ? "Lista" : "Confronta"}
         </div>
+        <div onClick={() => setSideView(sideView === "marketplace" ? "operatori" : "marketplace")} style={{ fontSize: 10, fontWeight: 600, color: sideView === "marketplace" ? "#fff" : T.amber, cursor: "pointer", padding: "3px 8px", borderRadius: 4, background: sideView === "marketplace" ? T.amber : "transparent", border: `1px solid ${sideView === "marketplace" ? T.amber : "transparent"}` }}>
+          MKT
+        </div>
       </div>
 
       {/* Lista operatori o confronto */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      {/* MARKETPLACE VIEW */}
+      {sideView === "marketplace" && (
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {/* Miei lavori pubblicati */}
+          <div style={{ padding: "10px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
+            Miei lavori pubblicati ({MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").length})
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "pubblicato").map(m => (
+            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: T.amber, fontFamily: T.mono }}>{m.id}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: m.offerte && m.offerte.length > 0 ? T.green : T.muted, background: m.offerte && m.offerte.length > 0 ? T.greenLight : T.lineLight, padding: "1px 6px", borderRadius: 3 }}>
+                  {m.offerte && m.offerte.length > 0 ? `${m.offerte.length} offerte` : "Nessuna offerta"}
+                </span>
+                <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>entro {m.scadenza}</span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
+              <div style={{ fontSize: 10, color: T.sub }}>{m.zona} · Budget {m.budget}</div>
+              {m.offerte && m.offerte.length > 0 && (
+                <div style={{ marginTop: 6, borderTop: `1px solid ${T.lineLight}`, paddingTop: 6 }}>
+                  {m.offerte.map((o, oi) => (
+                    <div key={oi} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0", fontSize: 10 }}>
+                      <span style={{ color: T.ink, fontWeight: 600, flex: 1 }}>{o.da}</span>
+                      <span style={{ color: T.teal, fontWeight: 700, fontFamily: T.mono }}>{"\u20AC"}{o.prezzo}</span>
+                      <span style={{ color: T.amber }}>{o.valutazione}/5</span>
+                      <span style={{ color: T.sub }}>{o.tempoConsegna}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Lavori disponibili nella mia zona */}
+          <div style={{ padding: "14px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
+            Disponibili nella mia zona ({MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").length})
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "disponibile").map(m => (
+            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: T.blue, fontFamily: T.mono }}>{m.id}</span>
+                {m.stato === "urgente" && <span style={{ fontSize: 9, fontWeight: 800, color: T.red, background: T.redLight, padding: "1px 5px", borderRadius: 3 }}>URGENTE</span>}
+                <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>{m.distanza}</span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
+              <div style={{ fontSize: 10, color: T.sub, marginBottom: 2 }}>{m.zona} · da {m.azienda}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.green, fontFamily: T.mono }}>{"\u20AC"}{m.budget}</span>
+                <span style={{ fontSize: 10, color: T.muted }}>entro {m.scadenza}</span>
+              </div>
+              <div style={{ fontSize: 10, color: T.sub, marginTop: 3, lineHeight: 1.4 }}>{m.dettagli}</div>
+              <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
+                <div style={{ padding: "5px 12px", borderRadius: 5, background: T.teal, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Fai offerta</div>
+                <div style={{ padding: "5px 12px", borderRadius: 5, background: T.lineLight, color: T.sub, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Dettagli</div>
+              </div>
+            </div>
+          ))}
+
+          {/* Lavori presi */}
+          <div style={{ padding: "14px 16px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.muted }}>
+            Lavori presi ({MARKETPLACE_DEMO.filter(m => m.tipo === "preso").length})
+          </div>
+          {MARKETPLACE_DEMO.filter(m => m.tipo === "preso").map(m => (
+            <div key={m.id} style={{ padding: "10px 16px", borderBottom: `1px solid ${T.lineLight}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{m.id}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: m.stato === "completato" ? T.green : T.amber, background: m.stato === "completato" ? T.greenLight : T.amberLight, padding: "1px 6px", borderRadius: 3 }}>
+                  {m.stato === "completato" ? "Completato" : "In corso"}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{m.titolo}</div>
+              <div style={{ fontSize: 10, color: T.sub }}>{m.zona} · da {m.azienda}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{"\u20AC"}{m.prezzoAccettato}</span>
+                <span style={{ fontSize: 10, color: T.sub }}>assegnato {m.dataAssegnazione}</span>
+                <span style={{ fontSize: 10, color: T.ink, marginLeft: "auto" }}>{m.operatoreAssegnato}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {sideView === "operatori" && <div style={{ flex: 1, overflowY: "auto" }}>
         {showConfronto ? <ConfrontoPrestazioni /> : opFiltered.map(o => {
           const sc = statoColor(o.stato);
           const active = o.id === selOp;
@@ -822,7 +931,7 @@ export default function PortaleAzienda() {
             </div>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 
