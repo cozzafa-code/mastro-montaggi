@@ -2987,16 +2987,97 @@ function TabChatCommessa({thread,threadMsg,setThreadMsg,sendThread,bpId,setBpId,
   sendThread:()=>void;bpId:string;setBpId:(s:string)=>void;
   press:(id:string,fn?:()=>void)=>void;
 }){
+  const SB='https://fgefcigxlbrmbeqqzjmo.supabase.co';
+  const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwODcyMDAsImV4cCI6MjA1ODY2MzIwMH0.4lKTGaxOWxGUyJLDOWVOxPbGMSFJkGzwMVtC8MhJMI8';
+  const [dbMsgs,setDbMsgs]=React.useState<any[]>([]);
+  const [loading,setLoading]=React.useState(true);
+  const scrollRef=React.useRef<HTMLDivElement>(null);
+
+  // Load messages from DB
+  React.useEffect(()=>{
+    loadMsgs();
+    const interval=setInterval(loadMsgs,8000); // Poll every 8s
+    return ()=>clearInterval(interval);
+  },[]);
+
+  React.useEffect(()=>{
+    if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight;
+  },[dbMsgs]);
+
+  async function loadMsgs(){
+    try{
+      const cid=COM.id;
+      if(!cid)return;
+      const res=await fetch(
+        SB+'/rest/v1/comunicazioni_commessa?commessa_id=eq.'+cid+'&select=*&order=created_at.asc&limit=100',
+        {headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'}}
+      );
+      if(res.ok){
+        const data=await res.json();
+        setDbMsgs(data);
+      }
+    }catch(e){console.error('loadMsgs:',e);}
+    setLoading(false);
+  }
+
+  async function sendMsg(){
+    const txt=threadMsg.trim();
+    if(!txt)return;
+    setThreadMsg('');
+    const cid=COM.id;
+    if(!cid)return;
+    const record={
+      commessa_id:cid,
+      da_nome:OP.nome||'Operatore',
+      tipo:'testo',
+      testo:txt,
+    };
+    try{
+      const res=await fetch(SB+'/rest/v1/comunicazioni_commessa',{
+        method:'POST',
+        headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},
+        body:JSON.stringify(record),
+      });
+      if(res.ok){
+        const [ins]=await res.json();
+        setDbMsgs(prev=>[...prev,ins]);
+      }
+    }catch(e){console.error('sendMsg:',e);}
+  }
+
+  const allMsgs=[...thread,...dbMsgs.map((m:any,i:number)=>({
+    id:'db-'+i, autore:m.da_nome||'', testo:m.testo||'',
+    ora:m.created_at?new Date(m.created_at).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'',
+    proprio:(m.da_nome||'')===(OP.nome||'Operatore'),
+    fase:'montaggio' as Fase,
+  }))];
+  // Deduplicate by text+ora
+  const seen=new Set<string>();
+  const unique=allMsgs.filter(m=>{
+    const k=m.testo+m.ora;
+    if(seen.has(k))return false;
+    seen.add(k);
+    return true;
+  });
+
   const faseColor:Record<Fase,string>={misura:DS.textMid,preventivo:DS.amber,produzione:DS.green,montaggio:DS.teal,fattura:DS.textLight};
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',minHeight:400}}>
-      <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,marginBottom:10}}>
-        {thread.map(msg=>(
+      <div ref={scrollRef} style={{flex:1,display:'flex',flexDirection:'column',gap:8,marginBottom:10,overflowY:'auto',maxHeight:500}}>
+        {loading&&<div style={{textAlign:'center',color:DS.textMid,fontSize:12,padding:20}}>Caricamento messaggi...</div>}
+        {!loading&&unique.length===0&&(
+          <div style={{textAlign:'center',color:DS.textLight,padding:40}}>
+            <MessageSquare size={32} color={DS.textLight} style={{marginBottom:8}}/>
+            <div style={{fontSize:13,fontWeight:600}}>Nessun messaggio</div>
+            <div style={{fontSize:11,marginTop:4}}>Scrivi al team per questa commessa</div>
+          </div>
+        )}
+        {unique.map(msg=>(
           <div key={msg.id} style={{display:'flex',justifyContent:msg.proprio?'flex-end':'flex-start'}}>
-            <div style={{maxWidth:'85%',background:msg.proprio?DS.teal:'#fff',borderRadius:msg.proprio?'12px 12px 4px 12px':'12px 12px 12px 4px',padding:'8px 12px',border:msg.proprio?'none':`1px solid ${DS.border}`}}>
+            <div style={{maxWidth:'85%',background:msg.proprio?DS.teal:'#fff',borderRadius:msg.proprio?'12px 12px 4px 12px':'12px 12px 12px 4px',padding:'8px 12px',border:msg.proprio?'none':'1px solid '+DS.border}}>
               {!msg.proprio&&<div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
                 <span style={{fontSize:11,color:DS.teal,fontWeight:700}}>{msg.autore}</span>
-                <span style={{fontSize:10,background:faseColor[msg.fase]+'22',color:faseColor[msg.fase],borderRadius:4,padding:'1px 5px',fontWeight:600}}>{msg.fase}</span>
+                <span style={{fontSize:10,background:(faseColor[msg.fase]||DS.teal)+'22',color:faseColor[msg.fase]||DS.teal,borderRadius:4,padding:'1px 5px',fontWeight:600}}>{msg.fase}</span>
               </div>}
               <div style={{fontSize:14,color:msg.proprio?'#fff':DS.text,lineHeight:1.4}}>{msg.testo}</div>
               <div style={{fontSize:10,color:msg.proprio?'rgba(255,255,255,0.5)':DS.textLight,marginTop:3,textAlign:'right'}}>{msg.ora}</div>
@@ -3004,12 +3085,12 @@ function TabChatCommessa({thread,threadMsg,setThreadMsg,sendThread,bpId,setBpId,
           </div>
         ))}
       </div>
-      <div style={{display:'flex',gap:8,paddingTop:10,borderTop:`1px solid ${DS.border}`,background:'rgba(248,254,254,0.9)'}}>
+      <div style={{display:'flex',gap:8,paddingTop:10,borderTop:'1px solid '+DS.border,background:'rgba(248,254,254,0.9)'}}>
         <input value={threadMsg} onChange={e=>setThreadMsg(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&sendThread()}
+          onKeyDown={e=>e.key==='Enter'&&sendMsg()}
           placeholder="Scrivi al team sulla commessa..."
-          style={{flex:1,padding:'10px 12px',border:`1.5px solid ${DS.border}`,borderRadius:10,fontSize:14,fontFamily:DS.ui,outline:'none'}}/>
-        <button onPointerDown={()=>setBpId('tc')} onPointerUp={()=>press('tc',sendThread)} style={{...bp(bpId==='tc'),padding:'10px 14px'}}>
+          style={{flex:1,padding:'10px 12px',border:'1.5px solid '+DS.border,borderRadius:10,fontSize:14,fontFamily:DS.ui,outline:'none'}}/>
+        <button onPointerDown={()=>setBpId('tc')} onPointerUp={()=>press('tc',sendMsg)} style={{...bp(bpId==='tc'),padding:'10px 14px'}}>
           <Send size={15}/>
         </button>
       </div>
