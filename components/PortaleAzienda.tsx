@@ -141,6 +141,19 @@ const MARKETPLACE = [
 /* ══════════ HELPERS ══════════ */
 const SC = (s) => ({in_cantiere:{bg:T.greenLight,fg:T.green,l:"Cantiere"},disponibile:{bg:T.tealLight,fg:T.teal,l:"Libero"},in_sopralluogo:{bg:T.purpleLight,fg:T.purple,l:"Sopralluogo"},in_pausa:{bg:T.amberLight,fg:T.amber,l:"Pausa"},non_disponibile:{bg:T.redLight,fg:T.red,l:"Assente"}}[s]||{bg:T.bgAlt,fg:T.sub,l:s});
 const fh = (n) => n > 0 ? n.toFixed(1)+"h" : "\u2014";
+const CC = (s) => ({in_corso:T.green,programmata:T.blue,in_attesa_materiali:T.amber,completata:T.teal}[s]||T.muted);
+const chatC = (t) => ({op:T.teal,uff:T.blue,cli:T.green,ai:T.purple}[t]||T.sub);
+
+const NAV = [
+  {id:"dashboard",label:"Dashboard",icon:"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"},
+  {id:"calendario",label:"Calendario",icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"},
+  {id:"operatori",label:"Operatori",icon:"M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"},
+  {id:"commesse",label:"Commesse",icon:"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"},
+  {id:"marketplace",label:"Marketplace",icon:"M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"},
+  {id:"problemi",label:"Problemi",icon:"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"},
+  {id:"spese",label:"Spese",icon:"M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"},
+  {id:"documenti",label:"Documenti",icon:"M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"},
+];
 
 export default function PortaleAzienda() {
   const [page, setPage] = useState("dashboard");
@@ -150,258 +163,232 @@ export default function PortaleAzienda() {
 
   const op = selOp ? OPERATORI.find(o => o.id === selOp) : null;
   const comm = op && selComm ? op.commesse.find(c => c.id === selComm) : null;
-
-  const inCantiere = OPERATORI.filter(o => o.stato === "in_cantiere" || o.stato === "in_sopralluogo");
-  const liberi = OPERATORI.filter(o => o.stato === "disponibile" || o.stato === "in_pausa");
-  const assenti = OPERATORI.filter(o => o.stato === "non_disponibile");
-  const tutteCommesse = OPERATORI.flatMap(o => o.commesse.map(c => ({...c, opNome: o.nome, opAvatar: o.avatar, opColore: o.colore})));
-  const critiche = tutteCommesse.filter(c => c.stato === "in_attesa_materiali" || c.prio === "alta");
-  const tuttiProblemi = OPERATORI.flatMap(o => o.commesse.flatMap(c => (c.problemi||[]).filter(p => p.stato === "aperto").map(p => ({...p, opNome: o.nome, commId: c.id, cliente: c.cliente}))));
-  const speseAppr = OPERATORI.flatMap(o => o.commesse.flatMap(c => c.spese.filter(s => s.ok === "no").map(s => ({...s, opNome: o.nome, commId: c.id}))));
+  const tutteComm = OPERATORI.flatMap(o => o.commesse.map(c => ({...c, opNome: o.nome, opAvatar: o.avatar, opColore: o.colore, opId: o.id})));
+  const tuttiProb = OPERATORI.flatMap(o => o.commesse.flatMap(c => (c.problemi||[]).filter(p => p.stato === "aperto").map(p => ({...p, opNome: o.nome, commId: c.id, cliente: c.cliente}))));
+  const tutteSpese = OPERATORI.flatMap(o => o.commesse.flatMap(c => c.spese.map(s => ({...s, opNome: o.nome, commId: c.id, opId: o.id}))));
+  const tuttiDoc = OPERATORI.flatMap(o => o.commesse.flatMap(c => c.doc.map(d => ({...d, opNome: o.nome, commId: c.id, cliente: c.cliente}))));
   const certScad = OPERATORI.flatMap(o => (o.cert||[]).filter(c => !c.ok).map(c => ({...c, opNome: o.nome})));
 
-  /* ══════ TOPBAR ══════ */
-  const Topbar = () => (
-    <div style={{background:"#0D1F1F",padding:"0 24px",display:"flex",alignItems:"center",height:48,gap:16,flexShrink:0}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:26,height:26,borderRadius:5,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#fff",fontSize:12,fontWeight:800}}>f</span></div>
-        <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>fliwoX</span>
-      </div>
-      <div style={{display:"flex",gap:2,marginLeft:16}}>
-        {["dashboard","marketplace"].map(p => (
-          <div key={p} onClick={() => {setPage(p);setSelOp(null);setSelComm(null);}}
-            style={{padding:"6px 16px",borderRadius:5,fontSize:12,fontWeight:page===p?700:500,color:page===p?"#fff":"rgba(255,255,255,.5)",background:page===p?"rgba(255,255,255,.1)":"transparent",cursor:"pointer",textTransform:"capitalize"}}>{p==="dashboard"?"Centro Controllo":"Marketplace"}</div>
-        ))}
-      </div>
-      <div style={{marginLeft:"auto",fontSize:11,color:"rgba(255,255,255,.35)"}}>08 Apr 2026 · {new Date().toLocaleTimeString("it",{hour:"2-digit",minute:"2-digit"})}</div>
-    </div>
-  );
+  const NavIcon = ({d}) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>;
 
-  /* ══════ DASHBOARD ══════ */
-  const Dashboard = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gridTemplateRows:"auto auto 1fr",gap:16}}>
-
-      {/* ═══ ROW 1: KPI GRANDI ═══ */}
-      <div style={{gridColumn:"1/-1",display:"flex",gap:12}}>
-        {[
-          {l:"In cantiere",v:inCantiere.length,c:T.green,tot:OPERATORI.length,sub:`su ${OPERATORI.length}`},
-          {l:"Liberi",v:liberi.length,c:T.teal,sub:"assegnabili"},
-          {l:"Assenti",v:assenti.length,c:T.red,sub:assenti.map(o=>o.nome.split(" ")[0]).join(", ")||"\u2014"},
-          {l:"Commesse attive",v:tutteCommesse.filter(c=>c.stato==="in_corso").length,c:T.ink,sub:`${tutteCommesse.length} totali`},
-          {l:"Bloccate",v:tutteCommesse.filter(c=>c.stato==="in_attesa_materiali").length,c:T.amber,sub:"attesa materiali"},
-          {l:"Problemi aperti",v:tuttiProblemi.length,c:tuttiProblemi.length>0?T.red:T.green,sub:tuttiProblemi.length>0?tuttiProblemi[0].tit.substring(0,30)+"...":"Nessuno"},
-          {l:"Spese da approv.",v:speseAppr.length,c:speseAppr.length>0?T.amber:T.green,sub:speseAppr.length>0?`\u20AC${speseAppr.reduce((s,sp)=>s+sp.imp,0).toFixed(0)}`:"Tutto OK"},
-          {l:"Cert. in scadenza",v:certScad.length,c:certScad.length>0?T.amber:T.green,sub:certScad.length>0?certScad[0].opNome:"Tutto OK"},
-        ].map((k,i) => (
-          <div key={i} style={{flex:1,background:T.bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${T.line}`}}>
-            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:".04em",marginBottom:4}}>{k.l}</div>
-            <div style={{fontSize:22,fontWeight:700,color:k.c,fontFamily:T.mono}}>{k.v}</div>
-            <div style={{fontSize:10,color:T.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k.sub}</div>
+  /* ═══ SIDEBAR ═══ */
+  const Sidebar = () => (
+    <div style={{width:56,background:"#0D1F1F",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:12,gap:4,flexShrink:0}}>
+      <div style={{width:32,height:32,borderRadius:7,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
+        <span style={{color:"#fff",fontSize:14,fontWeight:800}}>f</span>
+      </div>
+      {NAV.map(n => {
+        const active = page === n.id && !selOp;
+        const badge = n.id==="problemi"?tuttiProb.length:n.id==="spese"?tutteSpese.filter(s=>s.ok==="no").length:0;
+        return (
+          <div key={n.id} onClick={() => {setPage(n.id);setSelOp(null);setSelComm(null);}}
+            style={{width:44,height:44,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:active?"#fff":"rgba(255,255,255,.4)",background:active?"rgba(255,255,255,.1)":"transparent",position:"relative",transition:"all .15s"}}>
+            <NavIcon d={n.icon}/>
+            <span style={{fontSize:7,marginTop:1,fontWeight:active?700:500}}>{n.label}</span>
+            {badge>0&&<span style={{position:"absolute",top:2,right:4,width:14,height:14,borderRadius:"50%",background:T.red,color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{badge}</span>}
           </div>
-        ))}
-      </div>
-
-      {/* ═══ COL 1: CHI FA COSA OGGI ═══ */}
-      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:16,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <div style={{fontSize:12,fontWeight:700,color:T.ink,marginBottom:10}}>Oggi — chi fa cosa</div>
-        <div style={{flex:1,overflowY:"auto"}}>
-          {OPERATORI.map(o => {
-            const sc = SC(o.stato);
-            const oggi = (o.agenda||[]).find(g => g.g === "Mar");
-            return (
-              <div key={o.id} onClick={() => {setSelOp(o.id);setSelComm(null);}} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
-                <div style={{width:28,height:28,borderRadius:6,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:10,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:11,fontWeight:600,color:T.ink,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{o.nome}</div>
-                  <div style={{fontSize:10,color:oggi?.a?sc.fg:T.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{oggi?.a || (o.stato==="non_disponibile"?"Assente":"Nessuna attivita")}</div>
-                </div>
-                {oggi?.c && <span style={{fontSize:9,fontWeight:700,color:T.teal,fontFamily:T.mono,background:T.tealLight,padding:"1px 5px",borderRadius:3}}>{oggi.c}</span>}
-                <span style={{fontSize:9,fontWeight:600,color:sc.fg,background:sc.bg,padding:"2px 5px",borderRadius:3,flexShrink:0}}>{sc.l}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ═══ COL 2: COMMESSE IN CORSO ═══ */}
-      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:16,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <div style={{fontSize:12,fontWeight:700,color:T.ink,marginBottom:10}}>Commesse in corso ({tutteCommesse.filter(c=>c.stato==="in_corso").length})</div>
-        <div style={{flex:1,overflowY:"auto"}}>
-          {tutteCommesse.filter(c => c.stato === "in_corso").map(c => (
-            <div key={c.id+c.opNome} onClick={() => {const op2=OPERATORI.find(o=>o.commesse.some(cc=>cc.id===c.id));if(op2){setSelOp(op2.id);setSelComm(c.id);setTab("vani");}}} style={{padding:"8px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
-                <span style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span>
-                <span style={{fontSize:11,fontWeight:600,color:T.ink,flex:1}}>{c.cliente}</span>
-                <span style={{fontSize:11,fontWeight:700,color:T.ink,fontFamily:T.mono}}>{c.avanz}%</span>
-              </div>
-              <div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden",marginBottom:3}}>
-                <div style={{width:`${c.avanz}%`,height:"100%",borderRadius:2,background:c.avanz>=80?T.green:c.avanz>=40?T.teal:T.amber}}/>
-              </div>
-              <div style={{display:"flex",gap:8,fontSize:10,color:T.sub}}>
-                <span>{c.tipo}</span>
-                <span style={{marginLeft:"auto"}}>{c.opNome}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ═══ COL 3: ALERT & PROBLEMI ═══ */}
-      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:16,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <div style={{fontSize:12,fontWeight:700,color:T.red,marginBottom:10}}>Alert & Problemi ({tuttiProblemi.length + speseAppr.length + certScad.length})</div>
-        <div style={{flex:1,overflowY:"auto"}}>
-          {/* Problemi aperti */}
-          {tuttiProblemi.map((p,i) => (
-            <div key={"p"+i} style={{padding:"8px 0",borderBottom:`1px solid ${T.lineLight}`}}>
-              <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
-                <span style={{width:6,height:6,borderRadius:"50%",background:T.red,flexShrink:0}}/>
-                <span style={{fontSize:10,fontWeight:700,color:T.red}}>PROBLEMA</span>
-                <span style={{fontSize:10,color:T.sub,marginLeft:"auto"}}>{p.opNome} · {p.commId}</span>
-              </div>
-              <div style={{fontSize:11,color:T.ink,fontWeight:600}}>{p.tit}</div>
-            </div>
-          ))}
-          {/* Spese da approvare */}
-          {speseAppr.map((s,i) => (
-            <div key={"s"+i} style={{padding:"8px 0",borderBottom:`1px solid ${T.lineLight}`,display:"flex",alignItems:"center",gap:8}}>
-              <span style={{width:6,height:6,borderRadius:"50%",background:T.amber,flexShrink:0}}/>
-              <div style={{flex:1}}>
-                <div style={{fontSize:11,color:T.ink}}>{s.desc} <span style={{color:T.sub}}>· {s.opNome}</span></div>
-                <div style={{fontSize:10,color:T.sub}}>{s.cat} · {s.d}</div>
-              </div>
-              <span style={{fontSize:12,fontWeight:700,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(2)}</span>
-              <div style={{display:"flex",gap:3}}>
-                <div onClick={()=>alert("OK")} style={{padding:"3px 8px",borderRadius:4,background:T.greenLight,color:T.green,fontSize:9,fontWeight:700,cursor:"pointer"}}>OK</div>
-                <div onClick={()=>alert("NO")} style={{padding:"3px 8px",borderRadius:4,background:T.redLight,color:T.red,fontSize:9,fontWeight:700,cursor:"pointer"}}>NO</div>
-              </div>
-            </div>
-          ))}
-          {/* Certificazioni in scadenza */}
-          {certScad.map((c,i) => (
-            <div key={"c"+i} style={{padding:"8px 0",borderBottom:`1px solid ${T.lineLight}`,display:"flex",alignItems:"center",gap:8}}>
-              <span style={{width:6,height:6,borderRadius:"50%",background:T.purple,flexShrink:0}}/>
-              <div style={{flex:1}}>
-                <div style={{fontSize:11,color:T.ink}}>{c.n}</div>
-                <div style={{fontSize:10,color:T.sub}}>{c.opNome} · scade {c.scad}</div>
-              </div>
-            </div>
-          ))}
-          {tuttiProblemi.length + speseAppr.length + certScad.length === 0 && (
-            <div style={{color:T.green,fontSize:12,fontWeight:600,padding:20,textAlign:"center"}}>Tutto OK</div>
-          )}
-        </div>
-      </div>
-
-      {/* ═══ ROW 3: AGENDA SETTIMANA TEAM ═══ */}
-      <div style={{gridColumn:"1/-1",background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:16}}>
-        <div style={{fontSize:12,fontWeight:700,color:T.ink,marginBottom:10}}>Agenda settimana — tutto il team</div>
-        <div style={{display:"grid",gridTemplateColumns:"140px repeat(5,1fr)",gap:0}}>
-          {/* Header giorni */}
-          <div/>
-          {["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"].map(g => (
-            <div key={g} style={{fontSize:10,fontWeight:700,color:g==="Mar 08"?T.teal:T.muted,textAlign:"center",padding:"4px 0",borderBottom:`1px solid ${T.line}`}}>{g}{g==="Mar 08"?" (OGGI)":""}</div>
-          ))}
-          {/* Righe operatori */}
-          {OPERATORI.map(o => (
-            <React.Fragment key={o.id}>
-              <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 4px",borderBottom:`1px solid ${T.lineLight}`}}>
-                <div style={{width:22,height:22,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:800}}>{o.avatar}</div>
-                <span style={{fontSize:10,fontWeight:600,color:T.ink,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{o.nome.split(" ")[0]}</span>
-              </div>
-              {(o.agenda||[]).map((g,gi) => (
-                <div key={gi} style={{padding:"4px 3px",borderBottom:`1px solid ${T.lineLight}`,display:"flex",alignItems:"center"}}>
-                  {g.a ? (
-                    <div style={{width:"100%",background:`${g.col||T.muted}15`,borderLeft:`3px solid ${g.col||T.muted}`,borderRadius:"0 4px 4px 0",padding:"3px 6px"}}>
-                      {g.c && <div style={{fontSize:8,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono}}>{g.c}</div>}
-                      <div style={{fontSize:9,color:T.sub,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.a}</div>
-                    </div>
-                  ) : (
-                    <div style={{width:"100%",height:24,borderRadius:4,background:T.lineLight,opacity:.3}}/>
-                  )}
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 
-  /* ══════ DETTAGLIO (quando clicchi) ══════ */
-  const Dettaglio = () => {
-    if (!op) return null;
-    const sc = SC(op.stato);
+  /* ═══ DASHBOARD ═══ */
+  const PageDashboard = () => {
+    const inCant = OPERATORI.filter(o=>o.stato==="in_cantiere"||o.stato==="in_sopralluogo").length;
+    const liberi = OPERATORI.filter(o=>o.stato==="disponibile"||o.stato==="in_pausa").length;
+    const assenti = OPERATORI.filter(o=>o.stato==="non_disponibile");
     return (
-      <div style={{flex:1,overflowY:"auto"}}>
-        <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.line}`,display:"flex",alignItems:"center",gap:12}}>
-          <div onClick={()=>{setSelOp(null);setSelComm(null);}} style={{width:30,height:30,borderRadius:6,background:T.lineLight,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.ink} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Centro Controllo</div>
+      {/* KPI */}
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {[{l:"In cantiere",v:inCant,c:T.green,s:`su ${OPERATORI.length}`},{l:"Liberi",v:liberi,c:T.teal,s:"assegnabili"},{l:"Assenti",v:assenti.length,c:T.red,s:assenti.map(o=>o.nome.split(" ")[0]).join(",")||"\u2014"},{l:"Commesse attive",v:tutteComm.filter(c=>c.stato==="in_corso").length,c:T.ink,s:`${tutteComm.length} tot`},{l:"Bloccate",v:tutteComm.filter(c=>c.stato==="in_attesa_materiali").length,c:T.amber,s:"materiali"},{l:"Problemi",v:tuttiProb.length,c:tuttiProb.length?T.red:T.green,s:tuttiProb.length?tuttiProb[0].tit.substring(0,25)+"...":"OK"},{l:"Spese",v:tutteSpese.filter(s=>s.ok==="no").length,c:tutteSpese.filter(s=>s.ok==="no").length?T.amber:T.green,s:tutteSpese.filter(s=>s.ok==="no").length?`\u20AC${tutteSpese.filter(s=>s.ok==="no").reduce((a,b)=>a+b.imp,0).toFixed(0)}`:"OK"},{l:"Cert. scad.",v:certScad.length,c:certScad.length?T.amber:T.green,s:certScad.length?certScad[0].opNome:"OK"}].map((k,i)=>(
+          <div key={i} style={{flex:1,background:T.bg,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.line}`}}>
+            <div style={{fontSize:8,color:T.muted,textTransform:"uppercase",letterSpacing:".04em",marginBottom:3}}>{k.l}</div>
+            <div style={{fontSize:20,fontWeight:700,color:k.c,fontFamily:T.mono}}>{k.v}</div>
+            <div style={{fontSize:9,color:T.sub,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k.s}</div>
           </div>
-          <div style={{width:38,height:38,borderRadius:8,background:op.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:14,fontWeight:800}}>{op.avatar}</div>
-          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:T.ink}}>{op.nome}</div><div style={{fontSize:11,color:T.sub}}>{op.ruolo} · {op.telefono} · {op.automezzo}</div></div>
-          <a href={`tel:${op.telefono.replace(/\s/g,"")}`} style={{padding:"5px 12px",borderRadius:5,background:T.greenLight,color:T.green,fontSize:10,fontWeight:700,textDecoration:"none"}}>Chiama</a>
-          <a href={`https://wa.me/${op.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"5px 12px",borderRadius:5,background:"#DCF8C6",color:"#128C7E",fontSize:10,fontWeight:700,textDecoration:"none"}}>WA</a>
-          <span style={{fontSize:10,fontWeight:600,color:sc.fg,background:sc.bg,padding:"3px 8px",borderRadius:4}}>{sc.l}</span>
+        ))}
+      </div>
+      {/* 3 colonne */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+        {/* Chi fa cosa */}
+        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Oggi</div>
+          {OPERATORI.map(o=>{const sc=SC(o.stato);const oggi=(o.agenda||[]).find(g=>g.g==="Mar");return(
+            <div key={o.id} onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
+              <div style={{width:26,height:26,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:9,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{o.nome}</div><div style={{fontSize:9,color:oggi?.a?sc.fg:T.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{oggi?.a||(o.stato==="non_disponibile"?"Assente":"--")}</div></div>
+              {oggi?.c&&<span style={{fontSize:8,fontWeight:700,color:T.teal,fontFamily:T.mono,background:T.tealLight,padding:"1px 4px",borderRadius:2}}>{oggi.c}</span>}
+              <span style={{fontSize:8,fontWeight:600,color:sc.fg,background:sc.bg,padding:"2px 4px",borderRadius:3}}>{sc.l}</span>
+            </div>
+          );})}
         </div>
-        <div style={{padding:20}}>
-          {!selComm ? (
-            <>
-              {/* KPI */}
-              <div style={{display:"flex",gap:14,marginBottom:16,flexWrap:"wrap"}}>
-                {[{l:"Commesse",v:op.kpi.commesse},{l:"Ore",v:`${op.kpi.ore}h`},{l:"Media",v:`${op.kpi.media}h/g`,c:T.teal},{l:"Voto",v:`${op.kpi.voto}/5`,c:op.kpi.voto>=4.5?T.green:T.amber},{l:"Ritardi",v:op.kpi.ritardi,c:op.kpi.ritardi>3?T.red:T.ink},{l:"Presenze",v:`${op.kpi.presenze}/22`}].map((k,i)=>(
-                  <div key={i}><div style={{fontSize:9,color:T.muted}}>{k.l}</div><div style={{fontSize:13,fontWeight:700,color:k.c||T.ink,fontFamily:T.mono}}>{k.v}</div></div>
-                ))}
-              </div>
-              {/* Commesse */}
-              <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Commesse ({op.commesse.length})</div>
-              {op.commesse.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:op.commesse.map(c=>(
-                <div key={c.id} onClick={()=>{setSelComm(c.id);setTab("vani");}} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",border:`1px solid ${T.line}`,borderRadius:6,marginBottom:6,cursor:"pointer"}}>
-                  <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span>
-                  <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{c.cliente} · {c.tipo}</div><div style={{fontSize:10,color:T.sub}}>{c.vani.length} vani · {c.foto.length} foto · {c.chat.length} msg</div></div>
-                  <div style={{width:60}}><div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${c.avanz}%`,height:"100%",background:T.teal,borderRadius:2}}/></div><div style={{fontSize:10,textAlign:"right",fontFamily:T.mono,marginTop:2}}>{c.avanz}%</div></div>
-                </div>
-              ))}
-              {/* Cert + Dotaz */}
-              <div style={{display:"flex",gap:16,marginTop:16}}>
-                <div style={{flex:1}}><div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:6}}>CERTIFICAZIONI</div>{(op.cert||[]).map((c,i)=><div key={i} style={{display:"flex",gap:6,padding:"3px 0",fontSize:11}}><span style={{width:5,height:5,borderRadius:"50%",background:c.ok?T.green:T.amber,marginTop:4}}/><span style={{flex:1}}>{c.n}</span><span style={{color:T.sub,fontFamily:T.mono,fontSize:10}}>{c.scad}</span></div>)}</div>
-                <div style={{flex:1}}><div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:6}}>DOTAZIONI</div>{(op.dotaz||[]).map((d,i)=><div key={i} style={{fontSize:11,padding:"3px 0"}}>{d.n}</div>)}</div>
-              </div>
-            </>
-          ) : (
-            /* Commessa detail */
-            <>
-              <div onClick={()=>setSelComm(null)} style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,cursor:"pointer",color:T.sub,fontSize:11}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Indietro</div>
-              <div style={{marginBottom:12}}><span style={{fontSize:13,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{comm.id}</span> <span style={{fontSize:14,fontWeight:700}}>{comm.cliente}</span> <span style={{fontSize:11,color:T.sub}}>· {comm.tipo} · {comm.indirizzo}</span></div>
-              <div style={{display:"flex",gap:2,marginBottom:14,flexWrap:"wrap"}}>
-                {["vani","foto","documenti","chat","timeline","materiali","firme","spese","ore","problemi"].map(t=>{
-                  const al=t==="problemi"&&(comm.problemi||[]).filter(p=>p.stato==="aperto").length>0;
-                  return <div key={t} onClick={()=>setTab(t)} style={{padding:"6px 12px",borderRadius:5,fontSize:11,fontWeight:tab===t?700:500,color:tab===t?"#fff":T.sub,background:tab===t?T.teal:"transparent",cursor:"pointer",textTransform:"capitalize",position:"relative"}}>{t}{al&&<span style={{position:"absolute",top:2,right:2,width:4,height:4,borderRadius:"50%",background:T.red}}/>}</div>;
-                })}
-              </div>
-
-              {tab==="vani"&&comm.vani.map((v,i)=>{const vc={montato:{c:T.green,l:"OK"},in_corso:{c:T.amber,l:"In corso"},da_fare:{c:T.muted,l:"Da fare"}}[v.stato]||{c:T.muted,l:v.stato};return <div key={v.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.vani.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:6,height:6,borderRadius:"50%",background:vc.c}}/><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{v.id} · {v.nome} <span style={{fontWeight:400,color:T.sub}}>{v.tipo}</span></div><div style={{fontSize:10,color:T.sub}}>{v.dim} · {v.mat}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:vc.c,fontWeight:600}}>{vc.l}</div><div style={{fontSize:10,fontFamily:T.mono}}>{fh(v.oreR)}/{fh(v.oreP)}</div></div></div>;})}
-              {tab==="foto"&&(comm.foto.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna foto</div>:comm.foto.map((f,i)=>{const fc={PRIMA:T.blue,DEMOLIZIONE:T.red,MONTAGGIO:T.amber,DOPO:T.green,RILIEVO:T.purple}[f.fase]||T.sub;return <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<comm.foto.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{width:44,height:44,borderRadius:5,background:T.lineLight,border:`1px solid ${T.line}`,display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div><div style={{flex:1}}><div style={{display:"flex",gap:5,marginBottom:1}}><span style={{fontSize:9,fontWeight:700,color:fc,background:`${fc}15`,padding:"1px 5px",borderRadius:3}}>{f.fase}</span><span style={{fontSize:9,color:T.sub}}>V{f.vano}</span><span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>{f.data}</span></div><div style={{fontSize:11,color:T.ink}}>{f.nota}</div></div></div>;}))}
-              {tab==="documenti"&&(comm.doc.length===0?<div style={{color:T.muted,fontSize:11}}>Nessun doc</div>:comm.doc.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.doc.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{width:28,height:28,borderRadius:5,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t.toUpperCase()}</span></div><span style={{fontSize:11,flex:1}}>{d.n}</span><span style={{fontSize:9,color:T.muted}}>{d.d}</span></div>))}
-              {tab==="chat"&&(comm.chat.length===0?<div style={{color:T.muted,fontSize:11}}>Nessun msg</div>:comm.chat.map((m,i)=>{const cc={op:T.teal,uff:T.blue,cli:T.green,ai:T.purple}[m.tipo]||T.sub;return <div key={i} style={{display:"flex",gap:6,padding:"6px 0",borderBottom:i<comm.chat.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:5,height:5,borderRadius:"50%",background:cc,marginTop:5,flexShrink:0}}/><div><div style={{display:"flex",gap:5,marginBottom:1}}><span style={{fontSize:10,fontWeight:600,color:cc}}>{m.da}</span><span style={{fontSize:9,color:T.muted}}>{m.ora}</span></div><div style={{fontSize:11,color:T.ink}}>{m.t}</div></div></div>;}))}
-              {tab==="timeline"&&comm.timeline.map((t,i)=><div key={i} style={{display:"flex",gap:10,padding:"6px 0"}}><div style={{display:"flex",flexDirection:"column",alignItems:"center",width:12}}><span style={{width:6,height:6,borderRadius:"50%",background:t.e.includes("OGGI")?T.teal:T.line}}/>{i<comm.timeline.length-1&&<div style={{width:1,flex:1,background:T.lineLight,marginTop:3}}/>}</div><span style={{fontSize:11,color:t.e.includes("OGGI")?T.teal:T.ink,fontWeight:t.e.includes("OGGI")?700:400,flex:1}}>{t.e}</span><span style={{fontSize:9,color:T.muted,fontFamily:T.mono}}>{t.d}</span></div>)}
-              {tab==="materiali"&&(comm.materiali.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:comm.materiali.map((m,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.materiali.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{flex:1}}><div style={{fontSize:11}}>{m.n}</div><div style={{display:"flex",gap:6,marginTop:3,alignItems:"center"}}><div style={{flex:1,height:3,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${m.q>0?(m.u/m.q)*100:0}%`,height:"100%",borderRadius:2,background:T.teal}}/></div><span style={{fontSize:9,fontFamily:T.mono,color:T.sub}}>{m.u}/{m.q} {m.um}</span></div></div></div>))}
-              {tab==="firme"&&(comm.firme.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.firme.map((f,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:i<comm.firme.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:6,height:6,borderRadius:"50%",background:f.ok?T.green:T.muted}}/><div style={{flex:1}}><div style={{fontSize:11}}>{f.tipo}</div>{f.ok&&<div style={{fontSize:9,color:T.sub}}>{f.chi} · {f.data}</div>}</div><span style={{fontSize:9,fontWeight:600,color:f.ok?T.green:T.muted}}>{f.ok?"Firmato":"Attesa"}</span></div>))}
-              {tab==="spese"&&(comm.spese.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.spese.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.spese.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{flex:1}}><div style={{fontSize:11}}>{s.desc}</div><div style={{fontSize:9,color:T.sub}}>{s.cat} · {s.d}</div></div><span style={{fontSize:12,fontWeight:600,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(2)}</span>{s.ok==="no"?<div style={{display:"flex",gap:3}}><div onClick={()=>alert("OK")} style={{padding:"3px 8px",borderRadius:3,background:T.greenLight,color:T.green,fontSize:9,fontWeight:700,cursor:"pointer"}}>OK</div><div onClick={()=>alert("NO")} style={{padding:"3px 8px",borderRadius:3,background:T.redLight,color:T.red,fontSize:9,fontWeight:700,cursor:"pointer"}}>NO</div></div>:<span style={{fontSize:9,color:T.green}}>OK</span>}</div>))}
-              {tab==="ore"&&(comm.ore.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.ore.map((o,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.ore.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{fontSize:11,fontFamily:T.mono,minWidth:36}}>{o.d}</span><span style={{fontSize:11}}>{o.in} {"\u2192"} {o.out||"..."}</span>{o.pausa>0&&<span style={{fontSize:9,color:T.sub}}>({o.pausa}m)</span>}<span style={{fontSize:12,fontWeight:600,color:T.teal,fontFamily:T.mono,marginLeft:"auto"}}>{o.nette>0?fh(o.nette):"..."}</span></div>))}
-              {tab==="problemi"&&(()=>{const pp=comm.problemi||[];return pp.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:pp.map((p,i)=><div key={i} style={{padding:"8px 0",borderBottom:i<pp.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{display:"flex",gap:6,marginBottom:2}}><span style={{width:6,height:6,borderRadius:"50%",background:p.stato==="aperto"?T.red:T.green,marginTop:4}}/><span style={{fontSize:10,fontWeight:700,color:p.stato==="aperto"?T.red:T.green}}>{p.stato==="aperto"?"APERTO":"RISOLTO"}</span><span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>{p.data}</span></div><div style={{fontSize:12,fontWeight:600}}>{p.tit}</div><div style={{fontSize:11,color:T.sub}}>{p.desc}</div></div>);})()}
-            </>
-          )}
+        {/* Commesse */}
+        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Commesse in corso ({tutteComm.filter(c=>c.stato==="in_corso").length})</div>
+          {tutteComm.filter(c=>c.stato==="in_corso").map(c=>(
+            <div key={c.id+c.opNome} onClick={()=>{setSelOp(c.opId);setSelComm(c.id);setTab("vani");setPage("operatori");}} style={{padding:"7px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}><span style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span><span style={{fontSize:11,fontWeight:600,flex:1}}>{c.cliente}</span><span style={{fontSize:11,fontWeight:700,fontFamily:T.mono}}>{c.avanz}%</span></div>
+              <div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden",marginBottom:2}}><div style={{width:`${c.avanz}%`,height:"100%",borderRadius:2,background:c.avanz>=80?T.green:c.avanz>=40?T.teal:T.amber}}/></div>
+              <div style={{fontSize:9,color:T.sub}}>{c.tipo} · {c.opNome}</div>
+            </div>
+          ))}
+        </div>
+        {/* Alert */}
+        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.red,marginBottom:8}}>Alert ({tuttiProb.length+tutteSpese.filter(s=>s.ok==="no").length+certScad.length})</div>
+          {tuttiProb.map((p,i)=><div key={"p"+i} style={{padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><div style={{display:"flex",gap:4,marginBottom:1}}><span style={{width:5,height:5,borderRadius:"50%",background:T.red,marginTop:4}}/><span style={{fontSize:9,fontWeight:700,color:T.red}}>PROBLEMA</span><span style={{fontSize:9,color:T.sub,marginLeft:"auto"}}>{p.opNome}</span></div><div style={{fontSize:11,fontWeight:600}}>{p.tit}</div></div>)}
+          {tutteSpese.filter(s=>s.ok==="no").map((s,i)=><div key={"s"+i} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><span style={{width:5,height:5,borderRadius:"50%",background:T.amber}}/><div style={{flex:1}}><div style={{fontSize:11}}>{s.desc} · {s.opNome}</div></div><span style={{fontSize:11,fontWeight:700,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(0)}</span><div style={{display:"flex",gap:2}}><div onClick={()=>alert("OK")} style={{padding:"2px 6px",borderRadius:3,background:T.greenLight,color:T.green,fontSize:8,fontWeight:700,cursor:"pointer"}}>OK</div><div onClick={()=>alert("NO")} style={{padding:"2px 6px",borderRadius:3,background:T.redLight,color:T.red,fontSize:8,fontWeight:700,cursor:"pointer"}}>NO</div></div></div>)}
+          {certScad.map((c,i)=><div key={"c"+i} style={{display:"flex",gap:6,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><span style={{width:5,height:5,borderRadius:"50%",background:T.purple,marginTop:4}}/><div><div style={{fontSize:11}}>{c.n}</div><div style={{fontSize:9,color:T.sub}}>{c.opNome} · {c.scad}</div></div></div>)}
         </div>
       </div>
-    );
-  };
+    </div>
+  );};
 
-  /* ══════ MARKETPLACE ══════ */
-  const MktPage = () => (
+  /* ═══ CALENDARIO ═══ */
+  const PageCalendario = () => (
     <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Calendario settimana — 7-11 Aprile 2026</div>
+      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"120px repeat(5,1fr)",borderBottom:`1px solid ${T.line}`}}>
+          <div style={{padding:"10px 12px",fontWeight:700,fontSize:11,color:T.muted}}>Operatore</div>
+          {["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"].map(g=><div key={g} style={{padding:"10px 8px",fontSize:11,fontWeight:700,color:g.includes("08")?T.teal:T.ink,textAlign:"center",borderLeft:`1px solid ${T.line}`,background:g.includes("08")?"rgba(26,158,143,0.04)":"transparent"}}>{g}{g.includes("08")?" OGGI":""}</div>)}
+        </div>
+        {OPERATORI.map((o,oi)=>(
+          <div key={o.id} style={{display:"grid",gridTemplateColumns:"120px repeat(5,1fr)",borderBottom:oi<OPERATORI.length-1?`1px solid ${T.lineLight}`:"none"}}>
+            <div onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{padding:"8px 10px",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
+              <div style={{width:24,height:24,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+              <div><div style={{fontSize:10,fontWeight:600}}>{o.nome.split(" ")[0]}</div><div style={{fontSize:8,color:T.muted}}>{o.ruolo}</div></div>
+            </div>
+            {(o.agenda||[]).map((g,gi)=>(
+              <div key={gi} style={{padding:"6px 4px",borderLeft:`1px solid ${T.lineLight}`,background:gi===1?"rgba(26,158,143,0.02)":"transparent"}}>
+                {g.a?(
+                  <div style={{background:`${g.col||T.muted}12`,borderLeft:`3px solid ${g.col||T.muted}`,borderRadius:"0 4px 4px 0",padding:"4px 6px",height:"100%"}}>
+                    {g.c&&<div style={{fontSize:8,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono}}>{g.c}</div>}
+                    <div style={{fontSize:9,color:T.sub,lineHeight:1.3}}>{g.a}</div>
+                    {g.h&&<div style={{fontSize:8,color:T.muted}}>{g.h}</div>}
+                  </div>
+                ):(
+                  <div style={{height:"100%",minHeight:36,borderRadius:4,background:T.lineLight,opacity:.2}}/>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ═══ OPERATORI LIST ═══ */
+  const PageOperatori = () => {
+    if (selOp && op) return <DettaglioOp/>;
+    return (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Operatori ({OPERATORI.length})</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+        {OPERATORI.map(o=>{const sc=SC(o.stato);const oggi=(o.agenda||[]).find(g=>g.g==="Mar");return(
+          <div key={o.id} onClick={()=>{setSelOp(o.id);setSelComm(null);}} style={{background:T.bg,border:`1px solid ${T.line}`,borderRadius:8,padding:"14px 16px",cursor:"pointer"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{width:36,height:36,borderRadius:7,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:800}}>{o.avatar}</div>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{o.nome}</div><div style={{fontSize:10,color:T.sub}}>{o.ruolo} · {o.automezzo}</div></div>
+              <span style={{fontSize:9,fontWeight:600,color:sc.fg,background:sc.bg,padding:"3px 7px",borderRadius:4}}>{sc.l}</span>
+            </div>
+            <div style={{display:"flex",gap:10,marginBottom:6}}>
+              {[{l:"Ore",v:`${o.kpi.ore}h`},{l:"Media",v:`${o.kpi.media}h/g`},{l:"Voto",v:`${o.kpi.voto}/5`,c:o.kpi.voto>=4.5?T.green:T.amber},{l:"Ritardi",v:o.kpi.ritardi,c:o.kpi.ritardi>3?T.red:T.ink}].map((k,i)=><div key={i}><div style={{fontSize:8,color:T.muted}}>{k.l}</div><div style={{fontSize:11,fontWeight:600,color:k.c||T.ink,fontFamily:T.mono}}>{k.v}</div></div>)}
+            </div>
+            {oggi?.a&&<div style={{fontSize:10,color:sc.fg,background:sc.bg,borderRadius:4,padding:"4px 8px",marginBottom:4}}>{oggi.a}{oggi.c&&` · ${oggi.c}`}</div>}
+            <div style={{fontSize:9,color:T.muted}}>{o.posizione.indirizzo}</div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );};
+
+  /* ═══ DETTAGLIO OPERATORE ═══ */
+  const DettaglioOp = () => (
+    <div style={{flex:1,overflowY:"auto"}}>
+      <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.line}`,display:"flex",alignItems:"center",gap:12}}>
+        <div onClick={()=>{setSelOp(null);setSelComm(null);}} style={{width:30,height:30,borderRadius:6,background:T.lineLight,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.ink} strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div style={{width:40,height:40,borderRadius:8,background:op.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:15,fontWeight:800}}>{op.avatar}</div>
+        <div style={{flex:1}}><div style={{fontSize:16,fontWeight:700}}>{op.nome}</div><div style={{fontSize:11,color:T.sub}}>{op.ruolo} · {op.telefono} · {op.automezzo}</div></div>
+        <a href={`tel:${op.telefono.replace(/\s/g,"")}`} style={{padding:"6px 12px",borderRadius:5,background:T.greenLight,color:T.green,fontSize:10,fontWeight:700,textDecoration:"none",border:`1px solid ${T.green}30`}}>Chiama</a>
+        <a href={`https://wa.me/${op.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"6px 12px",borderRadius:5,background:"#DCF8C6",color:"#128C7E",fontSize:10,fontWeight:700,textDecoration:"none"}}>WA</a>
+        <span style={{fontSize:10,fontWeight:600,color:SC(op.stato).fg,background:SC(op.stato).bg,padding:"3px 8px",borderRadius:4}}>{SC(op.stato).l}</span>
+      </div>
+      <div style={{padding:20}}>
+        {!selComm?(
+          <>
+            <div style={{display:"flex",gap:14,marginBottom:16,flexWrap:"wrap"}}>
+              {[{l:"Commesse",v:op.kpi.commesse},{l:"Ore",v:`${op.kpi.ore}h`},{l:"Media",v:`${op.kpi.media}h/g`,c:T.teal},{l:"Voto",v:`${op.kpi.voto}/5`,c:op.kpi.voto>=4.5?T.green:T.amber},{l:"Ritardi",v:op.kpi.ritardi,c:op.kpi.ritardi>3?T.red:T.ink},{l:"Presenze",v:`${op.kpi.presenze}/22`}].map((k,i)=><div key={i}><div style={{fontSize:9,color:T.muted}}>{k.l}</div><div style={{fontSize:14,fontWeight:700,color:k.c||T.ink,fontFamily:T.mono}}>{k.v}</div></div>)}
+            </div>
+            <div style={{display:"flex",gap:4,marginBottom:16}}>
+              {(op.agenda||[]).map((g,i)=><div key={i} style={{flex:1,padding:"6px 8px",borderRadius:5,background:g.col?`${g.col}12`:T.lineLight,borderLeft:g.col?`3px solid ${g.col}`:"3px solid transparent"}}><div style={{fontSize:9,fontWeight:700,color:g.col||T.muted}}>{g.g}</div>{g.a&&<div style={{fontSize:9,color:T.sub}}>{g.a}</div>}{g.c&&<div style={{fontSize:8,color:g.col,fontFamily:T.mono}}>{g.c}</div>}</div>)}
+            </div>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commesse ({op.commesse.length})</div>
+            {op.commesse.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:op.commesse.map(c=>(
+              <div key={c.id} onClick={()=>{setSelComm(c.id);setTab("vani");}} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",border:`1px solid ${T.line}`,borderRadius:6,marginBottom:6,cursor:"pointer"}}>
+                <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span>
+                <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{c.cliente} · {c.tipo}</div><div style={{fontSize:10,color:T.sub}}>{c.vani.length} vani · {c.foto.length} foto · {c.chat.length} msg</div></div>
+                <div style={{width:60}}><div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${c.avanz}%`,height:"100%",background:T.teal,borderRadius:2}}/></div><div style={{fontSize:10,textAlign:"right",fontFamily:T.mono,marginTop:2}}>{c.avanz}%</div></div>
+              </div>
+            ))}
+            <div style={{display:"flex",gap:16,marginTop:16}}>
+              <div style={{flex:1}}><div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:6}}>CERTIFICAZIONI</div>{(op.cert||[]).map((c,i)=><div key={i} style={{display:"flex",gap:6,padding:"3px 0",fontSize:11}}><span style={{width:5,height:5,borderRadius:"50%",background:c.ok?T.green:T.amber,marginTop:4}}/><span style={{flex:1}}>{c.n}</span><span style={{color:T.sub,fontFamily:T.mono,fontSize:10}}>{c.scad}</span></div>)}</div>
+              <div style={{flex:1}}><div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:6}}>DOTAZIONI</div>{(op.dotaz||[]).map((d,i)=><div key={i} style={{fontSize:11,padding:"3px 0"}}>{d.n}</div>)}</div>
+              <div style={{flex:1}}><div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:6}}>STORICO</div><div style={{display:"flex",gap:6}}>{(op.storico||[]).map((s,i)=><div key={i} style={{flex:1,textAlign:"center"}}><div style={{height:32,display:"flex",alignItems:"flex-end",justifyContent:"center"}}><div style={{width:"80%",height:Math.max((s.ore/200)*28,2),borderRadius:3,background:s.v>=4.5?T.teal:s.v>=4?T.blue:T.amber,opacity:.7}}/></div><div style={{fontSize:8,color:T.muted}}>{s.m}</div><div style={{fontSize:9,fontWeight:600,fontFamily:T.mono}}>{s.ore}h</div></div>)}</div></div>
+            </div>
+          </>
+        ):(
+          /* COMMESSA DETAIL */
+          <>
+            <div onClick={()=>setSelComm(null)} style={{display:"inline-flex",alignItems:"center",gap:5,marginBottom:12,cursor:"pointer",color:T.sub,fontSize:11}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Indietro</div>
+            <div style={{marginBottom:10}}><span style={{fontSize:14,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{comm.id}</span> <span style={{fontSize:15,fontWeight:700}}>{comm.cliente}</span> <span style={{fontSize:11,color:T.sub}}>· {comm.tipo} · {comm.indirizzo}</span></div>
+            <div style={{display:"flex",gap:2,marginBottom:14,flexWrap:"wrap"}}>
+              {["vani","foto","documenti","chat","timeline","materiali","firme","spese","ore","problemi"].map(t=>{
+                const al=t==="problemi"&&(comm.problemi||[]).filter(p=>p.stato==="aperto").length>0;
+                return <div key={t} onClick={()=>setTab(t)} style={{padding:"6px 12px",borderRadius:5,fontSize:11,fontWeight:tab===t?700:500,color:tab===t?"#fff":T.sub,background:tab===t?T.teal:"transparent",cursor:"pointer",textTransform:"capitalize",position:"relative"}}>{t}{al&&<span style={{position:"absolute",top:2,right:2,width:4,height:4,borderRadius:"50%",background:T.red}}/>}</div>;
+              })}
+            </div>
+            {tab==="vani"&&comm.vani.map((v,i)=>{const vc={montato:{c:T.green,l:"OK"},in_corso:{c:T.amber,l:"In corso"},da_fare:{c:T.muted,l:"Da fare"}}[v.stato]||{c:T.muted,l:v.stato};return <div key={v.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.vani.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:6,height:6,borderRadius:"50%",background:vc.c}}/><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{v.id} · {v.nome} <span style={{fontWeight:400,color:T.sub}}>{v.tipo}</span></div><div style={{fontSize:10,color:T.sub}}>{v.dim} · {v.mat}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:vc.c,fontWeight:600}}>{vc.l}</div><div style={{fontSize:10,fontFamily:T.mono}}>{fh(v.oreR)}/{fh(v.oreP)}</div></div></div>;})}
+            {tab==="foto"&&(comm.foto.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna foto</div>:comm.foto.map((f,i)=>{const fc={PRIMA:T.blue,DEMOLIZIONE:T.red,MONTAGGIO:T.amber,DOPO:T.green,RILIEVO:T.purple}[f.fase]||T.sub;return <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<comm.foto.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{width:44,height:44,borderRadius:5,background:T.lineLight,border:`1px solid ${T.line}`,display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div><div style={{flex:1}}><div style={{display:"flex",gap:5}}><span style={{fontSize:9,fontWeight:700,color:fc,background:`${fc}15`,padding:"1px 5px",borderRadius:3}}>{f.fase}</span><span style={{fontSize:9,color:T.sub}}>V{f.vano}</span><span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>{f.data}</span></div><div style={{fontSize:11,color:T.ink,marginTop:2}}>{f.nota}</div></div></div>;}))}
+            {tab==="documenti"&&(comm.doc.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:comm.doc.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.doc.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{width:28,height:28,borderRadius:5,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t.toUpperCase()}</span></div><span style={{fontSize:11,flex:1}}>{d.n}</span><span style={{fontSize:9,color:T.muted}}>{d.d}</span></div>))}
+            {tab==="chat"&&(comm.chat.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:comm.chat.map((m,i)=><div key={i} style={{display:"flex",gap:6,padding:"6px 0",borderBottom:i<comm.chat.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:5,height:5,borderRadius:"50%",background:chatC(m.tipo),marginTop:5,flexShrink:0}}/><div><div style={{display:"flex",gap:5}}><span style={{fontSize:10,fontWeight:600,color:chatC(m.tipo)}}>{m.da}</span><span style={{fontSize:9,color:T.muted}}>{m.ora}</span></div><div style={{fontSize:11}}>{m.t}</div></div></div>))}
+            {tab==="timeline"&&comm.timeline.map((t,i)=><div key={i} style={{display:"flex",gap:10,padding:"6px 0"}}><div style={{display:"flex",flexDirection:"column",alignItems:"center",width:12}}><span style={{width:6,height:6,borderRadius:"50%",background:t.e.includes("OGGI")?T.teal:T.line}}/>{i<comm.timeline.length-1&&<div style={{width:1,flex:1,background:T.lineLight,marginTop:3}}/>}</div><span style={{fontSize:11,color:t.e.includes("OGGI")?T.teal:T.ink,fontWeight:t.e.includes("OGGI")?700:400,flex:1}}>{t.e}</span><span style={{fontSize:9,color:T.muted,fontFamily:T.mono}}>{t.d}</span></div>)}
+            {tab==="materiali"&&(comm.materiali.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:comm.materiali.map((m,i)=><div key={i} style={{padding:"8px 0",borderBottom:i<comm.materiali.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{fontSize:11}}>{m.n}</div><div style={{display:"flex",gap:6,marginTop:3,alignItems:"center"}}><div style={{flex:1,height:3,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${m.q>0?(m.u/m.q)*100:0}%`,height:"100%",borderRadius:2,background:T.teal}}/></div><span style={{fontSize:9,fontFamily:T.mono,color:T.sub}}>{m.u}/{m.q} {m.um}</span></div></div>))}
+            {tab==="firme"&&(comm.firme.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.firme.map((f,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:i<comm.firme.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{width:6,height:6,borderRadius:"50%",background:f.ok?T.green:T.muted}}/><div style={{flex:1}}><div style={{fontSize:11}}>{f.tipo}</div>{f.ok&&<div style={{fontSize:9,color:T.sub}}>{f.chi} · {f.data}</div>}</div><span style={{fontSize:9,fontWeight:600,color:f.ok?T.green:T.muted}}>{f.ok?"Firmato":"Attesa"}</span></div>))}
+            {tab==="spese"&&(comm.spese.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.spese.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.spese.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{flex:1}}><div style={{fontSize:11}}>{s.desc}</div><div style={{fontSize:9,color:T.sub}}>{s.cat} · {s.d}</div></div><span style={{fontSize:12,fontWeight:600,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(2)}</span>{s.ok==="no"?<div style={{display:"flex",gap:3}}><div onClick={()=>alert("OK")} style={{padding:"3px 8px",borderRadius:3,background:T.greenLight,color:T.green,fontSize:9,fontWeight:700,cursor:"pointer"}}>OK</div><div onClick={()=>alert("NO")} style={{padding:"3px 8px",borderRadius:3,background:T.redLight,color:T.red,fontSize:9,fontWeight:700,cursor:"pointer"}}>NO</div></div>:<span style={{fontSize:9,color:T.green}}>OK</span>}</div>))}
+            {tab==="ore"&&(comm.ore.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuna</div>:comm.ore.map((o,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<comm.ore.length-1?`1px solid ${T.lineLight}`:"none"}}><span style={{fontSize:11,fontFamily:T.mono,minWidth:36}}>{o.d}</span><span style={{fontSize:11}}>{o.in} {"\u2192"} {o.out||"..."}</span>{o.pausa>0&&<span style={{fontSize:9,color:T.sub}}>({o.pausa}m)</span>}<span style={{fontSize:12,fontWeight:600,color:T.teal,fontFamily:T.mono,marginLeft:"auto"}}>{o.nette>0?fh(o.nette):"..."}</span></div>))}
+            {tab==="problemi"&&(()=>{const pp=comm.problemi||[];return pp.length===0?<div style={{color:T.muted,fontSize:11}}>Nessuno</div>:pp.map((p,i)=><div key={i} style={{padding:"8px 0",borderBottom:i<pp.length-1?`1px solid ${T.lineLight}`:"none"}}><div style={{display:"flex",gap:6,marginBottom:2}}><span style={{width:6,height:6,borderRadius:"50%",background:p.stato==="aperto"?T.red:T.green,marginTop:4}}/><span style={{fontSize:10,fontWeight:700,color:p.stato==="aperto"?T.red:T.green}}>{p.stato.toUpperCase()}</span><span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>{p.data}</span></div><div style={{fontSize:12,fontWeight:600}}>{p.tit}</div><div style={{fontSize:11,color:T.sub}}>{p.desc}</div></div>);})()}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  /* ═══ COMMESSE GLOBALI ═══ */
+  const PageCommesse = () => (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Tutte le commesse ({tutteComm.length})</div>
+      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,overflow:"hidden"}}>
+        {tutteComm.map((c,i)=>(
+          <div key={c.id+c.opNome} onClick={()=>{setSelOp(c.opId);setSelComm(c.id);setTab("vani");setPage("operatori");}} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tutteComm.length-1?`1px solid ${T.lineLight}`:"none",cursor:"pointer"}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:CC(c.stato),flexShrink:0}}/>
+            <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono,minWidth:90}}>{c.id}</span>
+            <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{c.cliente}</div><div style={{fontSize:10,color:T.sub}}>{c.tipo} · {c.indirizzo}</div></div>
+            <div style={{width:80}}><div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden"}}><div style={{width:`${c.avanz}%`,height:"100%",borderRadius:2,background:CC(c.stato)}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:2}}><span style={{fontSize:9,color:T.sub}}>{c.opNome}</span><span style={{fontSize:9,fontFamily:T.mono,fontWeight:600}}>{c.avanz}%</span></div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ═══ MARKETPLACE ═══ */
+  const PageMarketplace = () => (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
         <div style={{fontSize:16,fontWeight:700}}>Marketplace fliwoX</div>
-        <div style={{fontSize:11,color:T.sub}}>Borsa lavori tra serramentisti</div>
+        <div style={{fontSize:11,color:T.sub}}>Borsa lavori</div>
         <div onClick={()=>alert("Pubblica")} style={{marginLeft:"auto",padding:"7px 18px",borderRadius:6,background:T.amber,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Pubblica lavoro</div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -411,13 +398,13 @@ export default function PortaleAzienda() {
             <div key={m.id} style={{border:`1px solid ${T.line}`,borderRadius:8,padding:"14px 16px",marginBottom:10}}>
               <div style={{display:"flex",gap:6,marginBottom:4}}><span style={{fontSize:10,fontWeight:700,color:T.amber,fontFamily:T.mono}}>{m.id}</span><span style={{fontSize:10,fontWeight:600,color:m.offerte.length>0?T.green:T.muted,background:m.offerte.length>0?T.greenLight:T.lineLight,padding:"1px 6px",borderRadius:3}}>{m.offerte.length>0?`${m.offerte.length} offerte`:"Attesa"}</span><span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>{m.scad}</span></div>
               <div style={{fontSize:14,fontWeight:700,marginBottom:3}}>{m.titolo}</div>
-              <div style={{fontSize:11,color:T.sub,marginBottom:3}}>{m.zona} · {m.budget}</div>
-              <div style={{fontSize:11,color:T.sub,lineHeight:1.4}}>{m.desc}</div>
+              <div style={{fontSize:11,color:T.sub}}>{m.zona} · {m.budget}</div>
+              <div style={{fontSize:11,color:T.sub,lineHeight:1.4,marginTop:4}}>{m.desc}</div>
               {m.offerte.length>0&&<div style={{borderTop:`1px solid ${T.line}`,marginTop:8,paddingTop:8}}>{m.offerte.map((o,oi)=><div key={oi} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 8px",borderRadius:5,marginBottom:3,background:oi===0?T.tealLight:"transparent"}}><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{o.da}</div><div style={{fontSize:10,color:T.sub}}>{o.nota}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{o.pr}</div><div style={{fontSize:9,color:T.sub}}>{o.v}/5 · {o.gg}</div></div><div onClick={()=>alert("Accetti?")} style={{padding:"5px 12px",borderRadius:5,background:T.teal,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer"}}>Accetta</div></div>)}</div>}
             </div>
           ))}
           <div style={{fontSize:12,fontWeight:700,color:T.teal,marginTop:16,marginBottom:10}}>Presi ({MARKETPLACE.filter(m=>m.dir==="done").length})</div>
-          {MARKETPLACE.filter(m=>m.dir==="done").map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",border:`1px solid ${T.line}`,borderRadius:6,marginBottom:6}}><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{m.id} <span style={{color:m.stato==="completato"?T.green:T.amber,fontSize:9}}>{m.stato==="completato"?"Completato":"In corso"}</span></div><div style={{fontSize:12,fontWeight:600}}>{m.titolo}</div><div style={{fontSize:10,color:T.sub}}>{m.zona} · {m.assegnato}</div></div><div style={{fontSize:15,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{m.prezzo}</div></div>)}
+          {MARKETPLACE.filter(m=>m.dir==="done").map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",border:`1px solid ${T.line}`,borderRadius:6,marginBottom:6}}><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{m.id} <span style={{color:m.stato==="completato"?T.green:T.amber,fontSize:9}}>{m.stato}</span></div><div style={{fontSize:12,fontWeight:600}}>{m.titolo}</div><div style={{fontSize:10,color:T.sub}}>{m.assegnato}</div></div><div style={{fontSize:15,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{m.prezzo}</div></div>)}
         </div>
         <div>
           <div style={{fontSize:12,fontWeight:700,color:T.blue,marginBottom:10}}>Disponibili ({MARKETPLACE.filter(m=>m.dir==="in").length})</div>
@@ -429,7 +416,7 @@ export default function PortaleAzienda() {
               <div style={{fontSize:11,color:T.sub}}>{m.zona} · <span style={{fontWeight:600,color:T.ink}}>{m.azienda}</span></div>
               <div style={{fontSize:15,fontWeight:700,color:T.green,fontFamily:T.mono,margin:"4px 0"}}>{"\u20AC"}{m.budget}</div>
               <div style={{fontSize:11,color:T.sub,lineHeight:1.4,marginBottom:8}}>{m.desc}</div>
-              <div style={{display:"flex",gap:6}}><div onClick={()=>alert("Offerta")} style={{padding:"7px 16px",borderRadius:5,background:T.teal,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Fai offerta</div><div style={{padding:"7px 16px",borderRadius:5,background:T.lineLight,color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}}>Dettagli</div></div>
+              <div style={{display:"flex",gap:6}}><div onClick={()=>alert("Offerta")} style={{padding:"7px 16px",borderRadius:5,background:T.teal,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Fai offerta</div><div style={{padding:"7px 16px",borderRadius:5,background:T.lineLight,color:T.sub,fontSize:11,cursor:"pointer"}}>Dettagli</div></div>
             </div>
           ))}
         </div>
@@ -437,10 +424,80 @@ export default function PortaleAzienda() {
     </div>
   );
 
+  /* ═══ PROBLEMI GLOBALI ═══ */
+  const PageProblemi = () => {
+    const all = OPERATORI.flatMap(o=>o.commesse.flatMap(c=>(c.problemi||[]).map(p=>({...p,opNome:o.nome,commId:c.id,cliente:c.cliente,opId:o.id}))));
+    return (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Problemi ({all.length})</div>
+      {all.length===0?<div style={{color:T.green,fontSize:13,fontWeight:600}}>Nessun problema</div>:
+      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
+        {all.map((p,i)=>(
+          <div key={i} onClick={()=>{setSelOp(p.opId);setSelComm(p.commId);setTab("problemi");setPage("operatori");}} style={{padding:"12px 16px",borderBottom:i<all.length-1?`1px solid ${T.lineLight}`:"none",cursor:"pointer"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{width:7,height:7,borderRadius:"50%",background:p.stato==="aperto"?T.red:T.green}}/>
+              <span style={{fontSize:11,fontWeight:700,color:p.stato==="aperto"?T.red:T.green}}>{p.stato.toUpperCase()}</span>
+              <span style={{fontSize:10,fontWeight:600,color:p.prio==="alta"?T.red:T.amber,background:p.prio==="alta"?T.redLight:T.amberLight,padding:"1px 6px",borderRadius:3}}>{p.prio}</span>
+              <span style={{fontSize:10,color:T.teal,fontFamily:T.mono}}>{p.commId}</span>
+              <span style={{fontSize:10,color:T.sub,marginLeft:"auto"}}>{p.opNome} · {p.data}</span>
+            </div>
+            <div style={{fontSize:13,fontWeight:600}}>{p.tit}</div>
+            <div style={{fontSize:11,color:T.sub}}>{p.desc}</div>
+          </div>
+        ))}
+      </div>}
+    </div>
+  );};
+
+  /* ═══ SPESE GLOBALI ═══ */
+  const PageSpese = () => (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Spese ({tutteSpese.length}) · Totale: {"\u20AC"}{tutteSpese.reduce((s,sp)=>s+sp.imp,0).toFixed(2)}</div>
+      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
+        {tutteSpese.map((s,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tutteSpese.length-1?`1px solid ${T.lineLight}`:"none"}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:s.ok==="si"?T.green:T.amber}}/>
+            <div style={{flex:1}}><div style={{fontSize:12,fontWeight:500}}>{s.desc}</div><div style={{fontSize:10,color:T.sub}}>{s.cat} · {s.d} · {s.opNome} · {s.commId}</div></div>
+            <span style={{fontSize:13,fontWeight:600,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(2)}</span>
+            {s.ok==="no"?<div style={{display:"flex",gap:3}}><div onClick={()=>alert("OK")} style={{padding:"4px 10px",borderRadius:4,background:T.greenLight,color:T.green,fontSize:10,fontWeight:700,cursor:"pointer"}}>Approva</div><div onClick={()=>alert("NO")} style={{padding:"4px 10px",borderRadius:4,background:T.redLight,color:T.red,fontSize:10,fontWeight:700,cursor:"pointer"}}>Rifiuta</div></div>:<span style={{fontSize:10,color:T.green,fontWeight:600}}>Approvata</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ═══ DOCUMENTI GLOBALI ═══ */
+  const PageDocumenti = () => (
+    <div style={{flex:1,overflowY:"auto",padding:20}}>
+      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Documenti ({tuttiDoc.length})</div>
+      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
+        {tuttiDoc.map((d,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tuttiDoc.length-1?`1px solid ${T.lineLight}`:"none"}}>
+            <div style={{width:30,height:30,borderRadius:5,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t.toUpperCase()}</span></div>
+            <div style={{flex:1}}><div style={{fontSize:12,fontWeight:500}}>{d.n}</div><div style={{fontSize:10,color:T.sub}}>{d.commId} · {d.cliente} · {d.opNome}</div></div>
+            <span style={{fontSize:10,color:T.muted}}>{d.d}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const getPage = () => {
+    if (page==="dashboard") return <PageDashboard/>;
+    if (page==="calendario") return <PageCalendario/>;
+    if (page==="operatori") return <PageOperatori/>;
+    if (page==="commesse") return <PageCommesse/>;
+    if (page==="marketplace") return <PageMarketplace/>;
+    if (page==="problemi") return <PageProblemi/>;
+    if (page==="spese") return <PageSpese/>;
+    if (page==="documenti") return <PageDocumenti/>;
+    return <PageDashboard/>;
+  };
+
   return (
-    <div style={{display:"flex",flexDirection:"column",fontFamily:T.font,color:T.ink,height:"100vh",overflow:"hidden",background:T.bgAlt}}>
-      <Topbar/>
-      {selOp ? <Dettaglio/> : page==="dashboard" ? <Dashboard/> : <MktPage/>}
+    <div style={{display:"flex",fontFamily:T.font,color:T.ink,height:"100vh",overflow:"hidden",background:T.bgAlt}}>
+      <Sidebar/>
+      {getPage()}
     </div>
   );
 }
