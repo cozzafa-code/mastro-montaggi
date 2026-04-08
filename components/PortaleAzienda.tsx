@@ -40,6 +40,8 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}) {
   const [montaggi,setMontaggi]=useState([]);
   const [fotoFasi,setFotoFasi]=useState([]);
   const [firme,setFirme]=useState([]);
+  const [fatture,setFatture]=useState([]);
+  const [costi,setCosti]=useState([]);
   const pollRef=useRef(null);
 
   useEffect(()=>{
@@ -119,6 +121,12 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}) {
       ]);
       setMontaggi(mt||[]);setFotoFasi((ft||[]).filter(f=>f.fase));setFirme(fm||[]);
     } else {setMontaggi([]);setFotoFasi([]);setFirme([]);}
+    // Load fatture e costi
+    const [fat,cos]=await Promise.all([
+      sb.get('fatture_freelance',{richiesta_id:'eq.'+r.id,order:'data_emissione.desc'}),
+      sb.get('costi_commessa',{richiesta_id:'eq.'+r.id,order:'data.desc'}),
+    ]);
+    setFatture(fat||[]);setCosti(cos||[]);
   };
 
   const getFreelancerName=(opId)=>{const f=freelancers.find(x=>x.id===opId);return f?`${f.nome} ${f.cognome}`:'—';};
@@ -382,6 +390,134 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}) {
 
           {/* Firma */}
           {firma&&<Cd t="Firma collaudo"><div style={{textAlign:'center'}}><img src={firma.firma_url} alt="Firma" style={{maxWidth:'100%',maxHeight:150,border:`1px solid ${DS.border}`,borderRadius:8}}/><div style={{fontSize:11,color:DS.textMid,marginTop:6}}>Firmato da {firma.firmato_da}</div></div></Cd>}
+
+          {/* FATTURE */}
+          {fatture.length>0&&<Cd t={`Fatture (${fatture.length})`}>
+            {fatture.map(f=>{
+              const stCol=f.stato==='pagata'?DS.green:f.stato==='scaduta'?DS.red:f.stato==='emessa'||f.stato==='inviata'?DS.amber:'#6B7280';
+              const stBg=f.stato==='pagata'?'#D1FAE5':f.stato==='scaduta'?'#FEE2E2':f.stato==='emessa'||f.stato==='inviata'?'#FEF3C7':'#F3F4F6';
+              return(
+                <div key={f.id} style={{background:'#F4FAFA',borderRadius:10,padding:12,marginBottom:8,border:`1px solid ${DS.border}`}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                    <div>
+                      <span style={{fontWeight:700,fontSize:14,color:DS.text}}>N. {f.numero}</span>
+                      <span style={{fontSize:11,color:DS.textMid,marginLeft:8}}>{new Date(f.data_emissione).toLocaleDateString('it-IT')}</span>
+                    </div>
+                    <span style={{fontSize:10,fontWeight:700,color:stCol,background:stBg,borderRadius:4,padding:'2px 8px'}}>
+                      {f.stato==='pagata'?'Pagata':f.stato==='scaduta'?'Scaduta':f.stato==='emessa'?'Emessa':f.stato==='inviata'?'Inviata':f.stato}
+                    </span>
+                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{fontSize:12,color:DS.textMid}}>
+                      Imponibile {'\u20AC'}{f.importo} + IVA {f.iva_pct}%
+                    </div>
+                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:16,color:DS.teal}}>{'\u20AC'}{f.totale||f.importo}</div>
+                  </div>
+                  {f.data_scadenza&&<div style={{fontSize:11,color:f.stato==='scaduta'?DS.red:DS.textLight,marginTop:4}}>Scadenza: {new Date(f.data_scadenza).toLocaleDateString('it-IT')}</div>}
+                  {f.pdf_url&&<a href={f.pdf_url} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,marginTop:6,fontSize:11,color:DS.teal,fontWeight:600,textDecoration:'none'}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Scarica PDF
+                  </a>}
+                </div>
+              );
+            })}
+            {(()=>{
+              const totFatt=fatture.reduce((s,f)=>s+(f.totale||f.importo||0),0);
+              const totPagato=fatture.filter(f=>f.stato==='pagata').reduce((s,f)=>s+(f.totale||f.importo||0),0);
+              const daPagare=totFatt-totPagato;
+              return(
+                <div style={{background:'#E0F2F1',borderRadius:8,padding:'10px 14px',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center',marginTop:4}}>
+                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:DS.tealDark}}>{'\u20AC'}{totFatt.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Totale</div></div>
+                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:DS.green}}>{'\u20AC'}{totPagato.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Pagato</div></div>
+                  <div><div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:14,color:daPagare>0?DS.red:DS.green}}>{'\u20AC'}{daPagare.toFixed(0)}</div><div style={{fontSize:9,color:DS.textMid}}>Da pagare</div></div>
+                </div>
+              );
+            })()}
+          </Cd>}
+
+          {/* COSTI COMMESSA */}
+          {costi.length>0&&<Cd t={`Dettaglio costi (${costi.length})`}>
+            {costi.map(c=>(
+              <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${DS.border}`}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:DS.text}}>{c.descrizione}</div>
+                  <div style={{fontSize:10,color:DS.textLight}}>{c.tipo} · {new Date(c.data).toLocaleDateString('it-IT')}{c.quantita>1?` · x${c.quantita}`:''}</div>
+                </div>
+                <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:700,fontSize:13,color:DS.text}}>{'\u20AC'}{c.totale||c.importo}</div>
+              </div>
+            ))}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,marginTop:4}}>
+              <span style={{fontSize:12,fontWeight:700,color:DS.text}}>Totale costi</span>
+              <span style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:16,color:DS.teal}}>{'\u20AC'}{costi.reduce((s,c)=>s+(c.totale||c.importo||0),0).toFixed(2)}</span>
+            </div>
+          </Cd>}
+
+          {/* RIEPILOGO ECONOMICO */}
+          {(fatture.length>0||costi.length>0||montaggio)&&<Cd t="Riepilogo economico">
+            {(()=>{
+              const budgetOrig=r.budget||0;
+              const totCosti=costi.reduce((s,c)=>s+(c.totale||c.importo||0),0);
+              const totFatturato=fatture.reduce((s,f)=>s+(f.totale||f.importo||0),0);
+              const oreReali=montaggio?.ore_reali||0;
+              const orePrev=montaggio?.ore_preventivate||0;
+              const costoOrario=oreReali>0?totCosti/oreReali:0;
+              return(
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
+                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.teal}}>{'\u20AC'}{budgetOrig}</div>
+                    <div style={{fontSize:10,color:DS.textMid}}>Budget accordato</div>
+                  </div>
+                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
+                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:totCosti>budgetOrig?DS.red:DS.green}}>{'\u20AC'}{totCosti.toFixed(0)}</div>
+                    <div style={{fontSize:10,color:DS.textMid}}>Costo effettivo</div>
+                  </div>
+                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
+                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.text}}>{oreReali?oreReali.toFixed(1):'\u2014'}h</div>
+                    <div style={{fontSize:10,color:DS.textMid}}>Ore reali{orePrev?` / ${orePrev}h prev.`:''}</div>
+                  </div>
+                  <div style={{background:'#F4FAFA',borderRadius:10,padding:12,textAlign:'center'}}>
+                    <div style={{fontFamily:'"JetBrains Mono",monospace',fontWeight:800,fontSize:18,color:DS.text}}>{costoOrario>0?`\u20AC${costoOrario.toFixed(0)}/h`:'\u2014'}</div>
+                    <div style={{fontSize:10,color:DS.textMid}}>Costo orario eff.</div>
+                  </div>
+                </div>
+              );
+            })()}
+          </Cd>}
+
+          {/* EXPORT REPORT */}
+          <Cd t="Report">
+            <button onClick={()=>{
+              // Genera report testuale da stampare/salvare come PDF dal browser
+              const w=window.open('','_blank');
+              if(!w) return;
+              const vani=r.vani_json||[];
+              const totCosti=costi.reduce((s,c)=>s+(c.totale||c.importo||0),0);
+              w.document.write(`<html><head><title>Report ${r.cliente}</title><style>body{font-family:system-ui;padding:40px;max-width:800px;margin:0 auto}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}th{background:#f0f0f0;font-weight:700}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}.kpi{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:16px 0}.kpi div{text-align:center;padding:12px;background:#f8f8f8;border-radius:8px}.kpi .n{font-size:20px;font-weight:800}.kpi .l{font-size:10px;color:#666}</style></head><body>`);
+              w.document.write(`<div class="header"><div><h1 style="margin:0">Report Commessa</h1><p style="color:#666">${r.cliente} — ${r.indirizzo}</p><p style="color:#999;font-size:12px">Generato il ${new Date().toLocaleDateString('it-IT')}</p></div></div>`);
+              w.document.write(`<div class="kpi"><div><div class="n">${vani.length}</div><div class="l">Vani</div></div><div><div class="n">\u20AC${r.budget||0}</div><div class="l">Budget</div></div><div><div class="n">\u20AC${totCosti.toFixed(0)}</div><div class="l">Costi</div></div><div><div class="n">${montaggio?.ore_reali?montaggio.ore_reali.toFixed(1)+'h':'\u2014'}</div><div class="l">Ore</div></div></div>`);
+              if(vani.length>0){
+                w.document.write(`<h3>Vani</h3><table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th><th>Note</th></tr>`);
+                vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'x'+v.altezza:'\u2014'}</td><td>${v.stanza||'\u2014'}</td><td>${v.note||''}</td></tr>`));
+                w.document.write(`</table>`);
+              }
+              if(costi.length>0){
+                w.document.write(`<h3>Dettaglio costi</h3><table><tr><th>Descrizione</th><th>Tipo</th><th>Data</th><th>Importo</th></tr>`);
+                costi.forEach(c=>w.document.write(`<tr><td>${c.descrizione}</td><td>${c.tipo}</td><td>${new Date(c.data).toLocaleDateString('it-IT')}</td><td>\u20AC${c.totale||c.importo}</td></tr>`));
+                w.document.write(`<tr><td colspan="3" style="font-weight:700;text-align:right">Totale</td><td style="font-weight:700">\u20AC${totCosti.toFixed(2)}</td></tr></table>`);
+              }
+              if(fatture.length>0){
+                w.document.write(`<h3>Fatture</h3><table><tr><th>N.</th><th>Data</th><th>Importo</th><th>Stato</th></tr>`);
+                fatture.forEach(f=>w.document.write(`<tr><td>${f.numero}</td><td>${new Date(f.data_emissione).toLocaleDateString('it-IT')}</td><td>\u20AC${f.totale||f.importo}</td><td>${f.stato}</td></tr>`));
+                w.document.write(`</table>`);
+              }
+              w.document.write(`<p style="margin-top:40px;color:#999;font-size:11px">Report generato da MASTRO Suite — mastro-montaggi.vercel.app</p></body></html>`);
+              w.document.close();
+              w.print();
+            }} style={{width:'100%',background:'linear-gradient(135deg,#0D1F1F,#1a3a3a)',color:'#fff',border:'none',borderRadius:12,padding:'14px 0',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Stampa / Salva report PDF
+            </button>
+          </Cd>
         </div>
       </div>
     );
