@@ -728,42 +728,54 @@ export default function PortaleAzienda() {
                             {commRef.doc.map((d,di)=><div key={di} style={{display:"flex",gap:4,padding:"2px 0",fontSize:10}}><span style={{width:14,height:14,borderRadius:3,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:6,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t}</span></span><span style={{flex:1}}>{d.n}</span></div>)}</>}
                           </div>
                         </div>
-                        {/* Problemi con azione */}
-                        {(commRef.problemi||[]).filter(p=>p.stato==="aperto").length>0&&<div style={{marginTop:8,padding:"8px 10px",background:T.redLight,borderRadius:5,border:`1px solid ${T.red}20`}}>
-                          <div style={{fontSize:10,fontWeight:700,color:T.red,marginBottom:4}}>PROBLEMI APERTI</div>
-                          {(commRef.problemi||[]).filter(p=>p.stato==="aperto").map((p,pi)=><div key={pi} style={{marginBottom:4}}>
-                            <div style={{fontSize:10,fontWeight:600,color:T.red}}>{p.tit}</div>
-                            <div style={{fontSize:9,color:T.sub}}>{p.desc}</div>
-                            <div style={{display:"flex",gap:4,marginTop:3}}>
-                              <div onClick={(e)=>{e.stopPropagation();alert("Problema risolto")}} style={{padding:"3px 8px",borderRadius:3,background:T.green,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Risolto</div>
-                              <div onClick={(e)=>{e.stopPropagation();alert("Mando rinforzo")}} style={{padding:"3px 8px",borderRadius:3,background:T.blue,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Mando rinforzo</div>
-                              <div onClick={(e)=>{e.stopPropagation();alert("Rispondi al problema")}} style={{padding:"3px 8px",borderRadius:3,background:T.amber,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Rispondi</div>
-                            </div>
-                          </div>)}
-                        </div>}
-                        {/* Chat rapida */}
-                        {commRef.chat.length>0&&<div style={{marginTop:8}}>
-                          <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>ULTIMI MESSAGGI</div>
-                          {commRef.chat.slice(-3).map((m,mi)=>{
-                            const cc={op:T.teal,uff:T.blue,cli:T.green,ai:T.purple}[m.tipo]||T.sub;
-                            return <div key={mi} style={{display:"flex",gap:5,padding:"3px 0",fontSize:10}}>
-                              <span style={{width:4,height:4,borderRadius:"50%",background:cc,marginTop:4,flexShrink:0}}/>
-                              <span style={{fontWeight:600,color:cc,minWidth:40}}>{m.da}</span>
-                              <span style={{color:T.ink}}>{m.t}</span>
-                              <span style={{color:T.muted,marginLeft:"auto",fontSize:9}}>{m.ora}</span>
-                            </div>;
-                          })}
-                        </div>}
-                        {/* Spese da approvare */}
-                        {commRef.spese.filter(s=>s.ok==="no").length>0&&<div style={{marginTop:8}}>
-                          <div style={{fontSize:10,fontWeight:700,color:T.amber,marginBottom:4}}>SPESE DA APPROVARE</div>
-                          {commRef.spese.filter(s=>s.ok==="no").map((s,si)=><div key={si} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0"}}>
-                            <span style={{fontSize:10,flex:1}}>{s.desc}</span>
-                            <span style={{fontSize:10,fontWeight:600,fontFamily:T.mono}}>{"€"}{s.imp.toFixed(2)}</span>
-                            <div onClick={(e)=>{e.stopPropagation();alert("Approvata")}} style={{padding:"2px 8px",borderRadius:3,background:T.green,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>OK</div>
-                            <div onClick={(e)=>{e.stopPropagation();alert("Rifiutata")}} style={{padding:"2px 8px",borderRadius:3,background:T.red,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>NO</div>
-                          </div>)}
-                        </div>}
+                        {/* ═══ WORKFLOW COMPLETO — chi ha fatto cosa ═══ */}
+                        <div style={{marginTop:8}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:6}}>WORKFLOW — chi ha fatto cosa</div>
+                          <div style={{position:"relative",paddingLeft:14}}>
+                            <div style={{position:"absolute",left:5,top:0,bottom:0,width:1,background:T.lineLight}}/>
+                            {/* Merge timeline + chat + spese + problemi in ordine cronologico */}
+                            {[
+                              ...commRef.timeline.map(t=>({time:t.d,type:"milestone",text:t.e})),
+                              ...commRef.chat.map(m=>({time:m.ora,type:"chat",text:m.t,da:m.da,chatTipo:m.tipo})),
+                              ...(commRef.problemi||[]).map(p=>({time:p.data,type:"problema",text:p.tit,desc:p.desc,prio:p.prio,stato:p.stato})),
+                              ...commRef.spese.map(s=>({time:s.d,type:"spesa",text:s.desc,imp:s.imp,ok:s.ok,cat:s.cat})),
+                              ...commRef.firme.filter(f=>f.ok).map(f=>({time:f.data,type:"firma",text:f.tipo,chi:f.chi})),
+                            ].sort((a,b)=>a.time>b.time?1:-1).map((ev,ei)=>{
+                              const dotColor = ev.type==="problema"?T.red:ev.type==="chat"?({op:T.teal,uff:T.blue,cli:T.green,ai:T.purple}[ev.chatTipo]||T.sub):ev.type==="spesa"?T.amber:ev.type==="firma"?T.green:T.teal;
+                              return (
+                                <div key={ei} style={{position:"relative",paddingLeft:12,paddingBottom:6,marginBottom:2}}>
+                                  <div style={{position:"absolute",left:0,top:4,width:10,height:10,borderRadius:"50%",background:dotColor,border:"2px solid #fff",zIndex:1}}/>
+                                  <div style={{display:"flex",alignItems:"flex-start",gap:6}}>
+                                    <span style={{fontSize:8,color:T.muted,fontFamily:T.mono,minWidth:46,marginTop:1}}>{ev.time}</span>
+                                    <div style={{flex:1}}>
+                                      {ev.type==="chat"&&<div style={{fontSize:10}}><span style={{fontWeight:600,color:dotColor}}>{ev.da}</span> <span style={{color:T.ink}}>{ev.text}</span></div>}
+                                      {ev.type==="milestone"&&<div style={{fontSize:10,color:T.teal,fontWeight:600}}>{ev.text}</div>}
+                                      {ev.type==="problema"&&<div>
+                                        <div style={{fontSize:10,fontWeight:700,color:T.red}}>{ev.stato==="aperto"?"PROBLEMA":"RISOLTO"}: {ev.text}</div>
+                                        <div style={{fontSize:9,color:T.sub}}>{ev.desc}</div>
+                                        {ev.stato==="aperto"&&<div style={{display:"flex",gap:3,marginTop:3}}>
+                                          <div onClick={(e)=>{e.stopPropagation();alert("Risolto")}} style={{padding:"3px 8px",borderRadius:3,background:T.green,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Segna risolto</div>
+                                          <div onClick={(e)=>{e.stopPropagation();alert("Rinforzo")}} style={{padding:"3px 8px",borderRadius:3,background:T.blue,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Mando rinforzo</div>
+                                          <div onClick={(e)=>{e.stopPropagation();alert("Rispondi")}} style={{padding:"3px 8px",borderRadius:3,background:T.amber,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Rispondi</div>
+                                        </div>}
+                                      </div>}
+                                      {ev.type==="spesa"&&<div style={{display:"flex",alignItems:"center",gap:6}}>
+                                        <span style={{fontSize:10}}>{ev.text} · {ev.cat}</span>
+                                        <span style={{fontSize:10,fontWeight:600,fontFamily:T.mono}}>{"\u20AC"}{ev.imp.toFixed(2)}</span>
+                                        {ev.ok==="no"&&<>
+                                          <div onClick={(e)=>{e.stopPropagation();alert("OK")}} style={{padding:"2px 6px",borderRadius:3,background:T.green,color:"#fff",fontSize:7,fontWeight:700,cursor:"pointer"}}>OK</div>
+                                          <div onClick={(e)=>{e.stopPropagation();alert("NO")}} style={{padding:"2px 6px",borderRadius:3,background:T.red,color:"#fff",fontSize:7,fontWeight:700,cursor:"pointer"}}>NO</div>
+                                        </>}
+                                        {ev.ok==="si"&&<span style={{fontSize:8,color:T.green}}>Approvata</span>}
+                                      </div>}
+                                      {ev.type==="firma"&&<div style={{fontSize:10,color:T.green}}>{ev.text} — firmato da {ev.chi}</div>}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>}
                     </div>
                   </div>
