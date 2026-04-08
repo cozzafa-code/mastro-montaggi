@@ -174,7 +174,7 @@ export default function PortaleAzienda() {
 
   /* ═══ SIDEBAR ═══ */
   const Sidebar = () => (
-    <div style={{width:sideOpen?200:56,background:"#0D1F1F",display:"flex",flexDirection:"column",paddingTop:12,flexShrink:0,transition:"width .2s ease",overflow:"hidden"}}>
+    <div style={{width:sideOpen?220:56,background:"#0D1F1F",display:"flex",flexDirection:"column",paddingTop:12,flexShrink:0,transition:"width .2s ease",overflow:"hidden"}}>
       {/* Logo + toggle */}
       <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 12px",marginBottom:16}}>
         <div style={{width:32,height:32,borderRadius:7,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -192,9 +192,9 @@ export default function PortaleAzienda() {
           const badge = n.id==="problemi"?tuttiProb.length:n.id==="spese"?tutteSpese.filter(s=>s.ok==="no").length:0;
           return (
             <div key={n.id} onClick={() => {setPage(n.id);setSelOp(null);setSelComm(null);}}
-              style={{display:"flex",alignItems:"center",gap:10,padding:sideOpen?"8px 10px":"8px 0",borderRadius:6,cursor:"pointer",color:active?"#fff":"rgba(255,255,255,.45)",background:active?"rgba(255,255,255,.1)":"transparent",transition:"all .15s",position:"relative",justifyContent:sideOpen?"flex-start":"center"}}>
+              style={{display:"flex",alignItems:"center",gap:10,padding:sideOpen?"10px 12px":"10px 0",borderRadius:6,cursor:"pointer",color:active?"#fff":"rgba(255,255,255,.45)",background:active?"rgba(255,255,255,.1)":"transparent",transition:"all .15s",position:"relative",justifyContent:sideOpen?"flex-start":"center"}}>
               <div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:20}}><NavIcon d={n.icon}/></div>
-              {sideOpen&&<span style={{fontSize:12,fontWeight:active?700:500,whiteSpace:"nowrap"}}>{n.label}</span>}
+              {sideOpen&&<span style={{fontSize:13,fontWeight:active?700:500,whiteSpace:"nowrap"}}>{n.label}</span>}
               {badge>0&&<span style={{position:sideOpen?"static":"absolute",top:sideOpen?undefined:2,right:sideOpen?undefined:0,marginLeft:sideOpen?"auto":0,minWidth:18,height:18,borderRadius:9,background:T.red,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{badge}</span>}
             </div>
           );
@@ -214,8 +214,8 @@ export default function PortaleAzienda() {
     const liberi = OPERATORI.filter(o=>o.stato==="disponibile"||o.stato==="in_pausa").length;
     const assenti = OPERATORI.filter(o=>o.stato==="non_disponibile");
     return (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Centro Controllo</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Centro Controllo</div>
       {/* KPI */}
       <div style={{display:"flex",gap:10,marginBottom:16}}>
         {[{l:"In cantiere",v:inCant,c:T.green,s:`su ${OPERATORI.length}`},{l:"Liberi",v:liberi,c:T.teal,s:"assegnabili"},{l:"Assenti",v:assenti.length,c:T.red,s:assenti.map(o=>o.nome.split(" ")[0]).join(",")||"\u2014"},{l:"Commesse attive",v:tutteComm.filter(c=>c.stato==="in_corso").length,c:T.ink,s:`${tutteComm.length} tot`},{l:"Bloccate",v:tutteComm.filter(c=>c.stato==="in_attesa_materiali").length,c:T.amber,s:"materiali"},{l:"Problemi",v:tuttiProb.length,c:tuttiProb.length?T.red:T.green,s:tuttiProb.length?tuttiProb[0].tit.substring(0,25)+"...":"OK"},{l:"Spese",v:tutteSpese.filter(s=>s.ok==="no").length,c:tutteSpese.filter(s=>s.ok==="no").length?T.amber:T.green,s:tutteSpese.filter(s=>s.ok==="no").length?`\u20AC${tutteSpese.filter(s=>s.ok==="no").reduce((a,b)=>a+b.imp,0).toFixed(0)}`:"OK"},{l:"Cert. scad.",v:certScad.length,c:certScad.length?T.amber:T.green,s:certScad.length?certScad[0].opNome:"OK"}].map((k,i)=>(
@@ -264,34 +264,39 @@ export default function PortaleAzienda() {
 
   /* ═══ CALENDARIO ═══ */
   const PageCalendario = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Calendario settimana — 7-11 Aprile 2026</div>
-      <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,overflow:"hidden"}}>
-        <div style={{display:"grid",gridTemplateColumns:"120px repeat(5,1fr)",borderBottom:`1px solid ${T.line}`}}>
-          <div style={{padding:"10px 12px",fontWeight:700,fontSize:11,color:T.muted}}>Operatore</div>
-          {["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"].map(g=><div key={g} style={{padding:"10px 8px",fontSize:11,fontWeight:700,color:g.includes("08")?T.teal:T.ink,textAlign:"center",borderLeft:`1px solid ${T.line}`,background:g.includes("08")?"rgba(26,158,143,0.04)":"transparent"}}>{g}{g.includes("08")?" OGGI":""}</div>)}
-        </div>
-        {OPERATORI.map((o,oi)=>(
-          <div key={o.id} style={{display:"grid",gridTemplateColumns:"120px repeat(5,1fr)",borderBottom:oi<OPERATORI.length-1?`1px solid ${T.lineLight}`:"none"}}>
-            <div onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{padding:"8px 10px",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
-              <div style={{width:24,height:24,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-              <div><div style={{fontSize:10,fontWeight:600}}>{o.nome.split(" ")[0]}</div><div style={{fontSize:8,color:T.muted}}>{o.ruolo}</div></div>
-            </div>
-            {(o.agenda||[]).map((g,gi)=>(
-              <div key={gi} style={{padding:"6px 4px",borderLeft:`1px solid ${T.lineLight}`,background:gi===1?"rgba(26,158,143,0.02)":"transparent"}}>
-                {g.a?(
-                  <div style={{background:`${g.col||T.muted}12`,borderLeft:`3px solid ${g.col||T.muted}`,borderRadius:"0 4px 4px 0",padding:"4px 6px",height:"100%"}}>
-                    {g.c&&<div style={{fontSize:8,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono}}>{g.c}</div>}
-                    <div style={{fontSize:9,color:T.sub,lineHeight:1.3}}>{g.a}</div>
-                    {g.h&&<div style={{fontSize:8,color:T.muted}}>{g.h}</div>}
-                  </div>
-                ):(
-                  <div style={{height:"100%",minHeight:36,borderRadius:4,background:T.lineLight,opacity:.2}}/>
-                )}
-              </div>
-            ))}
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{padding:"20px 28px 14px",flexShrink:0}}>
+        <div style={{fontSize:20,fontWeight:700}}>Calendario settimana</div>
+        <div style={{fontSize:13,color:T.sub,marginTop:2}}>7-11 Aprile 2026 · {OPERATORI.length} operatori</div>
+      </div>
+      <div style={{flex:1,overflow:"auto",padding:"0 28px 28px"}}>
+        <div style={{background:T.bg,borderRadius:10,border:`1px solid ${T.line}`,overflow:"hidden",minWidth:900}}>
+          <div style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",borderBottom:`2px solid ${T.line}`,position:"sticky",top:0,background:T.bg,zIndex:2}}>
+            <div style={{padding:"14px 16px",fontWeight:700,fontSize:12,color:T.muted}}>Operatore</div>
+            {["Lun 07","Mar 08","Mer 09","Gio 10","Ven 11"].map(g=><div key={g} style={{padding:"14px 12px",fontSize:13,fontWeight:700,color:g.includes("08")?T.teal:T.ink,textAlign:"center",borderLeft:`1px solid ${T.line}`,background:g.includes("08")?"rgba(26,158,143,0.05)":"transparent"}}>{g}{g.includes("08")?" OGGI":""}</div>)}
           </div>
-        ))}
+          {OPERATORI.map((o,oi)=>(
+            <div key={o.id} style={{display:"grid",gridTemplateColumns:"160px repeat(5,1fr)",borderBottom:oi<OPERATORI.length-1?`1px solid ${T.lineLight}`:"none",minHeight:64}}>
+              <div onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+                <div style={{width:32,height:32,borderRadius:7,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+                <div><div style={{fontSize:12,fontWeight:600}}>{o.nome.split(" ")[0]}</div><div style={{fontSize:10,color:T.muted}}>{o.ruolo}</div></div>
+              </div>
+              {(o.agenda||[]).map((g,gi)=>(
+                <div key={gi} style={{padding:"8px 6px",borderLeft:`1px solid ${T.lineLight}`,background:gi===1?"rgba(26,158,143,0.03)":"transparent",display:"flex",alignItems:"stretch"}}>
+                  {g.a?(
+                    <div style={{width:"100%",background:`${g.col||T.muted}12`,borderLeft:`4px solid ${g.col||T.muted}`,borderRadius:"0 6px 6px 0",padding:"8px 10px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                      {g.c&&<div style={{fontSize:10,fontWeight:700,color:g.col||T.muted,fontFamily:T.mono,marginBottom:2}}>{g.c}</div>}
+                      <div style={{fontSize:11,color:T.ink,lineHeight:1.4}}>{g.a}</div>
+                      {g.h&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>{g.h}</div>}
+                    </div>
+                  ):(
+                    <div style={{width:"100%",borderRadius:6,background:T.lineLight,opacity:.15}}/>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -300,8 +305,8 @@ export default function PortaleAzienda() {
   const PageOperatori = () => {
     if (selOp && op) return <DettaglioOp/>;
     return (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Operatori ({OPERATORI.length})</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Operatori ({OPERATORI.length})</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
         {OPERATORI.map(o=>{const sc=SC(o.stato);const oggi=(o.agenda||[]).find(g=>g.g==="Mar");return(
           <div key={o.id} onClick={()=>{setSelOp(o.id);setSelComm(null);}} style={{background:T.bg,border:`1px solid ${T.line}`,borderRadius:8,padding:"14px 16px",cursor:"pointer"}}>
@@ -332,7 +337,7 @@ export default function PortaleAzienda() {
         <a href={`https://wa.me/${op.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"6px 12px",borderRadius:5,background:"#DCF8C6",color:"#128C7E",fontSize:10,fontWeight:700,textDecoration:"none"}}>WA</a>
         <span style={{fontSize:10,fontWeight:600,color:SC(op.stato).fg,background:SC(op.stato).bg,padding:"3px 8px",borderRadius:4}}>{SC(op.stato).l}</span>
       </div>
-      <div style={{padding:20}}>
+      <div style={{padding:28}}>
         {!selComm?(
           <>
             <div style={{display:"flex",gap:14,marginBottom:16,flexWrap:"wrap"}}>
@@ -384,8 +389,8 @@ export default function PortaleAzienda() {
 
   /* ═══ COMMESSE GLOBALI ═══ */
   const PageCommesse = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Tutte le commesse ({tutteComm.length})</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Tutte le commesse ({tutteComm.length})</div>
       <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,overflow:"hidden"}}>
         {tutteComm.map((c,i)=>(
           <div key={c.id+c.opNome} onClick={()=>{setSelOp(c.opId);setSelComm(c.id);setTab("vani");setPage("operatori");}} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tutteComm.length-1?`1px solid ${T.lineLight}`:"none",cursor:"pointer"}}>
@@ -536,8 +541,8 @@ export default function PortaleAzienda() {
   const PageProblemi = () => {
     const all = OPERATORI.flatMap(o=>o.commesse.flatMap(c=>(c.problemi||[]).map(p=>({...p,opNome:o.nome,commId:c.id,cliente:c.cliente,opId:o.id}))));
     return (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Problemi ({all.length})</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Problemi ({all.length})</div>
       {all.length===0?<div style={{color:T.green,fontSize:13,fontWeight:600}}>Nessun problema</div>:
       <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
         {all.map((p,i)=>(
@@ -559,8 +564,8 @@ export default function PortaleAzienda() {
 
   /* ═══ SPESE GLOBALI ═══ */
   const PageSpese = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Spese ({tutteSpese.length}) · Totale: {"\u20AC"}{tutteSpese.reduce((s,sp)=>s+sp.imp,0).toFixed(2)}</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Spese ({tutteSpese.length}) · Totale: {"\u20AC"}{tutteSpese.reduce((s,sp)=>s+sp.imp,0).toFixed(2)}</div>
       <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
         {tutteSpese.map((s,i)=>(
           <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tutteSpese.length-1?`1px solid ${T.lineLight}`:"none"}}>
@@ -576,8 +581,8 @@ export default function PortaleAzienda() {
 
   /* ═══ DOCUMENTI GLOBALI ═══ */
   const PageDocumenti = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Documenti ({tuttiDoc.length})</div>
+    <div style={{flex:1,overflowY:"auto",padding:28}}>
+      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Documenti ({tuttiDoc.length})</div>
       <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`}}>
         {tuttiDoc.map((d,i)=>(
           <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:i<tuttiDoc.length-1?`1px solid ${T.lineLight}`:"none"}}>
