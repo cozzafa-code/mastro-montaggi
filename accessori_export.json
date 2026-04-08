@@ -1,0 +1,749 @@
+[
+  {
+    "id_orig": "MI-001",
+    "cat": "maniglie",
+    "codice": "3060",
+    "nome": "Martellina Karma DK",
+    "fornitore": "master",
+    "prezzo": 18.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-002",
+    "cat": "maniglie",
+    "codice": "3060K",
+    "nome": "Martellina Karma DK con chiave",
+    "fornitore": "master",
+    "prezzo": 25.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-003",
+    "cat": "maniglie",
+    "codice": "3060R",
+    "nome": "Martellina Karma Ribassata",
+    "fornitore": "master",
+    "prezzo": 20.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-004",
+    "cat": "maniglie",
+    "codice": "3067",
+    "nome": "Doppia Maniglia Karma",
+    "fornitore": "master",
+    "prezzo": 32.0,
+    "um": "coppia"
+  },
+  {
+    "id_orig": "MI-005",
+    "cat": "cremonesi",
+    "codice": "6065",
+    "nome": "Cremonese Karma Apertura Esterna",
+    "fornitore": "master",
+    "prezzo": 28.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-006",
+    "cat": "cremonesi",
+    "codice": "6060",
+    "nome": "Cremonese Karma Standard",
+    "fornitore": "master",
+    "prezzo": 22.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-007",
+    "cat": "cremonesi",
+    "codice": "6060L",
+    "nome": "Cremonese Karma Logica",
+    "fornitore": "master",
+    "prezzo": 35.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-008",
+    "cat": "maniglie",
+    "codice": "3060MD",
+    "nome": "Martellina Karma Minimal Design",
+    "fornitore": "master",
+    "prezzo": 22.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-010",
+    "cat": "maniglie",
+    "codice": "3042",
+    "nome": "Martellina Semplice / Italia",
+    "fornitore": "master",
+    "prezzo": 12.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-011",
+    "cat": "maniglie",
+    "codice": "3045",
+    "nome": "Martellina Italia DK",
+    "fornitore": "master",
+    "prezzo": 14.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-020",
+    "cat": "cremonesi",
+    "codice": "A6004",
+    "nome": "Cremonese Comfort",
+    "fornitore": "master",
+    "prezzo": 16.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-021",
+    "cat": "cremonesi",
+    "codice": "A6010",
+    "nome": "Cremonese Comfort Plus",
+    "fornitore": "master",
+    "prezzo": 18.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-022",
+    "cat": "cremonesi",
+    "codice": "6003E",
+    "nome": "Cremonese Master Apertura Interna",
+    "fornitore": "master",
+    "prezzo": 12.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-023",
+    "cat": "cremonesi",
+    "codice": "6028",
+    "nome": "Cremonese Master Apertura Esterna Persiana",
+    "fornitore": "master",
+    "prezzo": 28.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-030",
+    "cat": "maniglie",
+    "codice": "3070Q7",
+    "nome": "Maniglione Alzante Karma Q7",
+    "fornitore": "master",
+    "prezzo": 45.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-031",
+    "cat": "maniglie",
+    "codice": "3070Q10",
+    "nome": "Maniglione Alzante Karma Q10",
+    "fornitore": "master",
+    "prezzo": 48.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-040",
+    "cat": "cerniere",
+    "codice": "TR-100",
+    "nome": "Cerniera Top Rapid",
+    "fornitore": "master",
+    "prezzo": 8.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-041",
+    "cat": "cerniere",
+    "codice": "TR-120",
+    "nome": "Cerniera Top Rapid Pesante",
+    "fornitore": "master",
+    "prezzo": 12.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-050",
+    "cat": "ferramenta_ar",
+    "codice": "FL-001",
+    "nome": "Fast Lock Chiusura Multipunto",
+    "fornitore": "master",
+    "prezzo": 35.0,
+    "um": "kit"
+  },
+  {
+    "id_orig": "MI-051",
+    "cat": "ferramenta_ar",
+    "codice": "SHARK",
+    "nome": "Movimentazione Shark",
+    "fornitore": "master",
+    "prezzo": 22.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MI-060",
+    "cat": "motorizzazioni",
+    "codice": "APRO-01",
+    "nome": "Attuatore Apro Smart",
+    "fornitore": "master",
+    "prezzo": 180.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-001",
+    "cat": "serrature",
+    "codice": "11721-60",
+    "nome": "Serratura da Infilare Cisa",
+    "fornitore": "cisa",
+    "prezzo": 28.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-002",
+    "cat": "serrature",
+    "codice": "44150",
+    "nome": "Elettroserratura Cisa Elettrika",
+    "fornitore": "cisa",
+    "prezzo": 65.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-003",
+    "cat": "serrature",
+    "codice": "57010",
+    "nome": "Serratura Multitop Matic",
+    "fornitore": "cisa",
+    "prezzo": 120.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-004",
+    "cat": "serrature",
+    "codice": "46260",
+    "nome": "Serratura Cisa per Alluminio",
+    "fornitore": "cisa",
+    "prezzo": 35.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-005",
+    "cat": "serrature",
+    "codice": "14020",
+    "nome": "Serratura Cisa Doppia Mappa",
+    "fornitore": "cisa",
+    "prezzo": 45.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-010",
+    "cat": "cilindri",
+    "codice": "OA310-30",
+    "nome": "Cilindro Europeo Cisa Asix",
+    "fornitore": "cisa",
+    "prezzo": 25.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-011",
+    "cat": "cilindri",
+    "codice": "OA3S1-30",
+    "nome": "Cilindro Europeo Cisa RS5",
+    "fornitore": "cisa",
+    "prezzo": 55.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-012",
+    "cat": "cilindri",
+    "codice": "OA3SO-30",
+    "nome": "Cilindro Cisa C3000S",
+    "fornitore": "cisa",
+    "prezzo": 40.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-020",
+    "cat": "chiudiporta",
+    "codice": "60460",
+    "nome": "Chiudiporta Cisa C1510",
+    "fornitore": "cisa",
+    "prezzo": 55.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-021",
+    "cat": "chiudiporta",
+    "codice": "60480",
+    "nome": "Chiudiporta Cisa C6010",
+    "fornitore": "cisa",
+    "prezzo": 85.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-030",
+    "cat": "maniglioni",
+    "codice": "59801",
+    "nome": "Maniglione Antipanico Cisa Alpha Push",
+    "fornitore": "cisa",
+    "prezzo": 180.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-031",
+    "cat": "maniglioni",
+    "codice": "59811",
+    "nome": "Maniglione Antipanico Cisa Alpha Touch",
+    "fornitore": "cisa",
+    "prezzo": 195.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "CI-032",
+    "cat": "maniglioni",
+    "codice": "59803",
+    "nome": "Maniglione Antipanico Cisa Alpha 3P",
+    "fornitore": "cisa",
+    "prezzo": 280.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-001",
+    "cat": "ferramenta_ar",
+    "codice": "MM-CR-AR",
+    "nome": "Cremonese Anta-Ribalta Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 18.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-002",
+    "cat": "ferramenta_ar",
+    "codice": "MM-CR-AB",
+    "nome": "Cremonese Anta-Battente Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 16.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-003",
+    "cat": "ferramenta_ar",
+    "codice": "MM-FORB",
+    "nome": "Forbice a Ribalta Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 22.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-004",
+    "cat": "ferramenta_ar",
+    "codice": "MM-ASTA-C",
+    "nome": "Asta Rulli Centrale Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 15.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-005",
+    "cat": "ferramenta_ar",
+    "codice": "MM-ASTA-V",
+    "nome": "Asta Rulli Variabile Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 16.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-006",
+    "cat": "ferramenta_ar",
+    "codice": "MM-TERM-S",
+    "nome": "Terminale Superiore Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 6.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-007",
+    "cat": "ferramenta_ar",
+    "codice": "MM-TERM-I",
+    "nome": "Terminale Inferiore Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 7.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-008",
+    "cat": "ferramenta_ar",
+    "codice": "MM-ANG-S",
+    "nome": "Movimento Angolare Standard Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 5.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-009",
+    "cat": "ferramenta_ar",
+    "codice": "MM-ANG-P",
+    "nome": "Movimento Angolare Prolungabile Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 8.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-010",
+    "cat": "ferramenta_ar",
+    "codice": "MM-ALZAANTA",
+    "nome": "Dispositivo Alza-Anta Maico",
+    "fornitore": "maco",
+    "prezzo": 10.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-011",
+    "cat": "ferramenta_ar",
+    "codice": "MM-SCONTRO",
+    "nome": "Scontro Fungo Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 3.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-012",
+    "cat": "ferramenta_ar",
+    "codice": "MM-CR-INV",
+    "nome": "Cremonese ad Inversione Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 20.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-013",
+    "cat": "ferramenta_ar",
+    "codice": "MM-180",
+    "nome": "Terminale 180° Multi Matic",
+    "fornitore": "maco",
+    "prezzo": 7.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-020",
+    "cat": "cerniere",
+    "codice": "MC-CERN-S",
+    "nome": "Cerniera Maico Standard",
+    "fornitore": "maco",
+    "prezzo": 8.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-021",
+    "cat": "cerniere",
+    "codice": "MC-CERN-3D",
+    "nome": "Cerniera Maico 3D Regolabile",
+    "fornitore": "maco",
+    "prezzo": 14.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-030",
+    "cat": "maniglie",
+    "codice": "MC-HARM",
+    "nome": "Maniglia Maico Harmony",
+    "fornitore": "maco",
+    "prezzo": 12.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "MA-040",
+    "cat": "soglie",
+    "codice": "MC-SOGL-AL",
+    "nome": "Soglia Maico Alluminio",
+    "fornitore": "maco",
+    "prezzo": 35.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "YA-001",
+    "cat": "serrature",
+    "codice": "Y89-40",
+    "nome": "Lucchetto Yale Ottone 40mm",
+    "fornitore": "yale",
+    "prezzo": 12.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "YA-002",
+    "cat": "cilindri",
+    "codice": "Y1000-30",
+    "nome": "Cilindro Europeo Yale Y1000+",
+    "fornitore": "yale",
+    "prezzo": 50.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "YA-003",
+    "cat": "cilindri",
+    "codice": "Y2100-30",
+    "nome": "Cilindro Europeo Yale Superior",
+    "fornitore": "yale",
+    "prezzo": 75.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "YA-004",
+    "cat": "serrature",
+    "codice": "YSL-001",
+    "nome": "Serratura Smart Yale Linus",
+    "fornitore": "yale",
+    "prezzo": 220.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "YA-005",
+    "cat": "chiudiporta",
+    "codice": "Y-CP-03",
+    "nome": "Chiudiporta Yale Classe 3",
+    "fornitore": "yale",
+    "prezzo": 35.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "HO-001",
+    "cat": "maniglie",
+    "codice": "HP-TOKIO",
+    "nome": "Maniglia Hoppe Tokio",
+    "fornitore": "hoppe",
+    "prezzo": 15.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "HO-002",
+    "cat": "maniglie",
+    "codice": "HP-ATLANTA",
+    "nome": "Maniglia Hoppe Atlanta",
+    "fornitore": "hoppe",
+    "prezzo": 22.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "HO-003",
+    "cat": "maniglie",
+    "codice": "HP-SECUST",
+    "nome": "Maniglia Hoppe Secu100",
+    "fornitore": "hoppe",
+    "prezzo": 28.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "RO-001",
+    "cat": "ferramenta_ar",
+    "codice": "RT-NT",
+    "nome": "Roto NT Anta-Ribalta Kit",
+    "fornitore": "roto",
+    "prezzo": 35.0,
+    "um": "kit"
+  },
+  {
+    "id_orig": "RO-002",
+    "cat": "cerniere",
+    "codice": "RT-CERN",
+    "nome": "Cerniera Roto Solid S",
+    "fornitore": "roto",
+    "prezzo": 18.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-001",
+    "cat": "guarnizioni",
+    "codice": "GUAR-TPE-N",
+    "nome": "Guarnizione TPE Nera al metro",
+    "fornitore": "generico",
+    "prezzo": 1.5,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-002",
+    "cat": "guarnizioni",
+    "codice": "GUAR-TPE-G",
+    "nome": "Guarnizione TPE Grigia al metro",
+    "fornitore": "generico",
+    "prezzo": 1.5,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-003",
+    "cat": "guarnizioni",
+    "codice": "GUAR-EPDM",
+    "nome": "Guarnizione EPDM al metro",
+    "fornitore": "generico",
+    "prezzo": 2.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-004",
+    "cat": "coprifili",
+    "codice": "COPRI-PVC-B",
+    "nome": "Coprifilo PVC Bianco 40mm",
+    "fornitore": "generico",
+    "prezzo": 4.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-005",
+    "cat": "coprifili",
+    "codice": "COPRI-ALU-B",
+    "nome": "Coprifilo Alluminio Bianco 50mm",
+    "fornitore": "generico",
+    "prezzo": 8.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-006",
+    "cat": "soglie",
+    "codice": "SOGL-AL-B",
+    "nome": "Soglia Alluminio Bianca 30mm",
+    "fornitore": "generico",
+    "prezzo": 12.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-007",
+    "cat": "soglie",
+    "codice": "DAV-MARMO",
+    "nome": "Davanzale Marmo Biancone",
+    "fornitore": "generico",
+    "prezzo": 45.0,
+    "um": "ml"
+  },
+  {
+    "id_orig": "GE-008",
+    "cat": "controtelai",
+    "codice": "CT-LEGNO",
+    "nome": "Controtelaio Legno",
+    "fornitore": "generico",
+    "prezzo": 25.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-009",
+    "cat": "controtelai",
+    "codice": "CT-MONO",
+    "nome": "Controtelaio Monoblocco",
+    "fornitore": "generico",
+    "prezzo": 85.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-010",
+    "cat": "controtelai",
+    "codice": "CT-PM",
+    "nome": "Controtelaio Pronto Muro",
+    "fornitore": "generico",
+    "prezzo": 35.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-011",
+    "cat": "varie",
+    "codice": "SCHIUMA-PU",
+    "nome": "Schiuma Poliuretanica 750ml",
+    "fornitore": "generico",
+    "prezzo": 8.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-012",
+    "cat": "varie",
+    "codice": "SILICONE-N",
+    "nome": "Silicone Neutro 310ml",
+    "fornitore": "generico",
+    "prezzo": 6.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-013",
+    "cat": "varie",
+    "codice": "SILICONE-AC",
+    "nome": "Silicone Acetico 310ml",
+    "fornitore": "generico",
+    "prezzo": 4.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-014",
+    "cat": "varie",
+    "codice": "ZANCHE-SET",
+    "nome": "Set Zanche Fissaggio (10pz)",
+    "fornitore": "generico",
+    "prezzo": 8.0,
+    "um": "kit"
+  },
+  {
+    "id_orig": "GE-015",
+    "cat": "varie",
+    "codice": "VITI-TX-100",
+    "nome": "Viti Torx 7.5x112 (100pz)",
+    "fornitore": "generico",
+    "prezzo": 18.0,
+    "um": "kit"
+  },
+  {
+    "id_orig": "GE-016",
+    "cat": "varie",
+    "codice": "TASSELLI-100",
+    "nome": "Tasselli Fischer 10x80 (100pz)",
+    "fornitore": "generico",
+    "prezzo": 22.0,
+    "um": "kit"
+  },
+  {
+    "id_orig": "GE-017",
+    "cat": "varie",
+    "codice": "NASTRO-VM",
+    "nome": "Nastro Espandente Autoespandente 20mm",
+    "fornitore": "generico",
+    "prezzo": 15.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-018",
+    "cat": "varie",
+    "codice": "NASTRO-INT",
+    "nome": "Nastro Adesivo Interno Barriera Vapore",
+    "fornitore": "generico",
+    "prezzo": 25.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-020",
+    "cat": "motorizzazioni",
+    "codice": "MOT-TAPP-S",
+    "nome": "Motore Tapparella Standard 20Nm",
+    "fornitore": "generico",
+    "prezzo": 65.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-021",
+    "cat": "motorizzazioni",
+    "codice": "MOT-TAPP-R",
+    "nome": "Motore Tapparella Radio 30Nm",
+    "fornitore": "generico",
+    "prezzo": 95.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-022",
+    "cat": "motorizzazioni",
+    "codice": "MOT-TAPP-W",
+    "nome": "Motore Tapparella WiFi 30Nm",
+    "fornitore": "generico",
+    "prezzo": 120.0,
+    "um": "pz"
+  },
+  {
+    "id_orig": "GE-023",
+    "cat": "motorizzazioni",
+    "codice": "CENTR-4CH",
+    "nome": "Centralina 4 Canali Tapparelle",
+    "fornitore": "generico",
+    "prezzo": 45.0,
+    "um": "pz"
+  }
+]
