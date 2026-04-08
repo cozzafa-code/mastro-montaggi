@@ -160,6 +160,7 @@ import GalassiaAI from './GalassiaAI';
 import MagazzinoWow from './MagazzinoWow';
 import FotoFasi from './FotoFasi';
 import FirmaCliente from './FirmaCliente';
+import { OfflineBanner } from '../hooks/useOffline';
 
 const DS = {
   bg:'#E8F4F4', topbar:'#0D1F1F', teal:'#28A0A0', tealDark:'#156060',
@@ -4052,6 +4053,8 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
           );
         })}
       </div>
+
+      <OfflineBanner />
 
     </div>
   );
