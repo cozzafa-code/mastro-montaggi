@@ -674,10 +674,42 @@ export default function PortaleAzienda() {
                             <span style={{fontSize:12,fontWeight:700,fontFamily:T.mono}}>{commRef.avanz}%</span>
                           </div>
                         </>}
-                        <div style={{marginTop:8,display:"flex",gap:6}}>
-                          <a href={`tel:${o.telefono.replace(/\s/g,"")}`} style={{padding:"5px 12px",borderRadius:5,background:T.greenLight,color:T.green,fontSize:10,fontWeight:700,textDecoration:"none"}}>Chiama</a>
-                          <a href={`https://wa.me/${o.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"5px 12px",borderRadius:5,background:"#DCF8C6",color:"#128C7E",fontSize:10,fontWeight:700,textDecoration:"none"}}>WA</a>
-                          {commRef&&<div onClick={()=>{setSelOp(o.id);setSelComm(commRef.id);setTab("vani");setPage("operatori");}} style={{padding:"5px 12px",borderRadius:5,background:T.tealLight,color:T.teal,fontSize:10,fontWeight:700,cursor:"pointer"}}>Apri</div>}
+                        {/* ═══ AZIONI DIRETTE ═══ */}
+                        <div style={{marginTop:10,borderTop:`1px solid ${T.lineLight}`,paddingTop:10}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:6}}>AZIONI RAPIDE</div>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            <a href={`tel:${o.telefono.replace(/\s/g,"")}`} style={{padding:"6px 14px",borderRadius:5,background:T.green,color:"#fff",fontSize:10,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                              Chiama
+                            </a>
+                            <a href={`https://wa.me/${o.telefono.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener" style={{padding:"6px 14px",borderRadius:5,background:"#25D366",color:"#fff",fontSize:10,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                              WhatsApp
+                            </a>
+                            <a href={`mailto:${o.email||""}`} style={{padding:"6px 14px",borderRadius:5,background:T.blue,color:"#fff",fontSize:10,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                              Email
+                            </a>
+                            <div onClick={()=>alert("Chat interna con " + o.nome + " sulla commessa " + (commRef?.id||""))} style={{padding:"6px 14px",borderRadius:5,background:T.teal,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                              Chat interna
+                            </div>
+                            {commRef&&<div onClick={()=>{setSelOp(o.id);setSelComm(commRef.id);setTab("vani");setPage("operatori");}} style={{padding:"6px 14px",borderRadius:5,background:T.ink,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                              Apri commessa
+                            </div>}
+                          </div>
+                          {/* Messaggio rapido */}
+                          <div style={{marginTop:8,display:"flex",gap:6}}>
+                            <input placeholder={`Scrivi a ${o.nome.split(" ")[0]}...`} style={{flex:1,padding:"7px 12px",borderRadius:5,border:`1px solid ${T.line}`,fontSize:11,outline:"none",color:T.ink,fontFamily:T.font}}/>
+                            <div onClick={()=>alert("Messaggio inviato")} style={{padding:"7px 14px",borderRadius:5,background:T.teal,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer"}}>Invia</div>
+                          </div>
+                          {/* Quick actions */}
+                          <div style={{marginTop:6,display:"flex",gap:4,flexWrap:"wrap"}}>
+                            {["Manda foto stato lavori","Conferma arrivo cantiere","Materiali OK?","Serve aiuto?","Domani stesso orario?"].map((q,qi)=>(
+                              <div key={qi} onClick={()=>alert("Inviato: "+q)} style={{padding:"4px 10px",borderRadius:12,border:`1px solid ${T.line}`,fontSize:9,color:T.sub,cursor:"pointer",background:T.bg}}>{q}</div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                       {/* Vani + materiali */}
@@ -696,10 +728,41 @@ export default function PortaleAzienda() {
                             {commRef.doc.map((d,di)=><div key={di} style={{display:"flex",gap:4,padding:"2px 0",fontSize:10}}><span style={{width:14,height:14,borderRadius:3,background:d.t==="pdf"?T.redLight:T.blueLight,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:6,fontWeight:800,color:d.t==="pdf"?T.red:T.blue}}>{d.t}</span></span><span style={{flex:1}}>{d.n}</span></div>)}</>}
                           </div>
                         </div>
-                        {/* Problemi */}
-                        {(commRef.problemi||[]).filter(p=>p.stato==="aperto").length>0&&<div style={{marginTop:8,padding:"6px 10px",background:T.redLight,borderRadius:5,border:`1px solid ${T.red}20`}}>
-                          <div style={{fontSize:10,fontWeight:700,color:T.red,marginBottom:2}}>PROBLEMI APERTI</div>
-                          {(commRef.problemi||[]).filter(p=>p.stato==="aperto").map((p,pi)=><div key={pi} style={{fontSize:10,color:T.red}}>{p.tit}</div>)}
+                        {/* Problemi con azione */}
+                        {(commRef.problemi||[]).filter(p=>p.stato==="aperto").length>0&&<div style={{marginTop:8,padding:"8px 10px",background:T.redLight,borderRadius:5,border:`1px solid ${T.red}20`}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.red,marginBottom:4}}>PROBLEMI APERTI</div>
+                          {(commRef.problemi||[]).filter(p=>p.stato==="aperto").map((p,pi)=><div key={pi} style={{marginBottom:4}}>
+                            <div style={{fontSize:10,fontWeight:600,color:T.red}}>{p.tit}</div>
+                            <div style={{fontSize:9,color:T.sub}}>{p.desc}</div>
+                            <div style={{display:"flex",gap:4,marginTop:3}}>
+                              <div onClick={(e)=>{e.stopPropagation();alert("Problema risolto")}} style={{padding:"3px 8px",borderRadius:3,background:T.green,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Risolto</div>
+                              <div onClick={(e)=>{e.stopPropagation();alert("Mando rinforzo")}} style={{padding:"3px 8px",borderRadius:3,background:T.blue,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Mando rinforzo</div>
+                              <div onClick={(e)=>{e.stopPropagation();alert("Rispondi al problema")}} style={{padding:"3px 8px",borderRadius:3,background:T.amber,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>Rispondi</div>
+                            </div>
+                          </div>)}
+                        </div>}
+                        {/* Chat rapida */}
+                        {commRef.chat.length>0&&<div style={{marginTop:8}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.muted,marginBottom:4}}>ULTIMI MESSAGGI</div>
+                          {commRef.chat.slice(-3).map((m,mi)=>{
+                            const cc={op:T.teal,uff:T.blue,cli:T.green,ai:T.purple}[m.tipo]||T.sub;
+                            return <div key={mi} style={{display:"flex",gap:5,padding:"3px 0",fontSize:10}}>
+                              <span style={{width:4,height:4,borderRadius:"50%",background:cc,marginTop:4,flexShrink:0}}/>
+                              <span style={{fontWeight:600,color:cc,minWidth:40}}>{m.da}</span>
+                              <span style={{color:T.ink}}>{m.t}</span>
+                              <span style={{color:T.muted,marginLeft:"auto",fontSize:9}}>{m.ora}</span>
+                            </div>;
+                          })}
+                        </div>}
+                        {/* Spese da approvare */}
+                        {commRef.spese.filter(s=>s.ok==="no").length>0&&<div style={{marginTop:8}}>
+                          <div style={{fontSize:10,fontWeight:700,color:T.amber,marginBottom:4}}>SPESE DA APPROVARE</div>
+                          {commRef.spese.filter(s=>s.ok==="no").map((s,si)=><div key={si} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0"}}>
+                            <span style={{fontSize:10,flex:1}}>{s.desc}</span>
+                            <span style={{fontSize:10,fontWeight:600,fontFamily:T.mono}}>{"€"}{s.imp.toFixed(2)}</span>
+                            <div onClick={(e)=>{e.stopPropagation();alert("Approvata")}} style={{padding:"2px 8px",borderRadius:3,background:T.green,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>OK</div>
+                            <div onClick={(e)=>{e.stopPropagation();alert("Rifiutata")}} style={{padding:"2px 8px",borderRadius:3,background:T.red,color:"#fff",fontSize:8,fontWeight:700,cursor:"pointer"}}>NO</div>
+                          </div>)}
                         </div>}
                       </div>}
                     </div>
