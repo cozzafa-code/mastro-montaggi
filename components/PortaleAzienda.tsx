@@ -2,6 +2,8 @@
 // PortaleAzienda.tsx v3 — Gestione completa multi-freelance + marketplace
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import ImportaCommessa from './ImportaCommessa';
+import type { CommessaImportata } from './ImportaCommessa';
 
 const SB_URL = 'https://fgefcigxlbrmbeqqzjmo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODgwNDIsImV4cCI6MjA4NzI2NDA0Mn0.Pw_XaFZ1JMVsoNy5_LiozF2r3YZGuhUkqzRtUdPnjk8';
@@ -547,16 +549,36 @@ function NuovoForm({azienda,freelancers,selFreelancer,inviteCode,onSent,onBack})
   };
 
   const targetName=freelancers.find(f=>f.id===target);
+  const [showImport,setShowImport]=useState(false);
+
+  const handleImport=(data)=>{
+    if(data.cliente) setCliente(data.cliente);
+    if(data.indirizzo) setIndirizzo(data.indirizzo);
+    if(data.telefono) setTelC(data.telefono);
+    if(data.email) setEmailC(data.email);
+    if(data.note) setNote(data.note);
+    if(data.vani?.length>0){
+      setVani(data.vani.map((v,i)=>({id:i+1,tipo:v.tipo||'Finestra',materiale:v.materiale||'PVC',larghezza:v.larghezza?String(v.larghezza):'',altezza:v.altezza?String(v.altezza):'',stanza:v.stanza||'',piano:v.piano||'PT',note:[v.note,v.colore_int?'Int:'+v.colore_int:'',v.colore_est?'Est:'+v.colore_est:'',v.vetro?'Vetro:'+v.vetro:'',v.sistema?'Sistema:'+v.sistema:''].filter(Boolean).join(' · ')})));
+    }
+    setShowImport(false);
+  };
 
   if(sent)return<Full><IC bg="#D1FAE5"><CS c={DS.green}/></IC><P c={DS.text} w={800} s={22} mt={16}>Inviata!</P><P c={DS.textMid} mt={8}>{targetName?`${targetName.nome} ${targetName.cognome}`:'Il montatore'} riceverà una notifica</P></Full>;
 
   return(
     <div style={{minHeight:'100vh',background:DS.bg,fontFamily:'system-ui,-apple-system,sans-serif'}}>
+      {showImport&&<ImportaCommessa onImport={handleImport} onClose={()=>setShowImport(false)}/>}
       <div style={{background:DS.topbar,padding:'14px 20px',position:'sticky',top:0,zIndex:100}}>
         <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,color:DS.teal,fontWeight:700,fontSize:13,padding:0,marginBottom:6}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>Indietro
         </button>
-        <div style={{fontWeight:800,fontSize:18,color:'#fff'}}>Nuovo lavoro</div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{fontWeight:800,fontSize:18,color:'#fff'}}>Nuovo lavoro</div>
+          <button onClick={()=>setShowImport(true)} style={{background:'rgba(40,160,160,.15)',border:`1.5px solid ${DS.teal}`,borderRadius:10,padding:'6px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span style={{fontSize:12,fontWeight:700,color:DS.teal}}>Importa</span>
+          </button>
+        </div>
       </div>
       <div style={{maxWidth:600,margin:'0 auto',padding:'16px 16px 100px',display:'flex',flexDirection:'column',gap:12}}>
         {/* Scegli freelancer */}
