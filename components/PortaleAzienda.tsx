@@ -400,47 +400,139 @@ export default function PortaleAzienda() {
   );
 
   /* ═══ MARKETPLACE ═══ */
-  const PageMarketplace = () => (
-    <div style={{flex:1,overflowY:"auto",padding:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-        <div style={{fontSize:16,fontWeight:700}}>Marketplace fliwoX</div>
-        <div style={{fontSize:11,color:T.sub}}>Borsa lavori</div>
-        <div onClick={()=>alert("Pubblica")} style={{marginLeft:"auto",padding:"7px 18px",borderRadius:6,background:T.amber,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Pubblica lavoro</div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-        <div>
-          <div style={{fontSize:12,fontWeight:700,color:T.amber,marginBottom:10}}>Miei pubblicati ({MARKETPLACE.filter(m=>m.dir==="out").length})</div>
-          {MARKETPLACE.filter(m=>m.dir==="out").map(m=>(
-            <div key={m.id} style={{border:`1px solid ${T.line}`,borderRadius:8,padding:"14px 16px",marginBottom:10}}>
-              <div style={{display:"flex",gap:6,marginBottom:4}}><span style={{fontSize:10,fontWeight:700,color:T.amber,fontFamily:T.mono}}>{m.id}</span><span style={{fontSize:10,fontWeight:600,color:m.offerte.length>0?T.green:T.muted,background:m.offerte.length>0?T.greenLight:T.lineLight,padding:"1px 6px",borderRadius:3}}>{m.offerte.length>0?`${m.offerte.length} offerte`:"Attesa"}</span><span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>{m.scad}</span></div>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:3}}>{m.titolo}</div>
-              <div style={{fontSize:11,color:T.sub}}>{m.zona} · {m.budget}</div>
-              <div style={{fontSize:11,color:T.sub,lineHeight:1.4,marginTop:4}}>{m.desc}</div>
-              {m.offerte.length>0&&<div style={{borderTop:`1px solid ${T.line}`,marginTop:8,paddingTop:8}}>{m.offerte.map((o,oi)=><div key={oi} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 8px",borderRadius:5,marginBottom:3,background:oi===0?T.tealLight:"transparent"}}><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{o.da}</div><div style={{fontSize:10,color:T.sub}}>{o.nota}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{o.pr}</div><div style={{fontSize:9,color:T.sub}}>{o.v}/5 · {o.gg}</div></div><div onClick={()=>alert("Accetti?")} style={{padding:"5px 12px",borderRadius:5,background:T.teal,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer"}}>Accetta</div></div>)}</div>}
-            </div>
-          ))}
-          <div style={{fontSize:12,fontWeight:700,color:T.teal,marginTop:16,marginBottom:10}}>Presi ({MARKETPLACE.filter(m=>m.dir==="done").length})</div>
-          {MARKETPLACE.filter(m=>m.dir==="done").map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",border:`1px solid ${T.line}`,borderRadius:6,marginBottom:6}}><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{m.id} <span style={{color:m.stato==="completato"?T.green:T.amber,fontSize:9}}>{m.stato}</span></div><div style={{fontSize:12,fontWeight:600}}>{m.titolo}</div><div style={{fontSize:10,color:T.sub}}>{m.assegnato}</div></div><div style={{fontSize:15,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{m.prezzo}</div></div>)}
+  const PageMarketplace = () => {
+    const miei = MARKETPLACE.filter(m=>m.dir==="out");
+    const disp = MARKETPLACE.filter(m=>m.dir==="in");
+    const presi = MARKETPLACE.filter(m=>m.dir==="done");
+    const totOfferte = miei.reduce((s,m)=>s+m.offerte.length,0);
+    const totGuadagnato = presi.reduce((s,m)=>s+(m.prezzo||0),0);
+    return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Header ricco */}
+      <div style={{padding:"16px 24px",borderBottom:`1px solid ${T.line}`,background:T.bg}}>
+        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:14}}>
+          <div style={{fontSize:18,fontWeight:700}}>Marketplace</div>
+          <div style={{fontSize:12,color:T.sub}}>Borsa lavori tra serramentisti della rete fliwoX</div>
+          <div onClick={()=>alert("Pubblica")} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:6,background:T.amber,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Pubblica lavoro</div>
         </div>
-        <div>
-          <div style={{fontSize:12,fontWeight:700,color:T.blue,marginBottom:10}}>Disponibili ({MARKETPLACE.filter(m=>m.dir==="in").length})</div>
-          {MARKETPLACE.filter(m=>m.dir==="in").map(m=>(
-            <div key={m.id} style={{border:`1px solid ${m.urgente?T.red:T.line}`,borderRadius:8,padding:"14px 16px",marginBottom:10,position:"relative"}}>
-              {m.urgente&&<div style={{position:"absolute",top:-1,right:12,background:T.red,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:"0 0 5px 5px"}}>URGENTE</div>}
-              <div style={{display:"flex",gap:6,marginBottom:4}}><span style={{fontSize:10,fontWeight:700,color:T.blue,fontFamily:T.mono}}>{m.id}</span><span style={{fontSize:10,color:T.muted}}>{m.km}</span><span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>{m.scad}</span></div>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:3}}>{m.titolo}</div>
-              <div style={{fontSize:11,color:T.sub}}>{m.zona} · <span style={{fontWeight:600,color:T.ink}}>{m.azienda}</span></div>
-              <div style={{fontSize:15,fontWeight:700,color:T.green,fontFamily:T.mono,margin:"4px 0"}}>{"\u20AC"}{m.budget}</div>
-              <div style={{fontSize:11,color:T.sub,lineHeight:1.4,marginBottom:8}}>{m.desc}</div>
-              <div style={{display:"flex",gap:6}}><div onClick={()=>alert("Offerta")} style={{padding:"7px 16px",borderRadius:5,background:T.teal,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>Fai offerta</div><div style={{padding:"7px 16px",borderRadius:5,background:T.lineLight,color:T.sub,fontSize:11,cursor:"pointer"}}>Dettagli</div></div>
+        <div style={{display:"flex",gap:12}}>
+          {[{l:"Pubblicati",v:miei.length,c:T.amber},{l:"Offerte ricevute",v:totOfferte,c:T.green},{l:"Disponibili zona",v:disp.length,c:T.blue},{l:"Urgenti",v:disp.filter(m=>m.urgente).length,c:T.red},{l:"In corso",v:presi.filter(m=>m.stato==="in_corso").length,c:T.teal},{l:"Completati",v:presi.filter(m=>m.stato==="completato").length,c:T.green},{l:"Guadagnato MKT",v:`\u20AC${totGuadagnato}`,c:T.teal}].map((k,i)=>(
+            <div key={i} style={{flex:1,background:T.bgAlt,borderRadius:6,padding:"8px 12px",border:`1px solid ${T.lineLight}`}}>
+              <div style={{fontSize:8,color:T.muted,textTransform:"uppercase",letterSpacing:".04em"}}>{k.l}</div>
+              <div style={{fontSize:18,fontWeight:700,color:k.c,fontFamily:T.mono}}>{k.v}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Body 3 colonne che riempiono tutto */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* COL 1: Miei pubblicati */}
+        <div style={{flex:1,borderRight:`1px solid ${T.line}`,overflowY:"auto",padding:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.amber,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.amber} strokeWidth="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Miei pubblicati ({miei.length})
+          </div>
+          {miei.map(m=>(
+            <div key={m.id} style={{border:`1px solid ${T.line}`,borderRadius:8,padding:"12px 14px",marginBottom:10,background:T.bg}}>
+              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
+                <span style={{fontSize:10,fontWeight:700,color:T.amber,fontFamily:T.mono}}>{m.id}</span>
+                <span style={{fontSize:9,fontWeight:600,color:m.offerte.length>0?T.green:T.muted,background:m.offerte.length>0?T.greenLight:T.lineLight,padding:"1px 6px",borderRadius:3}}>{m.offerte.length>0?`${m.offerte.length} offerte`:"In attesa"}</span>
+                <span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>entro {m.scad}</span>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:2}}>{m.titolo}</div>
+              <div style={{fontSize:10,color:T.sub}}>{m.zona} · Budget {m.budget}</div>
+              <div style={{fontSize:10,color:T.sub,lineHeight:1.4,marginTop:4}}>{m.desc}</div>
+              {m.offerte.length>0&&<div style={{borderTop:`1px solid ${T.lineLight}`,marginTop:8,paddingTop:6}}>
+                {m.offerte.map((o,oi)=>(
+                  <div key={oi} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",borderRadius:5,marginBottom:3,background:oi===0?T.tealLight:"transparent",border:oi===0?`1px solid ${T.tealBorder}`:"1px solid transparent"}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{o.da}</div>
+                      <div style={{fontSize:9,color:T.sub}}>{o.nota}</div>
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{"\u20AC"}{o.pr}</div>
+                      <div style={{fontSize:8,color:T.sub}}>{o.v}/5 · {o.gg}</div>
+                    </div>
+                    <div onClick={()=>alert("Accetti "+o.da+"?")} style={{padding:"4px 10px",borderRadius:4,background:T.teal,color:"#fff",fontSize:9,fontWeight:700,cursor:"pointer",flexShrink:0}}>Accetta</div>
+                  </div>
+                ))}
+              </div>}
+            </div>
+          ))}
+        </div>
+
+        {/* COL 2: Disponibili */}
+        <div style={{flex:1,borderRight:`1px solid ${T.line}`,overflowY:"auto",padding:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.blue,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.blue} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Disponibili nella zona ({disp.length})
+          </div>
+          {disp.map(m=>(
+            <div key={m.id} style={{border:`1px solid ${m.urgente?T.red:T.line}`,borderRadius:8,padding:"12px 14px",marginBottom:10,background:T.bg,position:"relative"}}>
+              {m.urgente&&<div style={{position:"absolute",top:-1,right:10,background:T.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 8px",borderRadius:"0 0 5px 5px"}}>URGENTE</div>}
+              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
+                <span style={{fontSize:10,fontWeight:700,color:T.blue,fontFamily:T.mono}}>{m.id}</span>
+                <span style={{fontSize:9,color:T.muted}}>{m.km}</span>
+                <span style={{fontSize:9,color:T.muted,marginLeft:"auto"}}>{m.scad}</span>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:2}}>{m.titolo}</div>
+              <div style={{fontSize:10,color:T.sub}}>{m.zona} · <span style={{fontWeight:600,color:T.ink}}>{m.azienda}</span></div>
+              <div style={{fontSize:15,fontWeight:700,color:T.green,fontFamily:T.mono,margin:"4px 0"}}>{"\u20AC"}{m.budget}</div>
+              <div style={{fontSize:10,color:T.sub,lineHeight:1.4,marginBottom:8}}>{m.desc}</div>
+              <div style={{display:"flex",gap:6}}>
+                <div onClick={()=>alert("Offerta")} style={{padding:"6px 14px",borderRadius:5,background:T.teal,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer"}}>Fai offerta</div>
+                <div style={{padding:"6px 14px",borderRadius:5,background:T.lineLight,color:T.sub,fontSize:10,cursor:"pointer"}}>Dettagli</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* COL 3: Presi + Statistiche */}
+        <div style={{width:280,overflowY:"auto",padding:16,flexShrink:0}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.teal,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.teal} strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Lavori presi ({presi.length})
+          </div>
+          {presi.map(m=>(
+            <div key={m.id} style={{border:`1px solid ${T.line}`,borderRadius:8,padding:"10px 12px",marginBottom:8,background:T.bg}}>
+              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                <span style={{fontSize:9,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{m.id}</span>
+                <span style={{fontSize:8,fontWeight:600,color:m.stato==="completato"?T.green:T.amber,background:m.stato==="completato"?T.greenLight:T.amberLight,padding:"1px 5px",borderRadius:3}}>{m.stato}</span>
+              </div>
+              <div style={{fontSize:12,fontWeight:600}}>{m.titolo}</div>
+              <div style={{fontSize:10,color:T.sub}}>{m.zona} · {m.assegnato}</div>
+              <div style={{fontSize:14,fontWeight:700,color:T.teal,fontFamily:T.mono,marginTop:4}}>{"\u20AC"}{m.prezzo}</div>
+            </div>
+          ))}
+
+          {/* Come funziona */}
+          <div style={{marginTop:16,padding:"14px 12px",background:"rgba(26,158,143,0.04)",borderRadius:8,border:`1px solid ${T.tealBorder}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.teal,marginBottom:8}}>Come funziona</div>
+            {[{n:"1",t:"Pubblica un lavoro che non riesci a fare"},{n:"2",t:"Ricevi offerte da altri serramentisti fliwoX"},{n:"3",t:"Accetti l'offerta migliore"},{n:"4",t:"Il lavoro esce dal marketplace e diventa commessa"}].map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:8,marginBottom:6}}>
+                <div style={{width:18,height:18,borderRadius:"50%",background:T.teal,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{s.n}</div>
+                <div style={{fontSize:10,color:T.sub,lineHeight:1.4}}>{s.t}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div style={{marginTop:12,padding:"12px 12px",border:`1px solid ${T.line}`,borderRadius:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:8}}>Riepilogo</div>
+            {[{l:"Lavori pubblicati totali",v:"12"},{l:"Completati con successo",v:"8"},{l:"Totale guadagnato",v:`\u20AC${totGuadagnato}`},{l:"Valutazione media ricevuta",v:"4.7/5"},{l:"Tempo medio assegnazione",v:"2.3 giorni"}].map((s,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:i<4?`1px solid ${T.lineLight}`:"none"}}>
+                <span style={{fontSize:10,color:T.sub}}>{s.l}</span>
+                <span style={{fontSize:10,fontWeight:600,color:T.ink,fontFamily:T.mono}}>{s.v}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
-  );
+  );};
 
-  /* ═══ PROBLEMI GLOBALI ═══ */
+    /* ═══ PROBLEMI GLOBALI ═══ */
   const PageProblemi = () => {
     const all = OPERATORI.flatMap(o=>o.commesse.flatMap(c=>(c.problemi||[]).map(p=>({...p,opNome:o.nome,commId:c.id,cliente:c.cliente,opId:o.id}))));
     return (
