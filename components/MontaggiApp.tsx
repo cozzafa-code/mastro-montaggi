@@ -3461,11 +3461,33 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
           dataAppuntamento: montOggi?.data_montaggio || oggi,
           oraAppuntamento: montOggi?.ora_inizio?.slice(0,5) || '08:00',
           note: '',
-          vani: cmVani.length > 0 ? cmVani.map((v:any,i:number) => ({
-            id:i+1, dbId:v.id, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
-            stato:'da_fare' as const, materiale:(v.sistema||'pvc').toLowerCase() as any,
-            formato:'finestra' as any, dimensioni:'',
-          })) : COM.vani,
+          vani: cmVani.length > 0 ? cmVani.map((v:any,i:number) => {
+            // Estrai dimensioni da misure_json
+            const mj = v.misure_json || {};
+            const l = mj.lBasso || mj.lAlto || mj.lCentro || 0;
+            const h = mj.hSx || mj.hDx || mj.hCentro || 0;
+            const dim = (l && h) ? `${l}x${h}` : '';
+            // Mappa sistema a materiale
+            const sis = (v.sistema||'').toLowerCase();
+            let mat = 'pvc';
+            if (sis.includes('allum') || sis.includes('alu')) mat = 'alluminio';
+            else if (sis.includes('legno') || sis.includes('wood')) mat = 'legno';
+            else if (sis.includes('acciaio') || sis.includes('steel')) mat = 'acciaio';
+            else if (sis.includes('ideal') || sis.includes('energeto') || sis.includes('pvc')) mat = 'pvc';
+            // Mappa tipo a formato
+            const tp = (v.tipo||'').toUpperCase();
+            let fmt = 'finestra';
+            if (tp.includes('PF') || tp.includes('PORTA') && tp.includes('FIN')) fmt = 'portafinestra';
+            else if (tp.includes('P') && !tp.includes('F')) fmt = 'porta';
+            else if (tp.includes('SCOR')) fmt = 'scorrevole';
+            else if (tp.includes('VEL')) fmt = 'velux';
+            return {
+              id:i+1, dbId:v.id, nome:v.nome||'Vano '+(i+1), tipo:v.tipo||'Finestra',
+              stato:'da_fare' as const, materiale:mat as any,
+              formato:fmt as any, dimensioni:dim,
+              stanza: v.stanza||'', piano: v.piano||'',
+            };
+          }) : COM.vani,
         };
         setComData(newComData);
         Object.assign(COM, newComData);
