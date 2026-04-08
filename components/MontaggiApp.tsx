@@ -3137,7 +3137,7 @@ function TabVani({onCad,vanoImgs}:{onCad:(n:string,id:number)=>void;vanoImgs:Rec
         const img=vanoImgs[v.id];
         const showForm=ordineVano===v.id;
         return(
-          <CardVanoIndicatori key={v.id} nome={v.nome} tipo={v.tipo} stato={v.stato} materiale={v.materiale} formato={v.formato} dimensioni={v.dimensioni}>
+          <CardVanoIndicatori key={v.id} nome={v.nome} tipo={v.tipo} stato={v.stato} materiale={v.materiale||'pvc'} formato={v.formato||'finestra'} dimensioni={v.dimensioni}>
             {img&&(
               <div style={{marginBottom:8,borderRadius:8,overflow:'hidden',border:`1px solid ${DS.border}`}}>
                 <img src={img} alt="disegno" style={{width:'100%',display:'block'}}/>
@@ -3168,14 +3168,16 @@ function TabVani({onCad,vanoImgs}:{onCad:(n:string,id:number)=>void;vanoImgs:Rec
                 <ShoppingCart size={13}/> Ordina
               </button>
             </div>
-            <FotoFasi
-              vanoId={v.dbId||v.id?.toString()||''}
-              vanoNome={v.nome}
-              commessaId={COM.id?.toString()||''}
-              montaggioId={COM.montaggioId||''}
-              operatoreId={OP.nome||''}
-              compact={false}
-            />
+            {v.dbId && (
+              <FotoFasi
+                vanoId={v.dbId}
+                vanoNome={v.nome||'Vano'}
+                commessaId={COM.id?.toString()||''}
+                montaggioId={COM.montaggioId||''}
+                operatoreId={OP.nome||''}
+                compact={false}
+              />
+            )}
           </CardVanoIndicatori>
         );
       })}
