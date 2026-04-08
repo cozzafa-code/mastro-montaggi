@@ -210,57 +210,156 @@ export default function PortaleAzienda() {
 
   /* ═══ DASHBOARD ═══ */
   const PageDashboard = () => {
-    const inCant = OPERATORI.filter(o=>o.stato==="in_cantiere"||o.stato==="in_sopralluogo").length;
-    const liberi = OPERATORI.filter(o=>o.stato==="disponibile"||o.stato==="in_pausa").length;
+    const inCant = OPERATORI.filter(o=>o.stato==="in_cantiere"||o.stato==="in_sopralluogo");
+    const liberi = OPERATORI.filter(o=>o.stato==="disponibile"||o.stato==="in_pausa");
     const assenti = OPERATORI.filter(o=>o.stato==="non_disponibile");
+    const commAttive = tutteComm.filter(c=>c.stato==="in_corso"||c.stato==="in_attesa_materiali");
+    const giorni = ["Lun","Mar","Mer","Gio","Ven"];
+    const giorniLabel = ["Lun 07","Mar 08 OGGI","Mer 09","Gio 10","Ven 11"];
+
     return (
-    <div style={{flex:1,overflowY:"auto",padding:28}}>
-      <div style={{fontSize:20,fontWeight:700,marginBottom:16}}>Centro Controllo</div>
-      {/* KPI */}
-      <div style={{display:"flex",gap:10,marginBottom:16}}>
-        {[{l:"In cantiere",v:inCant,c:T.green,s:`su ${OPERATORI.length}`},{l:"Liberi",v:liberi,c:T.teal,s:"assegnabili"},{l:"Assenti",v:assenti.length,c:T.red,s:assenti.map(o=>o.nome.split(" ")[0]).join(",")||"\u2014"},{l:"Commesse attive",v:tutteComm.filter(c=>c.stato==="in_corso").length,c:T.ink,s:`${tutteComm.length} tot`},{l:"Bloccate",v:tutteComm.filter(c=>c.stato==="in_attesa_materiali").length,c:T.amber,s:"materiali"},{l:"Problemi",v:tuttiProb.length,c:tuttiProb.length?T.red:T.green,s:tuttiProb.length?tuttiProb[0].tit.substring(0,25)+"...":"OK"},{l:"Spese",v:tutteSpese.filter(s=>s.ok==="no").length,c:tutteSpese.filter(s=>s.ok==="no").length?T.amber:T.green,s:tutteSpese.filter(s=>s.ok==="no").length?`\u20AC${tutteSpese.filter(s=>s.ok==="no").reduce((a,b)=>a+b.imp,0).toFixed(0)}`:"OK"},{l:"Cert. scad.",v:certScad.length,c:certScad.length?T.amber:T.green,s:certScad.length?certScad[0].opNome:"OK"}].map((k,i)=>(
-          <div key={i} style={{flex:1,background:T.bg,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.line}`}}>
-            <div style={{fontSize:8,color:T.muted,textTransform:"uppercase",letterSpacing:".04em",marginBottom:3}}>{k.l}</div>
-            <div style={{fontSize:20,fontWeight:700,color:k.c,fontFamily:T.mono}}>{k.v}</div>
-            <div style={{fontSize:9,color:T.sub,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k.s}</div>
-          </div>
-        ))}
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* HEADER */}
+      <div style={{padding:"20px 28px 0",flexShrink:0}}>
+        <div style={{fontSize:20,fontWeight:700}}>Centro Controllo</div>
+        <div style={{fontSize:12,color:T.sub,marginTop:2}}>Martedi 8 Aprile 2026 · {OPERATORI.length} operatori · {tutteComm.length} commesse</div>
       </div>
-      {/* 3 colonne */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
-        {/* Chi fa cosa */}
-        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
-          <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Oggi</div>
-          {OPERATORI.map(o=>{const sc=SC(o.stato);const oggi=(o.agenda||[]).find(g=>g.g==="Mar");return(
-            <div key={o.id} onClick={()=>{setSelOp(o.id);setPage("operatori");}} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
-              <div style={{width:26,height:26,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:9,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
-              <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{o.nome}</div><div style={{fontSize:9,color:oggi?.a?sc.fg:T.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{oggi?.a||(o.stato==="non_disponibile"?"Assente":"--")}</div></div>
-              {oggi?.c&&<span style={{fontSize:8,fontWeight:700,color:T.teal,fontFamily:T.mono,background:T.tealLight,padding:"1px 4px",borderRadius:2}}>{oggi.c}</span>}
-              <span style={{fontSize:8,fontWeight:600,color:sc.fg,background:sc.bg,padding:"2px 4px",borderRadius:3}}>{sc.l}</span>
-            </div>
-          );})}
+
+      {/* BODY — 2 righe che riempiono tutto */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"16px 28px 28px",gap:16}}>
+
+        {/* ═══ RIGA 1: CHI STA DOVE ADESSO ═══ */}
+        <div style={{background:T.bg,borderRadius:10,border:`1px solid ${T.line}`,padding:20,flexShrink:0}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+            <span style={{color:T.green}}>In campo adesso</span>
+            <span style={{fontSize:12,color:T.sub,fontWeight:400}}>· {inCant.length} attivi · {liberi.length} liberi · {assenti.length} assenti</span>
+            {tuttiProb.length>0&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:600,color:T.red,background:T.redLight,padding:"3px 10px",borderRadius:5}}>{tuttiProb.length} problemi aperti</span>}
+            {tutteSpese.filter(s=>s.ok==="no").length>0&&<span style={{fontSize:11,fontWeight:600,color:T.amber,background:T.amberLight,padding:"3px 10px",borderRadius:5}}>{tutteSpese.filter(s=>s.ok==="no").length} spese da approvare</span>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
+            {OPERATORI.map(o => {
+              const sc = SC(o.stato);
+              const oggi = (o.agenda||[]).find(g=>g.g==="Mar");
+              const commAtt = o.commesse.find(c=>c.stato==="in_corso");
+              const prob = o.commesse.flatMap(c=>(c.problemi||[]).filter(p=>p.stato==="aperto"));
+              return (
+                <div key={o.id} onClick={()=>{setSelOp(o.id);setPage("operatori");}}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:`1px solid ${prob.length>0?T.red+"50":T.lineLight}`,background:prob.length>0?T.redLight:o.stato==="non_disponibile"?"#f9f9f9":"transparent",cursor:"pointer",transition:"background .15s"}}>
+                  <div style={{width:36,height:36,borderRadius:8,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800,flexShrink:0,position:"relative"}}>
+                    {o.avatar}
+                    <span style={{position:"absolute",bottom:-2,right:-2,width:10,height:10,borderRadius:"50%",background:sc.fg,border:"2px solid #fff"}}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:12,fontWeight:700,color:T.ink}}>{o.nome.split(" ")[0]}</span>
+                      <span style={{fontSize:9,color:T.muted}}>{o.ruolo}</span>
+                    </div>
+                    <div style={{fontSize:11,color:oggi?.a?T.ink:T.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>
+                      {oggi?.a||(o.stato==="non_disponibile"?"Assente":"Nessuna attivita")}
+                    </div>
+                    {prob.length>0&&<div style={{fontSize:9,color:T.red,fontWeight:600,marginTop:1}}>{prob[0].tit.substring(0,35)}...</div>}
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    {oggi?.c&&<div style={{fontSize:9,fontWeight:700,color:T.teal,fontFamily:T.mono,background:T.tealLight,padding:"2px 6px",borderRadius:3,marginBottom:2}}>{oggi.c}</div>}
+                    {oggi?.h&&<div style={{fontSize:9,color:T.muted}}>{oggi.h}</div>}
+                    {commAtt&&<div style={{fontSize:9,color:T.sub,fontFamily:T.mono}}>{commAtt.avanz}%</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {/* Commesse */}
-        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
-          <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Commesse in corso ({tutteComm.filter(c=>c.stato==="in_corso").length})</div>
-          {tutteComm.filter(c=>c.stato==="in_corso").map(c=>(
-            <div key={c.id+c.opNome} onClick={()=>{setSelOp(c.opId);setSelComm(c.id);setTab("vani");setPage("operatori");}} style={{padding:"7px 0",borderBottom:`1px solid ${T.lineLight}`,cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}><span style={{fontSize:10,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span><span style={{fontSize:11,fontWeight:600,flex:1}}>{c.cliente}</span><span style={{fontSize:11,fontWeight:700,fontFamily:T.mono}}>{c.avanz}%</span></div>
-              <div style={{height:3,background:T.lineLight,borderRadius:2,overflow:"hidden",marginBottom:2}}><div style={{width:`${c.avanz}%`,height:"100%",borderRadius:2,background:c.avanz>=80?T.green:c.avanz>=40?T.teal:T.amber}}/></div>
-              <div style={{fontSize:9,color:T.sub}}>{c.tipo} · {c.opNome}</div>
+
+        {/* ═══ RIGA 2: 2 COLONNE — Lavori da completare + Prossimi giorni ═══ */}
+        <div style={{flex:1,display:"flex",gap:16,overflow:"hidden",minHeight:0}}>
+
+          {/* COL 1: LAVORI DA COMPLETARE */}
+          <div style={{flex:1,background:T.bg,borderRadius:10,border:`1px solid ${T.line}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{padding:"16px 20px 10px",flexShrink:0}}>
+              <div style={{fontSize:14,fontWeight:700}}>Lavori da completare ({commAttive.length})</div>
+              <div style={{fontSize:11,color:T.sub}}>Ordinate per urgenza</div>
             </div>
-          ))}
-        </div>
-        {/* Alert */}
-        <div style={{background:T.bg,borderRadius:8,border:`1px solid ${T.line}`,padding:14,maxHeight:420,overflowY:"auto"}}>
-          <div style={{fontSize:12,fontWeight:700,color:T.red,marginBottom:8}}>Alert ({tuttiProb.length+tutteSpese.filter(s=>s.ok==="no").length+certScad.length})</div>
-          {tuttiProb.map((p,i)=><div key={"p"+i} style={{padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><div style={{display:"flex",gap:4,marginBottom:1}}><span style={{width:5,height:5,borderRadius:"50%",background:T.red,marginTop:4}}/><span style={{fontSize:9,fontWeight:700,color:T.red}}>PROBLEMA</span><span style={{fontSize:9,color:T.sub,marginLeft:"auto"}}>{p.opNome}</span></div><div style={{fontSize:11,fontWeight:600}}>{p.tit}</div></div>)}
-          {tutteSpese.filter(s=>s.ok==="no").map((s,i)=><div key={"s"+i} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><span style={{width:5,height:5,borderRadius:"50%",background:T.amber}}/><div style={{flex:1}}><div style={{fontSize:11}}>{s.desc} · {s.opNome}</div></div><span style={{fontSize:11,fontWeight:700,fontFamily:T.mono}}>{"\u20AC"}{s.imp.toFixed(0)}</span><div style={{display:"flex",gap:2}}><div onClick={()=>alert("OK")} style={{padding:"2px 6px",borderRadius:3,background:T.greenLight,color:T.green,fontSize:8,fontWeight:700,cursor:"pointer"}}>OK</div><div onClick={()=>alert("NO")} style={{padding:"2px 6px",borderRadius:3,background:T.redLight,color:T.red,fontSize:8,fontWeight:700,cursor:"pointer"}}>NO</div></div></div>)}
-          {certScad.map((c,i)=><div key={"c"+i} style={{display:"flex",gap:6,padding:"6px 0",borderBottom:`1px solid ${T.lineLight}`}}><span style={{width:5,height:5,borderRadius:"50%",background:T.purple,marginTop:4}}/><div><div style={{fontSize:11}}>{c.n}</div><div style={{fontSize:9,color:T.sub}}>{c.opNome} · {c.scad}</div></div></div>)}
+            <div style={{flex:1,overflowY:"auto",padding:"0 20px 16px"}}>
+              {commAttive.sort((a,b)=>{
+                const prio = {alta:0,media:1,bassa:2};
+                if(a.stato==="in_attesa_materiali"&&b.stato!=="in_attesa_materiali") return -1;
+                return (prio[a.prio]||2)-(prio[b.prio]||2);
+              }).map((c,i) => {
+                const bloccata = c.stato === "in_attesa_materiali";
+                const prob = (c.problemi||[]).filter(p=>p.stato==="aperto");
+                return (
+                  <div key={c.id+c.opNome} onClick={()=>{setSelOp(c.opId);setSelComm(c.id);setTab("vani");setPage("operatori");}}
+                    style={{padding:"12px 0",borderBottom:i<commAttive.length-1?`1px solid ${T.lineLight}`:"none",cursor:"pointer"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:11,fontWeight:700,color:T.teal,fontFamily:T.mono}}>{c.id}</span>
+                      {c.prio==="alta"&&<span style={{fontSize:9,fontWeight:700,color:T.red,background:T.redLight,padding:"1px 6px",borderRadius:3}}>ALTA</span>}
+                      {bloccata&&<span style={{fontSize:9,fontWeight:700,color:T.amber,background:T.amberLight,padding:"1px 6px",borderRadius:3}}>BLOCCATA</span>}
+                      {prob.length>0&&<span style={{fontSize:9,fontWeight:700,color:T.red,background:T.redLight,padding:"1px 6px",borderRadius:3}}>{prob.length} problema</span>}
+                      <span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>{c.inizio} → {c.fine}</span>
+                    </div>
+                    <div style={{fontSize:14,fontWeight:600,color:T.ink}}>{c.cliente}</div>
+                    <div style={{fontSize:11,color:T.sub,marginTop:1}}>{c.tipo} · {c.indirizzo}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6}}>
+                      <div style={{flex:1,height:5,background:T.lineLight,borderRadius:3,overflow:"hidden"}}>
+                        <div style={{width:`${c.avanz}%`,height:"100%",borderRadius:3,background:bloccata?T.amber:c.avanz>=80?T.green:T.teal}}/>
+                      </div>
+                      <span style={{fontSize:12,fontWeight:700,fontFamily:T.mono,color:T.ink}}>{c.avanz}%</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
+                      <div style={{width:20,height:20,borderRadius:4,background:c.opColore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:7,fontWeight:800}}>{c.opAvatar}</div>
+                      <span style={{fontSize:10,color:T.sub}}>{c.opNome}</span>
+                      <span style={{fontSize:10,color:T.sub,marginLeft:"auto"}}>{c.vani.length} vani · {c.vani.filter(v=>v.stato==="montato").length} fatti</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* COL 2: PROSSIMI GIORNI */}
+          <div style={{flex:1,background:T.bg,borderRadius:10,border:`1px solid ${T.line}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{padding:"16px 20px 10px",flexShrink:0}}>
+              <div style={{fontSize:14,fontWeight:700}}>Prossimi giorni</div>
+              <div style={{fontSize:11,color:T.sub}}>Mercoledi, Giovedi, Venerdi</div>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:"0 20px 16px"}}>
+              {[{g:"Mer 09",idx:2},{g:"Gio 10",idx:3},{g:"Ven 11",idx:4}].map(day => {
+                const attivi = OPERATORI.filter(o=>{const ag=(o.agenda||[])[day.idx];return ag&&ag.a&&!ag.a.includes("Malattia");});
+                const liberiG = OPERATORI.filter(o=>{const ag=(o.agenda||[])[day.idx];return !ag||!ag.a||ag.a.includes("Malattia");});
+                return (
+                  <div key={day.g} style={{marginBottom:16}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <span style={{fontSize:13,fontWeight:700,color:T.ink}}>{day.g}</span>
+                      <span style={{fontSize:11,color:T.teal,fontWeight:600}}>{attivi.length} attivi</span>
+                      {liberiG.filter(o=>o.stato!=="non_disponibile").length>0&&<span style={{fontSize:11,color:T.muted}}>{liberiG.filter(o=>o.stato!=="non_disponibile").length} liberi</span>}
+                    </div>
+                    {attivi.map(o => {
+                      const ag = (o.agenda||[])[day.idx];
+                      return (
+                        <div key={o.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:6,background:`${ag.col||T.muted}08`,borderLeft:`3px solid ${ag.col||T.muted}`,marginBottom:4}}>
+                          <div style={{width:22,height:22,borderRadius:5,background:o.colore,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:800,flexShrink:0}}>{o.avatar}</div>
+                          <span style={{fontSize:11,fontWeight:600,color:T.ink,minWidth:60}}>{o.nome.split(" ")[0]}</span>
+                          <span style={{fontSize:10,color:T.sub,flex:1}}>{ag.a}</span>
+                          {ag.c&&<span style={{fontSize:9,fontWeight:700,color:ag.col||T.teal,fontFamily:T.mono}}>{ag.c}</span>}
+                          {ag.h&&<span style={{fontSize:9,color:T.muted}}>{ag.h}</span>}
+                        </div>
+                      );
+                    })}
+                    {liberiG.filter(o=>o.stato!=="non_disponibile").length>0&&(
+                      <div style={{fontSize:10,color:T.muted,padding:"4px 10px",fontStyle:"italic"}}>
+                        Liberi: {liberiG.filter(o=>o.stato!=="non_disponibile").map(o=>o.nome.split(" ")[0]).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );};
+
 
   /* ═══ CALENDARIO ═══ */
   const PageCalendario = () => (
