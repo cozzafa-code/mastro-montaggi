@@ -277,12 +277,16 @@ const WEEK = [
 // ├ö├Â├ç├ö├Â├ç├ö├Â├ç HOOKS ├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç├ö├Â├ç
 function useTimer() {
   const KEY='fliwox_timer';
+  const KEY_PREV='fliwox_timer_prev';
   const [running,setRunning]=useState(false);
   const [elapsed,setElapsed]=useState(()=>{
     try{const s=localStorage.getItem(KEY);return s?parseInt(s,10):0;}catch{return 0;}
   });
+  const [orePreventivate,setOrePreventivate]=useState(()=>{
+    try{const s=localStorage.getItem(KEY_PREV);return s?parseFloat(s):0;}catch{return 0;}
+  });
+  const [pauseCount,setPauseCount]=useState(0);
   const ref=useRef<ReturnType<typeof setInterval>|null>(null);
-  const saveRef=useRef<ReturnType<typeof setInterval>|null>(null);
   const start=()=>{
     if(!running){
       setRunning(true);
@@ -291,16 +295,64 @@ function useTimer() {
         try{localStorage.setItem(KEY,String(n));}catch{}
         return n;
       }),1000);
+      logTimer('avvio');
     }
   };
-  const pause=()=>{
+  const pause=(motivo?:string)=>{
     if(ref.current)clearInterval(ref.current);
     setRunning(false);
+    setPauseCount(p=>p+1);
     try{localStorage.setItem(KEY,String(elapsed));}catch{}
+    logTimer('pausa',motivo);
   };
-  const stop=()=>{pause();setElapsed(0);try{localStorage.removeItem(KEY);}catch{}};
-  const fmt=(s:number)=>`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  return{running,elapsed,start,pause,stop,fmt};
+  const stop=()=>{
+    if(ref.current)clearInterval(ref.current);
+    setRunning(false);
+    logTimer('stop');
+    saveOreReali(elapsed);
+    setElapsed(0);
+    setPauseCount(0);
+    try{localStorage.removeItem(KEY);}catch{}
+  };
+  const setPreventivate=(h:number)=>{
+    setOrePreventivate(h);
+    try{localStorage.setItem(KEY_PREV,String(h));}catch{}
+  };
+  const fmt=(s:number)=>\`\${String(Math.floor(s/3600)).padStart(2,'0')}:\${String(Math.floor((s%3600)/60)).padStart(2,'0')}:\${String(s%60).padStart(2,'0')}\`;
+  const oreReali=elapsed/3600;
+  const percentuale=orePreventivate>0?Math.round((oreReali/orePreventivate)*100):0;
+  const inRitardo=orePreventivate>0&&oreReali>orePreventivate;
+  return{running,elapsed,start,pause,stop,fmt,orePreventivate,setPreventivate,oreReali,percentuale,inRitardo,pauseCount};
+}
+function logTimer(tipo:string,motivo?:string){
+  // Fire-and-forget log to DB
+  try{
+    const mid=COM.montaggioId;
+    const cid=COM.id;
+    if(!mid||!cid)return;
+    const SB='https://fgefcigxlbrmbeqqzjmo.supabase.co';
+    const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwODcyMDAsImV4cCI6MjA1ODY2MzIwMH0.4lKTGaxOWxGUyJLDOWVOxPbGMSFJkGzwMVtC8MhJMI8';
+    const el=parseInt(localStorage.getItem('fliwox_timer')||'0',10);
+    fetch(SB+'/rest/v1/timer_log',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({montaggio_id:mid,commessa_id:cid,tipo,motivo:motivo||null,secondi_al_momento:el}),
+    }).catch(()=>{});
+  }catch{}
+}
+function saveOreReali(secondi:number){
+  try{
+    const mid=COM.montaggioId;
+    if(!mid)return;
+    const SB='https://fgefcigxlbrmbeqqzjmo.supabase.co';
+    const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwODcyMDAsImV4cCI6MjA1ODY2MzIwMH0.4lKTGaxOWxGUyJLDOWVOxPbGMSFJkGzwMVtC8MhJMI8';
+    const ore=Math.round((secondi/3600)*100)/100;
+    fetch(SB+'/rest/v1/montaggi?id=eq.'+mid,{
+      method:'PATCH',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({ore_reali:ore,timer_secondi:secondi,completato_at:new Date().toISOString()}),
+    }).catch(()=>{});
+  }catch{}
 }
 
 function ora(){return new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});}
@@ -3590,6 +3642,16 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
               <div style={{fontFamily:DS.mono,fontSize:18,fontWeight:700,color:timer.running?DS.teal:'#8BBCBC',flex:1,letterSpacing:1}}>
                 {timer.fmt(timer.elapsed)}
               </div>
+              {timer.orePreventivate>0&&(
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
+                  <div style={{fontSize:9,color:timer.inRitardo?'#DC4444':'#8BBCBC',fontWeight:700}}>
+                    {timer.percentuale}% di {timer.orePreventivate}h
+                  </div>
+                  <div style={{width:50,height:4,background:'#1a2a2a',borderRadius:99,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:Math.min(timer.percentuale,100)+'%',background:timer.inRitardo?'#DC4444':timer.percentuale>80?'#F59E0B':'#1A9E73',borderRadius:99,transition:'width 300ms'}}/>
+                  </div>
+                </div>
+              )}
               {!timer.running
                 ?<button onPointerDown={()=>setBpId('t-s')} onPointerUp={()=>press('t-s',timer.start)}
                     style={{background:DS.green,color:'#fff',border:'none',borderRadius:8,padding:'6px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:DS.ui,fontWeight:700,fontSize:12,boxShadow:bpId==='t-s'?'none':'0 3px 0 0 #0F7A56',transform:bpId==='t-s'?'translateY(2px)':'none',transition:'all 80ms'}}>

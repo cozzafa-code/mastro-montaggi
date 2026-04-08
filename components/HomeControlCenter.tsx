@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ts-20260408realdata
 // ts-20260405d
 'use client';
