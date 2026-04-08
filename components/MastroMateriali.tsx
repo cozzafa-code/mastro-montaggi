@@ -241,7 +241,7 @@ const STATO_COLORI = {
 };
 
 export function CardVanoIndicatori({ nome, tipo, materiale, formato, stato, dimensioni, children }: VanoIndicatoreProps) {
-  const sc = STATO_COLORI[stato] || STATO_COLORI['da_fare'];
+  const sc = (STATO_COLORI as any)[stato] || STATO_COLORI['da_fare'];
   const mk = materiale ? safeMatKey(materiale) : null;
   const mat = mk ? MATERIALI[mk] : null;
   const fk = formato ? safeFmtKey(formato) : null;
