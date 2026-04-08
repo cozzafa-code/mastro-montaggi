@@ -1,400 +1,846 @@
 // @ts-nocheck
-// PortaleAzienda.tsx v8 — LIGHT / Line-divided / Apple iWork
-'use client';
-import React, { useState, useEffect, useRef } from 'react';
+"use client";
+// PORTALE AZIENDA fliwoX v8 LIGHT — tutte le sezioni dense
+// Gestione completa operatori: commesse, documenti, foto, chat, timeline, ore, firme, materiali, spese, GPS
 
-const SB_URL='https://fgefcigxlbrmbeqqzjmo.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODgwNDIsImV4cCI6MjA4NzI2NDA0Mn0.Pw_XaFZ1JMVsoNy5_LiozF2r3YZGuhUkqzRtUdPnjk8';
-const sb={
-  get:async(t,p={})=>{try{const r=await fetch(`${SB_URL}/rest/v1/${t}?${new URLSearchParams(p)}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});return r.ok?r.json():[];}catch{return[];}},
-  post:async(t,b)=>{try{const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(b)});return r.ok?r.json():null;}catch{return null;}},
-  patch:async(t,id,b)=>{try{await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(b)});}catch{}},
+import React, { useState, useMemo } from "react";
+
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — Apple iWork light
+═══════════════════════════════════════════ */
+const T = {
+  bg: "#FFFFFF",
+  bgAlt: "#FAFAFA",
+  bgHover: "#F5F7F7",
+  ink: "#1A1A1A",
+  sub: "#6B7280",
+  muted: "#9CA3AF",
+  line: "#E5E7EB",
+  lineLight: "#F0F0F0",
+  teal: "#1A9E8F",
+  tealLight: "rgba(26,158,143,0.08)",
+  tealBorder: "rgba(26,158,143,0.2)",
+  green: "#2D8A4E",
+  greenLight: "rgba(45,138,78,0.08)",
+  amber: "#C47D0A",
+  amberLight: "rgba(196,125,10,0.08)",
+  red: "#DC4444",
+  redLight: "rgba(220,68,68,0.08)",
+  blue: "#3B7FE0",
+  blueLight: "rgba(59,127,224,0.08)",
+  purple: "#7C3AED",
+  purpleLight: "rgba(124,58,237,0.08)",
+  radius: 8,
+  mono: "'JetBrains Mono',monospace",
+  font: "'Inter',-apple-system,BlinkMacSystemFont,sans-serif",
 };
 
-// ═══ LIGHT DESIGN SYSTEM ═══
-const F=`'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif`;
-const M=`'SF Mono','Menlo','Consolas',monospace`;
-const C={
-  bg:'#FFFFFF',
-  sb:'#FAFAFA',
-  line:'#E8E8E8',
-  lineS:'#F2F2F2',
-  hover:'#F7F7F7',
-  sel:'#F0F9F8',
-  teal:'#1A9E8F',
-  tealL:'#E8F5F3',
-  grn:'#2D8A4E',
-  grnL:'#E8F5EC',
-  amb:'#C47D0A',
-  ambL:'#FFF8E8',
-  red:'#D03838',
-  redL:'#FEF0F0',
-  blu:'#3574D4',
-  bluL:'#EEF3FC',
-  pur:'#7C5CBF',
-  purL:'#F3EFF9',
-  t1:'#1A1A1A',
-  t2:'#666666',
-  t3:'#999999',
-  t4:'#CCCCCC',
+/* ═══════════════════════════════════════════
+   DATI DEMO — operatori con tutto lo storico
+═══════════════════════════════════════════ */
+const OPERATORI = [
+  {
+    id: "op1", nome: "Marco Ferretti", ruolo: "montatore", stato: "in_cantiere",
+    telefono: "+39 345 678 9012", email: "marco.f@waltercozza.it",
+    pin: "1234", assunto: "2019-03-15", contratto: "indeterminato",
+    patente: "B", automezzo: "Fiat Ducato AB 123 CD",
+    avatar: "MF", colore: "#1A9E8F",
+    posizione: { lat: 39.3076, lng: 16.2501, aggiornamento: "08/04 08:42", indirizzo: "Via Roma 45, Cosenza" },
+    kpi: { commesseAnno: 47, oreAnno: 1840, mediaGiorno: 8.2, ritardi: 2, valutazioneMedia: 4.7, reclami: 1, presenzeMese: 21, assenzeAnno: 4 },
+    commesse: [
+      {
+        id: "COM-2024-089", cliente: "Fam. Bianchi", indirizzo: "Via Garibaldi 12, Cosenza",
+        tipo: "Sostituzione infissi", stato: "in_corso", priorita: "alta",
+        dataInizio: "05/04/2026", dataFine: "10/04/2026", avanzamento: 65,
+        vani: [
+          { id: "V1", nome: "Soggiorno", tipo: "Finestra 2 ante", dim: "1400x1600", materiale: "PVC Aluplast IDEAL 7000", stato: "montato", oreReali: 3.5, orePreviste: 3 },
+          { id: "V2", nome: "Camera matrimoniale", tipo: "Portafinestra scorrevole", dim: "2200x2200", materiale: "PVC Aluplast ENERGETO 8000", stato: "in_corso", oreReali: 2.0, orePreviste: 4 },
+          { id: "V3", nome: "Cucina", tipo: "Finestra 1 anta + ribalta", dim: "900x1200", materiale: "PVC Aluplast IDEAL 7000", stato: "da_fare", oreReali: 0, orePreviste: 2 },
+          { id: "V4", nome: "Bagno", tipo: "Vasistas", dim: "600x800", materiale: "PVC Aluplast IDEAL 7000", stato: "da_fare", oreReali: 0, orePreviste: 1.5 },
+        ],
+        documenti: [
+          { nome: "Ordine fornitore Aluplast", tipo: "pdf", data: "28/03", peso: "245 KB" },
+          { nome: "Scheda tecnica IDEAL 7000", tipo: "pdf", data: "28/03", peso: "1.2 MB" },
+          { nome: "Foto sopralluogo", tipo: "zip", data: "25/03", peso: "8.4 MB" },
+          { nome: "Preventivo approvato", tipo: "pdf", data: "20/03", peso: "180 KB" },
+          { nome: "DDT consegna materiali", tipo: "pdf", data: "04/04", peso: "95 KB" },
+        ],
+        foto: [
+          { src: "prima_soggiorno.jpg", fase: "PRIMA", vano: "V1", data: "05/04 09:15", nota: "Infisso esistente in legno, guarnizioni consumate" },
+          { src: "demolizione_soggiorno.jpg", fase: "DEMOLIZIONE", vano: "V1", data: "05/04 10:30", nota: "Controtelaio rimosso, muro pulito" },
+          { src: "montaggio_soggiorno.jpg", fase: "MONTAGGIO", vano: "V1", data: "05/04 14:20", nota: "Controtelaio nuovo posato, livellato" },
+          { src: "dopo_soggiorno.jpg", fase: "DOPO", vano: "V1", data: "05/04 16:45", nota: "Finestra montata, silicone fatto, anta regolata" },
+          { src: "prima_camera.jpg", fase: "PRIMA", vano: "V2", data: "07/04 08:30", nota: "Portafinestra scorrevole vecchia" },
+          { src: "demolizione_camera.jpg", fase: "DEMOLIZIONE", vano: "V2", data: "07/04 10:00", nota: "Binario rimosso" },
+        ],
+        chat: [
+          { da: "Marco", ora: "05/04 08:10", testo: "Sono arrivato, inizio dal soggiorno", tipo: "operatore" },
+          { da: "Ufficio", ora: "05/04 08:12", testo: "OK, buon lavoro. Ricordati le foto PRIMA", tipo: "ufficio" },
+          { da: "Marco", ora: "05/04 10:35", testo: "Controtelaio soggiorno rimosso. Muro in buone condizioni, niente sorprese", tipo: "operatore" },
+          { da: "Marco", ora: "05/04 16:50", testo: "Soggiorno completato, 4 foto caricate. Domani camera", tipo: "operatore" },
+          { da: "Cliente", ora: "06/04 09:00", testo: "Buongiorno, domani potete iniziare dopo le 9?", tipo: "cliente" },
+          { da: "Marco", ora: "07/04 08:32", testo: "Inizio camera matrimoniale. Scorrevole pesante, serve aiuto per il telaio", tipo: "operatore" },
+          { da: "Ufficio", ora: "07/04 08:35", testo: "Mando Luca alle 10", tipo: "ufficio" },
+          { da: "AI", ora: "07/04 08:36", testo: "Nota: per ENERGETO 8000 scorrevole, coppia serraggio ferramenta Roto = 2.5 Nm", tipo: "ai" },
+        ],
+        timeline: [
+          { data: "20/03", evento: "Preventivo approvato dal cliente", tipo: "milestone" },
+          { data: "25/03", evento: "Sopralluogo tecnico — misure confermate", tipo: "milestone" },
+          { data: "28/03", evento: "Ordine materiali inviato ad Aluplast", tipo: "ordine" },
+          { data: "03/04", evento: "Materiali consegnati in magazzino — DDT verificato", tipo: "consegna" },
+          { data: "04/04", evento: "Materiali caricati sul Ducato — lista spunta OK", tipo: "logistica" },
+          { data: "05/04", evento: "Inizio cantiere — V1 Soggiorno completato", tipo: "lavoro" },
+          { data: "07/04", evento: "V2 Camera — in corso (scorrevole)", tipo: "lavoro" },
+          { data: "08/04", evento: "OGGI — previsto: completare V2 + inizio V3", tipo: "oggi" },
+        ],
+        materiali: [
+          { nome: "Viti ASSY 4x50 zincate", qta: 48, usate: 32, um: "pz" },
+          { nome: "Silicone neutro bianco", qta: 4, usate: 2, um: "tubi" },
+          { nome: "Schiuma PU bassa espansione", qta: 3, usate: 1, um: "bombolette" },
+          { nome: "Nastro VKP PIU 25mm", qta: 2, usate: 1, um: "rotoli" },
+          { nome: "Guarnizione EPDM nera", qta: 10, usate: 4, um: "mt" },
+          { nome: "Tasselli Fischer FUR 10x80", qta: 24, usate: 12, um: "pz" },
+        ],
+        firme: [
+          { tipo: "Inizio lavori", data: "05/04 08:15", firmato: true, chi: "Sig. Bianchi" },
+          { tipo: "Fine lavori parziale V1", data: "05/04 16:50", firmato: true, chi: "Sig. Bianchi" },
+          { tipo: "Fine lavori totale", data: null, firmato: false, chi: null },
+          { tipo: "Collaudo", data: null, firmato: false, chi: null },
+        ],
+        spese: [
+          { data: "05/04", desc: "Colazione cantiere", importo: 8.50, cat: "Pasti", stato: "approvata" },
+          { data: "05/04", desc: "Tasselli aggiuntivi Brico", importo: 12.90, cat: "Materiale", stato: "approvata" },
+          { data: "07/04", desc: "Parcheggio ZTL Cosenza", importo: 5.00, cat: "Trasporto", stato: "da_approvare" },
+        ],
+        ore: [
+          { data: "05/04", inizio: "08:00", fine: "17:00", pausa: 60, nette: 8, tipo: "cantiere" },
+          { data: "07/04", inizio: "08:15", fine: "16:30", pausa: 45, nette: 7.5, tipo: "cantiere" },
+          { data: "08/04", inizio: "08:00", fine: null, pausa: 0, nette: 0, tipo: "cantiere" },
+        ],
+      },
+      {
+        id: "COM-2024-082", cliente: "Condominio Via Verdi", indirizzo: "Via Verdi 8, Rende",
+        tipo: "Persiane alluminio", stato: "programmata", priorita: "media",
+        dataInizio: "14/04/2026", dataFine: "18/04/2026", avanzamento: 0,
+        vani: [
+          { id: "V1", nome: "App.1 Soggiorno", tipo: "Persiana 2 ante", dim: "1200x1600", materiale: "Alluminio CX65", stato: "da_fare", oreReali: 0, orePreviste: 2 },
+          { id: "V2", nome: "App.1 Camera", tipo: "Persiana 2 ante", dim: "1000x1400", materiale: "Alluminio CX65", stato: "da_fare", oreReali: 0, orePreviste: 1.5 },
+          { id: "V3", nome: "App.2 Soggiorno", tipo: "Persiana 2 ante", dim: "1200x1600", materiale: "Alluminio CX65", stato: "da_fare", oreReali: 0, orePreviste: 2 },
+        ],
+        documenti: [
+          { nome: "Preventivo condominio", tipo: "pdf", data: "10/03", peso: "320 KB" },
+          { nome: "Delibera assembleare", tipo: "pdf", data: "15/03", peso: "450 KB" },
+        ],
+        foto: [],
+        chat: [
+          { da: "Ufficio", ora: "01/04", testo: "Commessa assegnata. Materiali arrivano il 12/04", tipo: "ufficio" },
+          { da: "Marco", ora: "01/04", testo: "OK, presa visione", tipo: "operatore" },
+        ],
+        timeline: [
+          { data: "10/03", evento: "Preventivo inviato", tipo: "milestone" },
+          { data: "15/03", evento: "Delibera assembleare approvata", tipo: "milestone" },
+          { data: "01/04", evento: "Commessa assegnata a Marco", tipo: "assegnazione" },
+        ],
+        materiali: [],
+        firme: [],
+        spese: [],
+        ore: [],
+      },
+    ],
+    storicoPrestazioni: [
+      { mese: "Gen", commesse: 4, oreNette: 168, valutazione: 4.8, ritardi: 0 },
+      { mese: "Feb", commesse: 5, oreNette: 152, valutazione: 4.6, ritardi: 1 },
+      { mese: "Mar", commesse: 4, oreNette: 176, valutazione: 4.9, ritardi: 0 },
+      { mese: "Apr", commesse: 2, oreNette: 56, valutazione: 4.5, ritardi: 1 },
+    ],
+    certificazioni: [
+      { nome: "Posa qualificata UNI 11673-1", scadenza: "12/2026", stato: "valida" },
+      { nome: "Sicurezza cantiere base", scadenza: "06/2026", stato: "in_scadenza" },
+      { nome: "Primo soccorso", scadenza: "03/2027", stato: "valida" },
+    ],
+    dotazioni: [
+      { nome: "Trapano Hilti TE 6-A22", stato: "assegnato", dal: "01/2024" },
+      { nome: "Livella laser Bosch GCL 2-50", stato: "assegnato", dal: "03/2024" },
+      { nome: "Kit sigillatura", stato: "assegnato", dal: "01/2024" },
+      { nome: "Fiat Ducato AB 123 CD", stato: "assegnato", dal: "06/2023" },
+    ],
+  },
+  {
+    id: "op2", nome: "Luca Mancini", ruolo: "montatore", stato: "disponibile",
+    telefono: "+39 333 456 7890", email: "luca.m@waltercozza.it",
+    pin: "5678", assunto: "2021-09-01", contratto: "determinato",
+    patente: "B", automezzo: "Fiat Doblò CD 456 EF",
+    avatar: "LM", colore: "#3B7FE0",
+    posizione: { lat: 39.3316, lng: 16.2404, aggiornamento: "08/04 07:55", indirizzo: "Sede — Via Industriale, Cosenza" },
+    kpi: { commesseAnno: 32, oreAnno: 1320, mediaGiorno: 7.8, ritardi: 5, valutazioneMedia: 4.2, reclami: 3, presenzeMese: 19, assenzeAnno: 8 },
+    commesse: [
+      {
+        id: "COM-2024-091", cliente: "Bar Sport Centrale", indirizzo: "Corso Mazzini 44, Cosenza",
+        tipo: "Vetrina commerciale", stato: "in_attesa_materiali", priorita: "media",
+        dataInizio: "11/04/2026", dataFine: "12/04/2026", avanzamento: 0,
+        vani: [
+          { id: "V1", nome: "Vetrina frontale", tipo: "Vetrata fissa temperata", dim: "3000x2400", materiale: "Alluminio CX70 + vetro stratificato 6+6", stato: "da_fare", oreReali: 0, orePreviste: 6 },
+        ],
+        documenti: [
+          { nome: "Preventivo vetrina", tipo: "pdf", data: "01/04", peso: "210 KB" },
+        ],
+        foto: [],
+        chat: [
+          { da: "Ufficio", ora: "03/04", testo: "Vetro stratificato ordinato a Vetro Sud. Consegna 10/04", tipo: "ufficio" },
+          { da: "Luca", ora: "03/04", testo: "Serve ponteggio?", tipo: "operatore" },
+          { da: "Ufficio", ora: "03/04", testo: "No, altezza interna 2.80. Ventose bastano", tipo: "ufficio" },
+        ],
+        timeline: [
+          { data: "01/04", evento: "Preventivo confermato", tipo: "milestone" },
+          { data: "03/04", evento: "Ordine vetro a Vetro Sud", tipo: "ordine" },
+        ],
+        materiali: [
+          { nome: "Silicone strutturale", qta: 6, usate: 0, um: "tubi" },
+          { nome: "Ventose 3 coppe", qta: 2, usate: 0, um: "pz" },
+        ],
+        firme: [],
+        spese: [],
+        ore: [],
+      },
+    ],
+    storicoPrestazioni: [
+      { mese: "Gen", commesse: 3, oreNette: 148, valutazione: 4.3, ritardi: 1 },
+      { mese: "Feb", commesse: 3, oreNette: 136, valutazione: 4.0, ritardi: 2 },
+      { mese: "Mar", commesse: 3, oreNette: 160, valutazione: 4.4, ritardi: 1 },
+      { mese: "Apr", commesse: 0, oreNette: 0, valutazione: 0, ritardi: 0 },
+    ],
+    certificazioni: [
+      { nome: "Posa qualificata UNI 11673-1", scadenza: "09/2026", stato: "valida" },
+      { nome: "Lavori in quota", scadenza: "05/2026", stato: "in_scadenza" },
+    ],
+    dotazioni: [
+      { nome: "Trapano Makita DHP 486", stato: "assegnato", dal: "09/2021" },
+      { nome: "Fiat Doblò CD 456 EF", stato: "assegnato", dal: "09/2021" },
+    ],
+  },
+  {
+    id: "op3", nome: "Andrea Russo", ruolo: "tecnico_misure", stato: "in_sopralluogo",
+    telefono: "+39 320 111 2233", email: "andrea.r@waltercozza.it",
+    pin: "9012", assunto: "2020-01-10", contratto: "indeterminato",
+    patente: "B", automezzo: "Fiat 500L GH 789 IJ",
+    avatar: "AR", colore: "#7C3AED",
+    posizione: { lat: 39.2900, lng: 16.2700, aggiornamento: "08/04 09:10", indirizzo: "Via Gramsci 22, Rende" },
+    kpi: { commesseAnno: 62, oreAnno: 1560, mediaGiorno: 7.0, ritardi: 1, valutazioneMedia: 4.9, reclami: 0, presenzeMese: 22, assenzeAnno: 2 },
+    commesse: [
+      {
+        id: "RIL-2024-155", cliente: "Sig.ra Greco", indirizzo: "Via Gramsci 22, Rende",
+        tipo: "Rilievo misure infissi", stato: "in_corso", priorita: "alta",
+        dataInizio: "08/04/2026", dataFine: "08/04/2026", avanzamento: 40,
+        vani: [
+          { id: "V1", nome: "Soggiorno", tipo: "Finestra 2 ante", dim: "da rilevare", materiale: "da definire", stato: "in_corso", oreReali: 0.5, orePreviste: 0.5 },
+          { id: "V2", nome: "Camera 1", tipo: "Finestra 1 anta", dim: "da rilevare", materiale: "da definire", stato: "da_fare", oreReali: 0, orePreviste: 0.3 },
+          { id: "V3", nome: "Camera 2", tipo: "Finestra 1 anta", dim: "da rilevare", materiale: "da definire", stato: "da_fare", oreReali: 0, orePreviste: 0.3 },
+          { id: "V4", nome: "Cucina", tipo: "Finestra 1 anta + ribalta", dim: "da rilevare", materiale: "da definire", stato: "da_fare", oreReali: 0, orePreviste: 0.3 },
+          { id: "V5", nome: "Bagno", tipo: "Vasistas", dim: "da rilevare", materiale: "da definire", stato: "da_fare", oreReali: 0, orePreviste: 0.2 },
+        ],
+        documenti: [],
+        foto: [
+          { src: "ril_soggiorno_1.jpg", fase: "RILIEVO", vano: "V1", data: "08/04 09:20", nota: "Luce muro 1380mm, altezza 1580mm, fuori squadro 3mm" },
+        ],
+        chat: [
+          { da: "Andrea", ora: "08/04 09:05", testo: "Arrivato da Sig.ra Greco. Inizio rilievo", tipo: "operatore" },
+          { da: "Andrea", ora: "08/04 09:22", testo: "Soggiorno: luce 1380x1580, fuori squadro 3mm lato dx. Muro 30cm", tipo: "operatore" },
+        ],
+        timeline: [
+          { data: "08/04", evento: "Inizio rilievo misure", tipo: "lavoro" },
+        ],
+        materiali: [],
+        firme: [],
+        spese: [],
+        ore: [
+          { data: "08/04", inizio: "09:00", fine: null, pausa: 0, nette: 0, tipo: "sopralluogo" },
+        ],
+      },
+    ],
+    storicoPrestazioni: [
+      { mese: "Gen", commesse: 6, oreNette: 154, valutazione: 4.9, ritardi: 0 },
+      { mese: "Feb", commesse: 5, oreNette: 140, valutazione: 4.8, ritardi: 1 },
+      { mese: "Mar", commesse: 7, oreNette: 168, valutazione: 5.0, ritardi: 0 },
+      { mese: "Apr", commesse: 1, oreNette: 8, valutazione: 0, ritardi: 0 },
+    ],
+    certificazioni: [
+      { nome: "Posa qualificata UNI 11673-1", scadenza: "01/2027", stato: "valida" },
+      { nome: "Termografia edifici livello 1", scadenza: "11/2026", stato: "valida" },
+    ],
+    dotazioni: [
+      { nome: "Metro laser Leica DISTO D2", stato: "assegnato", dal: "01/2020" },
+      { nome: "iPad Pro 12.9 + Apple Pencil", stato: "assegnato", dal: "03/2023" },
+      { nome: "Fiat 500L GH 789 IJ", stato: "assegnato", dal: "01/2020" },
+    ],
+  },
+];
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+const statoColor = (s: string) => {
+  const m: Record<string, { bg: string; fg: string; label: string }> = {
+    in_cantiere:         { bg: T.greenLight,   fg: T.green,  label: "In cantiere" },
+    disponibile:         { bg: T.tealLight,    fg: T.teal,   label: "Disponibile" },
+    in_sopralluogo:      { bg: T.purpleLight,  fg: T.purple, label: "In sopralluogo" },
+    in_pausa:            { bg: T.amberLight,   fg: T.amber,  label: "In pausa" },
+    non_disponibile:     { bg: T.redLight,     fg: T.red,    label: "Non disponibile" },
+  };
+  return m[s] || { bg: T.bgAlt, fg: T.sub, label: s };
 };
-const ST={
-  nuova:{c:C.amb,bg:C.ambL,l:'In attesa'},
-  vista:{c:C.blu,bg:C.bluL,l:'Presa in carico'},
-  accettata:{c:C.grn,bg:C.grnL,l:'Accettata'},
-  in_corso:{c:C.teal,bg:C.tealL,l:'In lavorazione'},
-  completata:{c:C.pur,bg:C.purL,l:'Completata'},
-  rifiutata:{c:C.red,bg:C.redL,l:'Rifiutata'},
-  annullata:{c:C.t3,bg:C.lineS,l:'Annullata'},
+
+const statoVanoColor = (s: string) => {
+  const m: Record<string, { dot: string; label: string }> = {
+    montato:  { dot: T.green, label: "Montato" },
+    in_corso: { dot: T.amber, label: "In corso" },
+    da_fare:  { dot: T.muted, label: "Da fare" },
+  };
+  return m[s] || { dot: T.muted, label: s };
 };
 
-const Logo=({s=22})=><svg width={s} height={s} viewBox="0 0 200 200" fill="none"><rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/><rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/><rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/><rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/><g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g></svg>;
+const statoCommColor = (s: string) => {
+  const m: Record<string, { dot: string; label: string }> = {
+    in_corso:             { dot: T.green, label: "In corso" },
+    programmata:          { dot: T.blue,  label: "Programmata" },
+    in_attesa_materiali:  { dot: T.amber, label: "Attesa materiali" },
+    completata:           { dot: T.teal,  label: "Completata" },
+  };
+  return m[s] || { dot: T.muted, label: s };
+};
 
-export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
-  const [loading,setLoading]=useState(true);const [azienda,setAzienda]=useState(null);const [notFound,setNotFound]=useState(false);
-  const [freelancers,setFreelancers]=useState([]);const [richieste,setRichieste]=useState([]);
-  const [page,setPage]=useState('dashboard');const [selFL,setSelFL]=useState(null);const [selR,setSelR]=useState(null);
-  const [filtro,setFiltro]=useState('tutti');const [search,setSearch]=useState('');
-  const [det,setDet]=useState({montaggi:[],fotoFasi:[],firme:[],fatture:[],costi:[],documenti:[],candidature:[],timeline:[],chat:[],valutazione:null});
-  const [calDate,setCalDate]=useState(()=>new Date());const [hoverEvent,setHoverEvent]=useState(null);const [hoverPos,setHoverPos]=useState({x:0,y:0});
-  const [notifiche,setNotifiche]=useState([]);const [valutazioni,setValutazioni]=useState([]);
-  const [chatMsg,setChatMsg]=useState('');const [detTab,setDetTab]=useState('info');
-  const [fFatture,setFFatture]=useState([]);const [fProfilo,setFProfilo]=useState(null);const [flTab,setFlTab]=useState('panoramica');
-  const pollRef=useRef(null);const chatEndRef=useRef(null);
+const tipoTimelineIcon = (tipo: string) => {
+  const m: Record<string, string> = {
+    milestone: "◆", ordine: "▶", consegna: "📦", logistica: "🚛",
+    lavoro: "🔧", assegnazione: "👤", oggi: "●",
+  };
+  return m[tipo] || "·";
+};
 
-  useEffect(()=>{(async()=>{
-    const azRes=await sb.get('aziende_freelance',{invite_code:'eq.'+inviteCode,limit:'1'});
-    if(!azRes?.length){setNotFound(true);setLoading(false);return;}
-    const az=azRes[0];setAzienda(az);
-    const allAz=await sb.get('aziende_freelance',{nome:'eq.'+az.nome,attiva:'eq.true'});
-    const ops=[];for(const a of(allAz||[])){const o=await sb.get('operatori',{id:'eq.'+a.operatore_id,limit:'1'});if(o?.[0])ops.push({...o[0],azienda_fl_id:a.id});}
-    setFreelancers(ops);await loadRL(allAz||[]);
-    const azIds=(allAz||[]).map(a=>a.id);const allN=[];for(const aid of azIds){const n=await sb.get('notifiche_portale',{azienda_fl_id:'eq.'+aid,destinatario:'eq.azienda',order:'created_at.desc',limit:'50'});allN.push(...(n||[]));}
-    allN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));setNotifiche(allN);
-    const allV=[];for(const op of ops){const v=await sb.get('valutazioni_freelance',{operatore_id:'eq.'+op.id,order:'created_at.desc'});allV.push(...(v||[]));}
-    setValutazioni(allV);setLoading(false);
-  })();return()=>{if(pollRef.current)clearInterval(pollRef.current);};},[inviteCode]);
-  useEffect(()=>{if(!azienda)return;pollRef.current=setInterval(async()=>{const a=await sb.get('aziende_freelance',{nome:'eq.'+azienda.nome,attiva:'eq.true'});await loadRL(a||[]);},25000);return()=>clearInterval(pollRef.current);},[azienda]);
-  useEffect(()=>{if(!selFL)return;(async()=>{const fat=await sb.get('fatture_freelance',{operatore_id:'eq.'+selFL.id,order:'data_emissione.desc',limit:'50'});setFFatture(fat||[]);const prof=await sb.get('profili_freelance',{operatore_id:'eq.'+selFL.id,limit:'1'});setFProfilo(prof?.[0]||null);setFlTab('panoramica');})();},[selFL]);
+const tipoChatColor = (tipo: string) => {
+  const m: Record<string, string> = { operatore: T.teal, ufficio: T.blue, cliente: T.green, ai: T.purple };
+  return m[tipo] || T.sub;
+};
 
-  const loadRL=async(azL)=>{const all=[];for(const a of azL){const r=await sb.get('richieste_lavoro',{azienda_fl_id:'eq.'+a.id,order:'created_at.desc',limit:'200'});all.push(...(r||[]));}all.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));setRichieste(all);};
-  const openDet=async(r)=>{setSelR(r);setPage('dettaglio');setDetTab('info');const [docs,fat,cos,tl,ch,val]=await Promise.all([sb.get('documenti_lavoro',{richiesta_id:'eq.'+r.id,order:'created_at.desc'}),sb.get('fatture_freelance',{richiesta_id:'eq.'+r.id,order:'data_emissione.desc'}),sb.get('costi_commessa',{richiesta_id:'eq.'+r.id,order:'data.desc'}),sb.get('timeline_eventi',{richiesta_id:'eq.'+r.id,order:'created_at.desc',limit:'50'}),sb.get('chat_portale',{richiesta_id:'eq.'+r.id,order:'created_at.asc',limit:'100'}),sb.get('valutazioni_freelance',{richiesta_id:'eq.'+r.id,limit:'1'})]);let montaggi=[],fotoFasi=[],firme=[];if(r.commessa_id){const [mt,ft,fm]=await Promise.all([sb.get('montaggi',{commessa_id:'eq.'+r.commessa_id,limit:'10'}),sb.get('allegati_vano',{select:'*',limit:'50'}),sb.get('firma_collaudo',{select:'*',limit:'10'})]);montaggi=mt||[];fotoFasi=(ft||[]).filter(f=>f.fase);firme=fm||[];}setDet({montaggi,fotoFasi,firme,fatture:fat||[],costi:cos||[],documenti:docs||[],candidature:[],timeline:tl||[],chat:ch||[],valutazione:val?.[0]||null});};
-  const sendChat=async()=>{if(!chatMsg.trim()||!selR)return;const msg={richiesta_id:selR.id,mittente_tipo:'azienda',mittente_nome:azienda?.nome||'Azienda',testo:chatMsg.trim()};const res=await sb.post('chat_portale',msg);if(res){setDet(d=>({...d,chat:[...d.chat,...(Array.isArray(res)?res:[res])]}));setChatMsg('');setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100);}};
+const fmtOre = (n: number) => n > 0 ? `${n.toFixed(1)}h` : "—";
 
-  const gn=(opId)=>{const f=freelancers.find(x=>x.id===opId);return f?`${f.nome} ${f.cognome}`:'—';};
-  const rpf=(opId)=>richieste.filter(r=>r.operatore_id===opId);
-  const avgR=(opId)=>{const v=valutazioni.filter(x=>x.operatore_id===opId);return v.length?{avg:(v.reduce((s,x)=>s+x.stelle,0)/v.length).toFixed(1),n:v.length}:{avg:'—',n:0};};
-  const kN=richieste.filter(r=>['nuova','vista'].includes(r.stato)).length;
-  const kA=richieste.filter(r=>['accettata','in_corso'].includes(r.stato)).length;
-  const kC=richieste.filter(r=>r.stato==='completata').length;
-  const kB=richieste.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(parseFloat(r.budget)||0),0);
-  const unreadN=notifiche.filter(n=>!n.letta).length;
-  let filtered=richieste;
-  if(filtro==='attivi')filtered=richieste.filter(r=>['nuova','vista','accettata','in_corso'].includes(r.stato));
-  else if(filtro==='completati')filtered=richieste.filter(r=>r.stato==='completata');
-  if(search)filtered=filtered.filter(r=>(r.cliente+r.indirizzo+(r.note||'')).toLowerCase().includes(search.toLowerCase()));
+/* ═══════════════════════════════════════════
+   SEZIONE: LINE DIVIDER
+═══════════════════════════════════════════ */
+const Line = () => <div style={{ borderBottom: `1px solid ${T.line}` }} />;
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ padding: "14px 20px 6px", fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", color: T.muted }}>{children}</div>
+);
 
-  if(loading)return<div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:F}}><Css/><Logo s={36}/></div>;
-  if(notFound)return<div style={{minHeight:'100vh',background:C.bg,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',fontFamily:F,gap:12}}><Css/><Logo s={40}/><div style={{color:C.t3,fontSize:14}}>Questo link non è valido</div></div>;
+/* ═══════════════════════════════════════════
+   BARRA AVANZAMENTO
+═══════════════════════════════════════════ */
+const ProgressBar = ({ pct, height = 4 }: { pct: number; height?: number }) => (
+  <div style={{ background: T.lineLight, borderRadius: height / 2, height, overflow: "hidden", flex: 1 }}>
+    <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", borderRadius: height / 2, background: pct >= 100 ? T.green : pct >= 50 ? T.teal : T.amber, transition: "width 0.3s" }} />
+  </div>
+);
 
-  return(
-    <div style={{display:'flex',height:'100vh',background:C.bg,fontFamily:F,color:C.t1,overflow:'hidden'}}><Css/>
+/* ═══════════════════════════════════════════
+   COMPONENTE PRINCIPALE
+═══════════════════════════════════════════ */
+export default function PortaleAzienda() {
+  const [selOp, setSelOp] = useState<string | null>(null);
+  const [selComm, setSelComm] = useState<string | null>(null);
+  const [commTab, setCommTab] = useState("vani");
+  const [search, setSearch] = useState("");
 
-      {/* ═══ SIDEBAR ═══ */}
-      <div style={{width:220,background:C.sb,borderRight:`1px solid ${C.line}`,display:'flex',flexDirection:'column',flexShrink:0}}>
-        <div style={{padding:'16px 14px 12px'}}>
-          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:14}}>
-            <Logo s={20}/>
-            <span style={{fontSize:14,fontWeight:600,letterSpacing:'-0.02em',color:C.t1}}>fliwo<span style={{color:C.teal}}>X</span></span>
+  const opFiltered = useMemo(() => {
+    if (!search) return OPERATORI;
+    const q = search.toLowerCase();
+    return OPERATORI.filter(o => o.nome.toLowerCase().includes(q) || o.ruolo.includes(q) || o.id.includes(q));
+  }, [search]);
+
+  const op = OPERATORI.find(o => o.id === selOp);
+  const comm = op?.commesse.find(c => c.id === selComm);
+
+  // ── SIDEBAR ──
+  const Sidebar = () => (
+    <div style={{ width: 280, borderRight: `1px solid ${T.line}`, background: T.bgAlt, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{ padding: "16px 16px 12px", borderBottom: `1px solid ${T.line}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 6, background: T.teal, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 800 }}>f</span>
           </div>
-          <div style={{fontSize:12,fontWeight:500,color:C.t2}}>{azienda?.nome}</div>
+          <span style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>fliwoX</span>
+          <span style={{ fontSize: 11, color: T.muted, marginLeft: "auto" }}>Portale Azienda</span>
         </div>
-        <div style={{height:1,background:C.line,margin:'0 14px'}}/>
-        <div style={{padding:'8px 6px',flex:1,overflowY:'auto'}}>
-          {[
-            {k:'dashboard',l:'Dashboard',b:kN||null},
-            {k:'calendario',l:'Calendario'},
-            {k:'notifiche',l:'Notifiche',b:unreadN||null},
-          ].map(n=>(
-            <button key={n.k} onClick={()=>{setPage(n.k);if(n.k==='dashboard')setSelFL(null);setSelR(null);}}
-              style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 10px',borderRadius:5,border:'none',cursor:'pointer',marginBottom:1,background:page===n.k&&!selFL?C.tealL:'transparent',fontSize:13,fontWeight:page===n.k&&!selFL?600:400,color:page===n.k&&!selFL?C.teal:C.t2,fontFamily:F}}>
-              <span>{n.l}</span>
-              {n.b&&<span style={{fontSize:10,fontWeight:600,color:C.amb}}>{n.b}</span>}
-            </button>
-          ))}
-
-          <div style={{height:1,background:C.line,margin:'10px 8px'}}/>
-          <div style={{padding:'2px 10px 6px',fontSize:11,fontWeight:500,color:C.t3}}>Serramentisti</div>
-          {freelancers.map(f=>{
-            const a=selFL?.id===f.id&&page==='serramentista';const fAct=rpf(f.id).filter(r=>['accettata','in_corso'].includes(r.stato)).length;const rt=avgR(f.id);
-            return(
-              <button key={f.id} onClick={()=>{setSelFL(f);setPage('serramentista');setSelR(null);}}
-                style={{width:'100%',display:'flex',alignItems:'center',gap:7,padding:'5px 10px',borderRadius:5,border:'none',cursor:'pointer',marginBottom:1,background:a?C.tealL:'transparent',fontFamily:F}}>
-                <div style={{width:20,height:20,borderRadius:5,background:a?C.teal:C.line,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:700,color:a?'#fff':C.t3,flexShrink:0}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
-                <div style={{flex:1,textAlign:'left',minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:a?600:400,color:a?C.teal:C.t2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.nome} {f.cognome}</div>
-                </div>
-                {fAct>0&&<span style={{fontSize:10,color:C.teal,fontWeight:600}}>{fAct}</span>}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{padding:'10px 14px',borderTop:`1px solid ${C.line}`,display:'flex',alignItems:'center',gap:5,opacity:.4}}>
-          <Logo s={10}/><span style={{fontSize:9,color:C.t3}}>fliwoX</span>
-        </div>
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Cerca operatore..."
+          style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, fontSize: 13, background: T.bg, outline: "none", color: T.ink, fontFamily: T.font }}
+        />
       </div>
-
-      {/* ═══ MAIN ═══ */}
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        {/* Topbar */}
-        <div style={{padding:'12px 32px',display:'flex',alignItems:'center',gap:16,flexShrink:0,borderBottom:`1px solid ${C.line}`}}>
-          {page==='dettaglio'&&<button onClick={()=>{setPage('dashboard');setSelR(null);}} style={{background:'none',border:'none',cursor:'pointer',padding:0}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>}
-          <span style={{flex:1,fontSize:13,fontWeight:500,color:C.t2}}>{page==='calendario'?'Calendario':page==='notifiche'?'Notifiche':page==='dettaglio'&&selR?selR.cliente:page==='serramentista'&&selFL?`${selFL.nome} ${selFL.cognome}`:'Dashboard'}</span>
-          <div style={{position:'relative'}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{position:'absolute',left:8,top:7}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca..."
-              style={{width:200,background:C.sb,border:`1px solid ${C.line}`,borderRadius:6,padding:'5px 8px 5px 28',fontSize:12,color:C.t1,fontFamily:F,outline:'none'}}/>
-          </div>
-        </div>
-
-        <div style={{flex:1,overflowY:'auto',padding:'24px 32px 32px'}}>
-
-          {/* ═══ DASHBOARD ═══ */}
-          {page==='dashboard'&&<>
-            {/* KPI — inline, no boxes, just numbers */}
-            <div style={{display:'flex',gap:40,marginBottom:28}}>
-              {[{n:kN,l:'In attesa',c:C.amb},{n:kA,l:'Attivi',c:C.teal},{n:kC,l:'Completati',c:C.grn},{n:'\u20AC'+kB.toLocaleString('it-IT',{maximumFractionDigits:0}),l:'Volume',c:C.t1}].map((k,i)=>(
-                <div key={i}><div style={{fontFamily:M,fontWeight:500,fontSize:typeof k.n==='number'?28:22,color:k.c,letterSpacing:'-0.03em',lineHeight:1}}>{k.n}</div><div style={{fontSize:12,color:C.t3,marginTop:5}}>{k.l}</div></div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div style={{display:'flex',gap:2,marginBottom:16}}>
-              {[{k:'tutti',l:'Tutti',n:richieste.length},{k:'attivi',l:'Attivi',n:kA+kN},{k:'completati',l:'Completati',n:kC}].map(f=>(
-                <button key={f.k} onClick={()=>setFiltro(f.k)} style={{background:filtro===f.k?C.sb:'transparent',color:filtro===f.k?C.t1:C.t3,border:'none',borderRadius:4,padding:'4px 12px',fontSize:12,fontWeight:filtro===f.k?600:400,cursor:'pointer'}}>{f.l} <span style={{color:C.t4}}>{f.n}</span></button>
-              ))}
-            </div>
-
-            {/* Table — line divided, no card */}
-            <div style={{borderTop:`1px solid ${C.line}`}}>
-              <div style={{display:'grid',gridTemplateColumns:'2.5fr 2.5fr 1.5fr 50px 80px 70px 110px',padding:'8px 0',borderBottom:`1px solid ${C.line}`}}>
-                {['Cliente','Indirizzo','Serramentista','Vani','Budget','Data','Stato'].map(h=><div key={h} style={{fontSize:11,color:C.t3,fontWeight:500}}>{h}</div>)}
-              </div>
-              {filtered.length===0?<div style={{padding:'40px 0',textAlign:'center',color:C.t3}}>Nessun lavoro</div>:
-              filtered.map(r=>{const st=ST[r.stato]||ST.nuova;return(
-                <div key={r.id} onClick={()=>openDet(r)} style={{display:'grid',gridTemplateColumns:'2.5fr 2.5fr 1.5fr 50px 80px 70px 110px',padding:'10px 0',borderBottom:`1px solid ${C.lineS}`,cursor:'pointer',transition:'.08s'}}
-                  onMouseEnter={e=>e.currentTarget.style.background=C.hover} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                  <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    <span style={{fontSize:13,fontWeight:500,color:C.t1}}>{r.cliente}</span>
-                    {r.urgente&&<span style={{fontSize:9,fontWeight:600,color:C.red}}>URG</span>}
-                    {r.tipo_invio==='marketplace'&&<span style={{fontSize:9,fontWeight:600,color:C.pur}}>MKT</span>}
-                  </div>
-                  <div style={{fontSize:12,color:C.t3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{r.indirizzo}</div>
-                  <div style={{fontSize:12,color:C.t2}}>{gn(r.operatore_id)}</div>
-                  <div style={{fontFamily:M,fontSize:12,color:C.t3}}>{(r.vani_json||[]).length}</div>
-                  <div style={{fontFamily:M,fontSize:12,color:C.teal}}>{r.budget?'\u20AC'+parseFloat(r.budget).toLocaleString('it-IT'):'—'}</div>
-                  <div style={{fontSize:11,color:C.t3}}>{r.data_preferita?new Date(r.data_preferita).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}):'—'}</div>
-                  <div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:6,height:6,borderRadius:'50%',background:st.c}}/><span style={{fontSize:11,color:st.c,fontWeight:500}}>{st.l}</span></div>
+      {/* KPI azienda */}
+      <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.line}`, display: "flex", gap: 12 }}>
+        <div><span style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>{OPERATORI.length}</span><span style={{ fontSize: 11, color: T.muted, marginLeft: 4 }}>operatori</span></div>
+        <div><span style={{ fontSize: 18, fontWeight: 700, color: T.green }}>{OPERATORI.filter(o => o.stato === "in_cantiere" || o.stato === "in_sopralluogo").length}</span><span style={{ fontSize: 11, color: T.muted, marginLeft: 4 }}>attivi</span></div>
+        <div><span style={{ fontSize: 18, fontWeight: 700, color: T.amber }}>{OPERATORI.reduce((s, o) => s + o.commesse.filter(c => c.stato === "in_attesa_materiali").length, 0)}</span><span style={{ fontSize: 11, color: T.muted, marginLeft: 4 }}>bloccati</span></div>
+      </div>
+      {/* Lista */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {opFiltered.map(o => {
+          const sc = statoColor(o.stato);
+          const active = o.id === selOp;
+          return (
+            <div key={o.id} onClick={() => { setSelOp(o.id); setSelComm(null); }}
+              style={{ padding: "12px 16px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer", background: active ? T.tealLight : "transparent", transition: "background 0.15s" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: o.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{o.avatar}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.nome}</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>{o.ruolo === "montatore" ? "Montatore" : o.ruolo === "tecnico_misure" ? "Tecnico misure" : o.ruolo}</div>
                 </div>
-              );})}
-            </div>
-          </>}
-
-          {/* ═══ CALENDARIO ═══ */}
-          {page==='calendario'&&(()=>{
-            const oggi=new Date();const oggiStr=oggi.toISOString().slice(0,10);
-            const FC=['#1A9E8F','#3574D4','#7C5CBF','#D03838','#C47D0A','#2D8A4E','#C44298','#0E8CC2','#5B5FC7','#D06B1E','#3DAF6A'];
-            const flC=opId=>{const idx=freelancers.findIndex(f=>f.id===opId);return FC[idx%FC.length];};
-            const prev=()=>{const d=new Date(calDate);d.setMonth(d.getMonth()-1);setCalDate(d);};
-            const next=()=>{const d=new Date(calDate);d.setMonth(d.getMonth()+1);setCalDate(d);};
-            const year=calDate.getFullYear();const month=calDate.getMonth();
-            const firstDay=new Date(year,month,1);const lastDay=new Date(year,month+1,0);
-            const startOff=(firstDay.getDay()+6)%7;const totalD=lastDay.getDate();
-            const grid=[];const prevML=new Date(year,month,0).getDate();
-            for(let i=startOff-1;i>=0;i--)grid.push({d:prevML-i,other:true});
-            for(let i=1;i<=totalD;i++)grid.push({d:i,other:false});
-            const rem=42-grid.length;for(let i=1;i<=rem;i++)grid.push({d:i,other:true});
-            return(<div>
-              <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
-                <button onClick={prev} style={{background:'none',border:'none',cursor:'pointer'}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-                <span style={{fontSize:16,fontWeight:600,textTransform:'capitalize',minWidth:150}}>{calDate.toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</span>
-                <button onClick={next} style={{background:'none',border:'none',cursor:'pointer'}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
-                <button onClick={()=>setCalDate(new Date())} style={{background:C.sb,border:`1px solid ${C.line}`,borderRadius:4,padding:'3px 10px',fontSize:11,color:C.t2,cursor:'pointer'}}>Oggi</button>
+                <span style={{ fontSize: 10, fontWeight: 600, color: sc.fg, background: sc.bg, padding: "3px 8px", borderRadius: 4 }}>{sc.label}</span>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)'}}>
-                {['LUN','MAR','MER','GIO','VEN','SAB','DOM'].map((d,i)=><div key={d} style={{fontSize:10,color:C.t3,fontWeight:500,textAlign:'center',padding:'6px 0',borderBottom:`1px solid ${C.line}`}}>{d}</div>)}
-                {grid.map((gd,i)=>{
-                  const am=gd.other?(i<7?month-1:month+1):month;const amN=am<0?11:am>11?0:am;const ay=am<0?year-1:am>11?year+1:year;
-                  const ds=`${ay}-${String(amN+1).padStart(2,'0')}-${String(gd.d).padStart(2,'0')}`;
-                  const dayRL=richieste.filter(r=>r.data_preferita===ds);const isT=ds===oggiStr;
-                  return(<div key={i} style={{borderBottom:`1px solid ${C.lineS}`,borderRight:i%7<6?`1px solid ${C.lineS}`:'none',padding:'4px 6px',minHeight:80,background:isT?C.tealL:'transparent'}}>
-                    <div style={{fontSize:12,fontWeight:isT?700:gd.other?300:400,color:isT?C.teal:gd.other?C.t4:C.t2,marginBottom:3}}>{gd.d}</div>
-                    {dayRL.slice(0,3).map(r=>{const fc=flC(r.operatore_id);return(
-                      <div key={r.id} onClick={()=>openDet(r)} onMouseEnter={e=>{setHoverEvent(r);setHoverPos({x:e.clientX,y:e.clientY});}} onMouseLeave={()=>setHoverEvent(null)}
-                        style={{borderLeft:`2px solid ${fc}`,paddingLeft:5,marginBottom:2,cursor:'pointer'}}>
-                        <div style={{fontSize:10,fontWeight:500,color:C.t1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.cliente}</div>
-                      </div>
-                    );})}
-                    {dayRL.length>3&&<div style={{fontSize:9,color:C.t3}}>+{dayRL.length-3}</div>}
-                  </div>);
+              {/* Mini commesse */}
+              <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {o.commesse.slice(0, 3).map(c => {
+                  const cc = statoCommColor(c.stato);
+                  return (
+                    <span key={c.id} style={{ fontSize: 10, color: T.sub, display: "flex", alignItems: "center", gap: 3 }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: cc.dot, display: "inline-block" }} />
+                      {c.id}
+                    </span>
+                  );
                 })}
               </div>
-              {hoverEvent&&<div style={{position:'fixed',left:hoverPos.x+12,top:hoverPos.y-8,background:'#fff',border:`1px solid ${C.line}`,borderRadius:8,padding:'10px 14px',zIndex:1000,boxShadow:'0 4px 20px rgba(0,0,0,.08)',maxWidth:260,pointerEvents:'none'}}>
-                <div style={{fontWeight:600,fontSize:13,marginBottom:2}}>{hoverEvent.cliente}</div>
-                <div style={{fontSize:11,color:C.t3}}>{hoverEvent.indirizzo}</div>
-                <div style={{display:'flex',gap:8,fontSize:11,color:C.t2,marginTop:4}}><span>{(hoverEvent.vani_json||[]).length} vani</span>{hoverEvent.budget&&<span style={{color:C.teal}}>{'\u20AC'}{parseFloat(hoverEvent.budget).toLocaleString('it-IT')}</span>}<span>{gn(hoverEvent.operatore_id)}</span></div>
-              </div>}
-            </div>);
-          })()}
-
-          {/* ═══ NOTIFICHE ═══ */}
-          {page==='notifiche'&&<div style={{maxWidth:560}}>
-            {notifiche.length===0?<div style={{padding:40,textAlign:'center',color:C.t3}}>Nessuna notifica</div>:
-            notifiche.map(n=>(<div key={n.id} style={{display:'flex',gap:10,padding:'12px 0',borderBottom:`1px solid ${C.lineS}`}}>
-              <div style={{width:6,height:6,borderRadius:'50%',background:n.letta?'transparent':C.teal,flexShrink:0,marginTop:6}}/>
-              <div><div style={{fontSize:13,fontWeight:n.letta?400:600}}>{n.titolo}</div>{n.corpo&&<div style={{fontSize:12,color:C.t2,marginTop:1}}>{n.corpo}</div>}<div style={{fontSize:11,color:C.t3,marginTop:3}}>{new Date(n.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})}</div></div>
-            </div>))}
-          </div>}
-
-          {/* ═══ DETTAGLIO ═══ */}
-          {page==='dettaglio'&&selR&&(()=>{
-            const r=selR;const st=ST[r.stato]||ST.nuova;const vani=r.vani_json||[];
-            const {montaggi,fotoFasi,firme,fatture,costi,timeline,chat,valutazione}=det;
-            const mt=montaggi[0];
-            const totC=costi.reduce((s,c)=>s+(parseFloat(c.totale)||parseFloat(c.importo)||0),0);
-            const totF=fatture.reduce((s,f)=>s+(parseFloat(f.totale)||parseFloat(f.importo)||0),0);
-            const totP=fatture.filter(f=>f.stato==='pagata').reduce((s,f)=>s+(parseFloat(f.totale)||parseFloat(f.importo)||0),0);
-            return(
-              <div style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:40}}>
-                <div style={{overflowY:'auto',maxHeight:'calc(100vh - 80px)'}}>
-                  {/* Header */}
-                  <div style={{marginBottom:24}}>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-                      <div style={{width:6,height:6,borderRadius:'50%',background:st.c}}/><span style={{fontSize:12,color:st.c,fontWeight:500}}>{st.l}</span>
-                      {r.urgente&&<span style={{fontSize:11,color:C.red}}>Urgente</span>}
-                    </div>
-                    <div style={{fontSize:24,fontWeight:700,letterSpacing:'-0.03em'}}>{r.cliente}</div>
-                    <div style={{fontSize:13,color:C.t2,marginTop:4}}>{r.indirizzo}{r.telefono_cliente?' \u00B7 '+r.telefono_cliente:''}</div>
-                    <div style={{fontSize:12,color:C.teal,marginTop:3}}>{gn(r.operatore_id)}</div>
-                    <div style={{display:'flex',gap:2,marginTop:14}}>{['nuova','accettata','in_corso','completata'].map((s,i)=>{const idx=['nuova','vista','accettata','in_corso','completata'].indexOf(r.stato);return<div key={s} style={{flex:1,height:2,borderRadius:1,background:idx>=i?C.teal:C.line}}/>;})}</div>
-                  </div>
-
-                  {/* Tabs */}
-                  <div style={{display:'flex',gap:20,borderBottom:`1px solid ${C.line}`,marginBottom:16}}>
-                    {[{k:'info',l:'Dettagli'},{k:'timeline',l:'Timeline'},{k:'chat',l:'Chat'},{k:'economia',l:'Economia'}].map(t=>(<button key={t.k} onClick={()=>setDetTab(t.k)} style={{background:'none',border:'none',borderBottom:detTab===t.k?`2px solid ${C.teal}`:'2px solid transparent',padding:'6px 0',cursor:'pointer',fontSize:13,fontWeight:detTab===t.k?600:400,color:detTab===t.k?C.t1:C.t3}}>{t.l}</button>))}
-                  </div>
-
-                  {detTab==='info'&&<>
-                    <div style={{display:'flex',gap:32,marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${C.lineS}`}}>
-                      {[{l:'Data',v:r.data_preferita?new Date(r.data_preferita).toLocaleDateString('it-IT'):'—'},{l:'Budget',v:r.budget?`\u20AC${parseFloat(r.budget).toLocaleString('it-IT')}`:'—'},{l:'Vani',v:`${vani.length}`}].map(d=>(<div key={d.l}><div style={{fontSize:11,color:C.t3}}>{d.l}</div><div style={{fontSize:15,fontWeight:600,marginTop:1}}>{d.v}</div></div>))}
-                    </div>
-                    {r.note&&<div style={{fontSize:13,color:C.t2,lineHeight:1.6,marginBottom:16,paddingBottom:16,borderBottom:`1px solid ${C.lineS}`}}>{r.note}</div>}
-                    {vani.length>0&&<div style={{marginBottom:20}}>
-                      <div style={{fontSize:13,fontWeight:600,marginBottom:8}}>Vani</div>
-                      <div style={{borderTop:`1px solid ${C.line}`}}>
-                        {vani.map((v,i)=>(<div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0',borderBottom:`1px solid ${C.lineS}`}}>
-                          <div style={{display:'flex',alignItems:'center',gap:10}}>
-                            <span style={{fontFamily:M,fontSize:11,color:C.t4,width:16}}>{i+1}</span>
-                            <div><div style={{fontSize:13,fontWeight:500}}>{v.tipo}</div><div style={{fontSize:11,color:C.t3}}>{v.stanza||''}{v.piano?' \u00B7 P.'+v.piano:''}</div></div>
-                          </div>
-                          <div style={{display:'flex',alignItems:'center',gap:10}}>
-                            <span style={{fontSize:11,color:C.teal}}>{v.materiale}</span>
-                            <span style={{fontFamily:M,fontSize:12,color:C.t2}}>{v.larghezza&&v.altezza?`${v.larghezza}\u00D7${v.altezza}`:''}</span>
-                          </div>
-                        </div>))}
-                      </div>
-                    </div>}
-                    {fotoFasi.length>0&&<div style={{marginBottom:20}}><div style={{fontSize:13,fontWeight:600,marginBottom:8}}>Foto</div><div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6}}>{fotoFasi.map((f,i)=><img key={i} src={f.file_url||f.url} alt="" style={{width:'100%',aspectRatio:'1',objectFit:'cover',borderRadius:6}}/>)}</div></div>}
-                    {valutazione&&<div><div style={{fontSize:13,fontWeight:600,marginBottom:6}}>Valutazione</div><div style={{color:C.amb,fontSize:16}}>{'\u2605'.repeat(valutazione.stelle)}<span style={{opacity:.2}}>{'\u2605'.repeat(5-valutazione.stelle)}</span></div>{valutazione.commento&&<div style={{fontSize:12,color:C.t2,marginTop:4,fontStyle:'italic'}}>"{valutazione.commento}"</div>}</div>}
-                  </>}
-
-                  {detTab==='timeline'&&<div>{timeline.map((ev,i)=>(<div key={ev.id} style={{display:'flex',gap:14}}><div style={{display:'flex',flexDirection:'column',alignItems:'center',width:10,flexShrink:0}}><div style={{width:7,height:7,borderRadius:'50%',background:i===0?C.teal:C.line,flexShrink:0}}/>{i<timeline.length-1&&<div style={{width:1,flex:1,background:C.lineS}}/>}</div><div style={{paddingBottom:18}}><div style={{fontSize:13,fontWeight:500}}>{ev.titolo}</div>{ev.descrizione&&<div style={{fontSize:12,color:C.t3,marginTop:1}}>{ev.descrizione}</div>}<div style={{fontSize:11,color:C.t4,marginTop:3}}>{new Date(ev.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></div></div>))}</div>}
-
-                  {detTab==='chat'&&<div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 260px)'}}><div style={{flex:1,overflowY:'auto'}}>{chat.length===0?<div style={{padding:32,textAlign:'center',color:C.t3}}>Nessun messaggio</div>:chat.map((m,i)=>(<div key={m.id||i} style={{display:'flex',justifyContent:m.mittente_tipo==='azienda'?'flex-end':'flex-start',marginBottom:8}}><div style={{maxWidth:'60%'}}><div style={{fontSize:10,color:C.t3,marginBottom:2}}>{m.mittente_nome}</div><div style={{background:m.mittente_tipo==='azienda'?C.teal:C.sb,color:m.mittente_tipo==='azienda'?'#fff':C.t1,borderRadius:10,padding:'7px 12px',fontSize:13,lineHeight:1.5,border:m.mittente_tipo!=='azienda'?`1px solid ${C.line}`:'none'}}>{m.testo}</div></div></div>))}<div ref={chatEndRef}/></div><div style={{display:'flex',gap:6,paddingTop:10}}><input value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Scrivi..." style={{flex:1,background:C.sb,border:`1px solid ${C.line}`,borderRadius:6,padding:'8px 12px',fontSize:13,color:C.t1,fontFamily:F,outline:'none'}}/><button onClick={sendChat} disabled={!chatMsg.trim()} style={{background:C.teal,border:'none',borderRadius:6,padding:'0 16px',cursor:'pointer',fontSize:12,fontWeight:600,color:'#fff',opacity:chatMsg.trim()?1:.3}}>Invia</button></div></div>}
-
-                  {detTab==='economia'&&<><div style={{display:'flex',gap:32,marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${C.lineS}`}}>{[{l:'Budget',v:'\u20AC'+parseFloat(r.budget||0).toLocaleString('it-IT'),c:C.t1},{l:'Costi',v:'\u20AC'+totC.toFixed(0),c:totC>(parseFloat(r.budget)||0)?C.red:C.grn},{l:'Fatturato',v:'\u20AC'+totF.toFixed(0),c:C.teal},{l:'Da pagare',v:'\u20AC'+(totF-totP).toFixed(0),c:(totF-totP)>0?C.amb:C.grn}].map(k=>(<div key={k.l}><div style={{fontSize:11,color:C.t3}}>{k.l}</div><div style={{fontFamily:M,fontSize:18,fontWeight:500,color:k.c,marginTop:1}}>{k.v}</div></div>))}</div>
-                    {fatture.length>0&&<div style={{marginBottom:20}}><div style={{fontSize:13,fontWeight:600,marginBottom:8}}>Fatture</div>{fatture.map(f=>(<div key={f.id} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:`1px solid ${C.lineS}`}}><div><div style={{fontSize:13}}>N. {f.numero}</div><div style={{fontSize:10,color:C.t3}}>{new Date(f.data_emissione).toLocaleDateString('it-IT')}</div></div><div style={{textAlign:'right'}}><div style={{fontFamily:M,fontSize:13,color:C.teal}}>{'\u20AC'}{parseFloat(f.totale||f.importo).toLocaleString('it-IT')}</div><div style={{fontSize:10,color:f.stato==='pagata'?C.grn:f.stato==='scaduta'?C.red:C.amb}}>{f.stato}</div></div></div>))}</div>}
-                    {costi.length>0&&<div><div style={{fontSize:13,fontWeight:600,marginBottom:8}}>Costi</div>{costi.map(c=>(<div key={c.id} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:`1px solid ${C.lineS}`}}><div><div style={{fontSize:12}}>{c.descrizione}</div><div style={{fontSize:10,color:C.t3}}>{c.tipo}</div></div><div style={{fontFamily:M,fontSize:12,color:C.t2}}>{'\u20AC'}{parseFloat(c.totale||c.importo).toLocaleString('it-IT')}</div></div>))}<div style={{display:'flex',justifyContent:'space-between',paddingTop:8}}><span style={{fontSize:12,fontWeight:600}}>Totale</span><span style={{fontFamily:M,fontSize:14,fontWeight:600,color:C.teal}}>{'\u20AC'}{totC.toFixed(2)}</span></div></div>}
-                  </>}
-                </div>
-
-                {/* Right */}
-                <div style={{borderLeft:`1px solid ${C.line}`,paddingLeft:28,overflowY:'auto',maxHeight:'calc(100vh - 80px)'}}>
-                  <div style={{fontSize:11,color:C.t3,marginBottom:10}}>Riepilogo</div>
-                  {[{l:'Budget',v:'\u20AC'+parseFloat(r.budget||0).toLocaleString('it-IT')},{l:'Costi',v:'\u20AC'+totC.toFixed(0)},{l:'Fatturato',v:'\u20AC'+totF.toFixed(0)},{l:'Saldo',v:'\u20AC'+(totF-totP).toFixed(0)}].map(k=>(<div key={k.l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:`1px solid ${C.lineS}`}}><span style={{fontSize:12,color:C.t3}}>{k.l}</span><span style={{fontSize:12,fontWeight:500}}>{k.v}</span></div>))}
-
-                  {timeline.length>0&&<><div style={{fontSize:11,color:C.t3,marginTop:20,marginBottom:8}}>Ultimi eventi</div>{timeline.slice(0,5).map(ev=>(<div key={ev.id} style={{marginBottom:8}}><div style={{fontSize:12}}>{ev.titolo}</div><div style={{fontSize:10,color:C.t4}}>{new Date(ev.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short'})}</div></div>))}</>}
-
-                  {(()=>{const f=freelancers.find(x=>x.id===r.operatore_id);const rt=f?avgR(f.id):{avg:'—',n:0};return f?<><div style={{fontSize:11,color:C.t3,marginTop:20,marginBottom:8}}>Serramentista</div><div style={{fontSize:13,fontWeight:600}}>{f.nome} {f.cognome}</div>{rt.n>0&&<div style={{fontSize:11,color:C.amb,marginTop:2}}>{'\u2605'} {rt.avg} ({rt.n})</div>}</>:null;})()}
-
-                  <button onClick={()=>{const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>${r.cliente}</title><style>*{margin:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;padding:48px;max-width:700px;margin:0 auto;color:#1a1a1a}h1{font-size:20px;font-weight:700}p.s{color:#888;font-size:11px;margin-top:3px}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{padding:7px 8px;text-align:left;font-size:11px;border-bottom:1px solid #eee}th{font-size:9px;color:#888;text-transform:uppercase}</style></head><body><h1>${r.cliente}</h1><p class="s">${r.indirizzo}</p>`);if(vani.length){w.document.write('<table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th></tr>');vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'\u00D7'+v.altezza:''}</td><td>${v.stanza||''}</td></tr>`));w.document.write('</table>');}w.document.write('<p style="margin-top:24px;color:#ccc;font-size:8px">fliwoX</p></body></html>');w.document.close();w.print();}}
-                    style={{width:'100%',marginTop:24,background:'none',border:`1px solid ${C.line}`,borderRadius:6,padding:'8px 0',fontSize:12,color:C.t2,cursor:'pointer',fontFamily:F}}>Report PDF</button>
-                </div>
-              </div>);
-          })()}
-
-          {/* ═══ SERRAMENTISTA ═══ */}
-          {page==='serramentista'&&selFL&&(()=>{
-            const f=selFL;const fRL=rpf(f.id);const fComp=fRL.filter(r=>r.stato==='completata');
-            const fAtt=fRL.filter(r=>['accettata','in_corso'].includes(r.stato));
-            const fBud=fRL.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(parseFloat(r.budget)||0),0);
-            const rt=avgR(f.id);const fVal=valutazioni.filter(v=>v.operatore_id===f.id);
-            const totFatt=fFatture.reduce((s,x)=>s+(parseFloat(x.totale)||parseFloat(x.importo)||0),0);
-            const totPag=fFatture.filter(x=>x.stato==='pagata').reduce((s,x)=>s+(parseFloat(x.totale)||parseFloat(x.importo)||0),0);
-            return(
-              <div style={{display:'grid',gridTemplateColumns:'1fr 260px',gap:40}}>
-                <div style={{overflowY:'auto',maxHeight:'calc(100vh - 80px)'}}>
-                  <div style={{marginBottom:24}}>
-                    <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
-                      <div style={{width:44,height:44,borderRadius:12,background:C.tealL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:600,color:C.teal}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
-                      <div><div style={{fontSize:22,fontWeight:700,letterSpacing:'-0.02em'}}>{f.nome} {f.cognome}</div><div style={{fontSize:12,color:C.t3}}>{f.ruolo||'Montatore'}</div></div>
-                      {rt.n>0&&<div style={{marginLeft:'auto'}}><span style={{fontFamily:M,fontSize:20,fontWeight:500,color:C.amb}}>{rt.avg}</span><span style={{fontSize:11,color:C.t3,marginLeft:4}}>{rt.n} val.</span></div>}
-                    </div>
-                    {fProfilo?.bio&&<div style={{fontSize:13,color:C.t2,lineHeight:1.6,marginBottom:10}}>{fProfilo.bio}</div>}
-                    <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                      {(fProfilo?.specializzazioni||[]).map(s=><span key={s} style={{fontSize:11,color:C.teal,background:C.tealL,borderRadius:3,padding:'1px 7px'}}>{s}</span>)}
-                      {(fProfilo?.certificazioni||[]).map(c=><span key={c} style={{fontSize:11,color:C.grn,background:C.grnL,borderRadius:3,padding:'1px 7px'}}>{c}</span>)}
-                    </div>
-                  </div>
-
-                  <div style={{display:'flex',gap:36,marginBottom:24,paddingBottom:16,borderBottom:`1px solid ${C.line}`}}>
-                    {[{n:fRL.length,l:'Totali'},{n:fAtt.length,l:'Attivi',c:C.teal},{n:fComp.length,l:'Completati',c:C.grn},{n:'\u20AC'+fBud.toLocaleString('it-IT',{maximumFractionDigits:0}),l:'Volume'}].map(k=>(<div key={k.l}><div style={{fontFamily:M,fontSize:typeof k.n==='number'?22:16,fontWeight:500,color:k.c||C.t1}}>{k.n}</div><div style={{fontSize:11,color:C.t3,marginTop:2}}>{k.l}</div></div>))}
-                  </div>
-
-                  <div style={{display:'flex',gap:20,borderBottom:`1px solid ${C.line}`,marginBottom:16}}>
-                    {[{k:'panoramica',l:'Panoramica'},{k:'lavori',l:'Lavori'},{k:'contabilita',l:'Contabilità'},{k:'valutazioni',l:'Valutazioni'}].map(t=>(<button key={t.k} onClick={()=>setFlTab(t.k)} style={{background:'none',border:'none',borderBottom:flTab===t.k?`2px solid ${C.teal}`:'2px solid transparent',padding:'6px 0',cursor:'pointer',fontSize:13,fontWeight:flTab===t.k?600:400,color:flTab===t.k?C.t1:C.t3}}>{t.l}</button>))}
-                  </div>
-
-                  {flTab==='panoramica'&&fRL.slice(0,8).map(r=>{const st=ST[r.stato]||ST.nuova;return(<div key={r.id} onClick={()=>openDet(r)} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:`1px solid ${C.lineS}`,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.background=C.hover} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><div><div style={{fontSize:13,fontWeight:500}}>{r.cliente}</div><div style={{fontSize:11,color:C.t3}}>{r.indirizzo}</div></div><div style={{display:'flex',alignItems:'center',gap:10}}>{r.budget&&<span style={{fontFamily:M,fontSize:11,color:C.teal}}>{'\u20AC'}{parseFloat(r.budget).toLocaleString('it-IT')}</span>}<div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:5,height:5,borderRadius:'50%',background:st.c}}/><span style={{fontSize:10,color:st.c}}>{st.l}</span></div></div></div>);})}
-
-                  {flTab==='lavori'&&<div style={{borderTop:`1px solid ${C.line}`}}>{fRL.map(r=>{const st=ST[r.stato]||ST.nuova;return(<div key={r.id} onClick={()=>openDet(r)} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:`1px solid ${C.lineS}`,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.background=C.hover} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><span style={{fontSize:12,fontWeight:500}}>{r.cliente}</span><div style={{display:'flex',alignItems:'center',gap:12}}><span style={{fontSize:11,color:C.t3}}>{(r.vani_json||[]).length}v</span><span style={{fontFamily:M,fontSize:11,color:C.teal}}>{r.budget?'\u20AC'+parseFloat(r.budget).toLocaleString('it-IT'):'—'}</span><div style={{display:'flex',alignItems:'center',gap:3}}><div style={{width:5,height:5,borderRadius:'50%',background:st.c}}/><span style={{fontSize:10,color:st.c}}>{st.l}</span></div></div></div>);})}</div>}
-
-                  {flTab==='contabilita'&&<><div style={{display:'flex',gap:32,marginBottom:20,paddingBottom:14,borderBottom:`1px solid ${C.lineS}`}}>{[{l:'Fatturato',v:'\u20AC'+totFatt.toFixed(0),c:C.teal},{l:'Pagato',v:'\u20AC'+totPag.toFixed(0),c:C.grn},{l:'Da pagare',v:'\u20AC'+(totFatt-totPag).toFixed(0),c:(totFatt-totPag)>0?C.amb:C.grn}].map(k=>(<div key={k.l}><div style={{fontSize:11,color:C.t3}}>{k.l}</div><div style={{fontFamily:M,fontSize:18,fontWeight:500,color:k.c}}>{k.v}</div></div>))}</div>{fFatture.map(ft=>(<div key={ft.id} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:`1px solid ${C.lineS}`}}><div><div style={{fontSize:12}}>N. {ft.numero}</div><div style={{fontSize:10,color:C.t3}}>{new Date(ft.data_emissione).toLocaleDateString('it-IT')}</div></div><div style={{textAlign:'right'}}><div style={{fontFamily:M,fontSize:12,color:C.teal}}>{'\u20AC'}{parseFloat(ft.totale||ft.importo).toLocaleString('it-IT')}</div><div style={{fontSize:10,color:ft.stato==='pagata'?C.grn:ft.stato==='scaduta'?C.red:C.amb}}>{ft.stato}</div></div></div>))}</>}
-
-                  {flTab==='valutazioni'&&<>{fVal.length===0?<div style={{padding:24,color:C.t3}}>Nessuna valutazione</div>:fVal.map(v=>(<div key={v.id} style={{padding:'12px 0',borderBottom:`1px solid ${C.lineS}`}}><div style={{color:C.amb,fontSize:15}}>{'\u2605'.repeat(v.stelle)}<span style={{opacity:.15}}>{'\u2605'.repeat(5-v.stelle)}</span></div>{v.commento&&<div style={{fontSize:12,color:C.t2,marginTop:4,fontStyle:'italic'}}>"{v.commento}"</div>}<div style={{fontSize:10,color:C.t4,marginTop:3}}>{new Date(v.created_at).toLocaleDateString('it-IT')}</div></div>))}</>}
-                </div>
-
-                <div style={{borderLeft:`1px solid ${C.line}`,paddingLeft:24,overflowY:'auto',maxHeight:'calc(100vh - 80px)'}}>
-                  <div style={{fontSize:11,color:C.t3,marginBottom:8}}>Info</div>
-                  {[{l:'Tariffa',v:fProfilo?.tariffa_oraria?'\u20AC'+fProfilo.tariffa_oraria+'/h':'—'},{l:'Esperienza',v:fProfilo?.anni_esperienza?fProfilo.anni_esperienza+' anni':'—'},{l:'Zone',v:(fProfilo?.zone_operative||[]).join(', ')||'—'},{l:'Fatturato',v:'\u20AC'+totFatt.toFixed(0)},{l:'Da pagare',v:'\u20AC'+(totFatt-totPag).toFixed(0)}].map(r=>(<div key={r.l} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:`1px solid ${C.lineS}`}}><span style={{fontSize:11,color:C.t3}}>{r.l}</span><span style={{fontSize:11,fontWeight:500}}>{r.v}</span></div>))}
-                </div>
-              </div>);
-          })()}
-
-          {(page==='nuovo'||page==='marketplace')&&<div style={{padding:'40px 0',textAlign:'center',color:C.t3}}>In arrivo</div>}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-}
 
-function Css(){return<style>{`
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  @keyframes spin{to{transform:rotate(360deg)}}
-  *::-webkit-scrollbar{width:4px}*::-webkit-scrollbar-track{background:transparent}*::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
-  ::selection{background:#1A9E8F22}
-  input{font-family:'Inter',-apple-system,sans-serif}
-  body{margin:0}
-`}</style>;}
+  // ── DETTAGLIO OPERATORE ──
+  const DettaglioOp = () => {
+    if (!op) return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 14 }}>
+        Seleziona un operatore dalla lista
+      </div>
+    );
+
+    const sc = statoColor(op.stato);
+    const oreOggi = op.commesse.reduce((s, c) => s + c.ore.filter(o => o.data === "08/04").reduce((s2, o2) => s2 + (o2.nette || 0), 0), 0);
+    const speseMese = op.commesse.reduce((s, c) => s + c.spese.reduce((s2, sp) => s2 + sp.importo, 0), 0);
+
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* ── HEADER OPERATORE ── */}
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.line}`, background: T.bg }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 10, background: op.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 800 }}>{op.avatar}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>{op.nome}</div>
+              <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>{op.ruolo === "montatore" ? "Montatore" : "Tecnico misure"} · {op.telefono} · {op.automezzo}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: sc.fg, background: sc.bg, padding: "4px 10px", borderRadius: 5 }}>{sc.label}</span>
+          </div>
+          {/* KPI row */}
+          <div style={{ display: "flex", gap: 20, marginTop: 14, flexWrap: "wrap" }}>
+            {[
+              { label: "Commesse anno", val: op.kpi.commesseAnno, color: T.ink },
+              { label: "Ore anno", val: `${op.kpi.oreAnno}h`, color: T.ink },
+              { label: "Media/giorno", val: `${op.kpi.mediaGiorno}h`, color: T.teal },
+              { label: "Valutazione", val: `${op.kpi.valutazioneMedia}/5`, color: op.kpi.valutazioneMedia >= 4.5 ? T.green : T.amber },
+              { label: "Ritardi", val: op.kpi.ritardi, color: op.kpi.ritardi > 3 ? T.red : T.ink },
+              { label: "Reclami", val: op.kpi.reclami, color: op.kpi.reclami > 2 ? T.red : T.ink },
+              { label: "Presenze mese", val: `${op.kpi.presenzeMese}/22`, color: T.ink },
+              { label: "Spese mese", val: `€${speseMese.toFixed(0)}`, color: T.amber },
+            ].map((k, i) => (
+              <div key={i} style={{ minWidth: 80 }}>
+                <div style={{ fontSize: 10, color: T.muted, marginBottom: 2 }}>{k.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: k.color, fontFamily: T.mono }}>{k.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── BODY — 2 colonne ── */}
+        <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          {/* COLONNA SX — Commesse */}
+          <div style={{ width: 340, borderRight: `1px solid ${T.line}`, overflowY: "auto" }}>
+            <SectionTitle>Commesse assegnate ({op.commesse.length})</SectionTitle>
+            {op.commesse.map(c => {
+              const cc = statoCommColor(c.stato);
+              const active = c.id === selComm;
+              const oreTot = c.vani.reduce((s, v) => s + v.oreReali, 0);
+              const orePrev = c.vani.reduce((s, v) => s + v.orePreviste, 0);
+              return (
+                <div key={c.id} onClick={() => { setSelComm(c.id); setCommTab("vani"); }}
+                  style={{ padding: "12px 20px", borderBottom: `1px solid ${T.lineLight}`, cursor: "pointer", background: active ? T.tealLight : "transparent" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: cc.dot }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>{c.id}</span>
+                    <span style={{ fontSize: 11, color: T.sub, marginLeft: "auto" }}>{cc.label}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{c.cliente}</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{c.tipo} · {c.indirizzo}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                    <ProgressBar pct={c.avanzamento} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: T.ink, fontFamily: T.mono, minWidth: 30, textAlign: "right" }}>{c.avanzamento}%</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 10, color: T.sub }}>
+                    <span>{c.vani.length} vani</span>
+                    <span>{fmtOre(oreTot)}/{fmtOre(orePrev)}</span>
+                    <span>{c.foto.length} foto</span>
+                    <span>{c.documenti.length} doc</span>
+                    <span>{c.chat.length} msg</span>
+                    <span>{c.spese.length} spese</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: T.sub, marginTop: 4 }}>{c.dataInizio} → {c.dataFine}</div>
+                </div>
+              );
+            })}
+
+            {/* ── SEZIONI EXTRA OPERATORE ── */}
+            <Line />
+            <SectionTitle>Posizione GPS</SectionTitle>
+            <div style={{ padding: "8px 20px 14px" }}>
+              <div style={{ fontSize: 12, color: T.ink }}>{op.posizione.indirizzo}</div>
+              <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>Aggiornamento: {op.posizione.aggiornamento} · {op.posizione.lat.toFixed(4)}, {op.posizione.lng.toFixed(4)}</div>
+            </div>
+
+            <Line />
+            <SectionTitle>Certificazioni</SectionTitle>
+            {op.certificazioni.map((c, i) => (
+              <div key={i} style={{ padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.stato === "valida" ? T.green : c.stato === "in_scadenza" ? T.amber : T.red }} />
+                <span style={{ fontSize: 12, color: T.ink, flex: 1 }}>{c.nome}</span>
+                <span style={{ fontSize: 10, color: c.stato === "in_scadenza" ? T.amber : T.sub, fontFamily: T.mono }}>{c.scadenza}</span>
+              </div>
+            ))}
+
+            <Line />
+            <SectionTitle>Dotazioni assegnate</SectionTitle>
+            {op.dotazioni.map((d, i) => (
+              <div key={i} style={{ padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, color: T.ink, flex: 1 }}>{d.nome}</span>
+                <span style={{ fontSize: 10, color: T.sub }}>dal {d.dal}</span>
+              </div>
+            ))}
+
+            <Line />
+            <SectionTitle>Storico prestazioni</SectionTitle>
+            <div style={{ padding: "4px 20px 14px" }}>
+              <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 60, marginBottom: 6 }}>
+                {op.storicoPrestazioni.map((p, i) => {
+                  const maxH = 56;
+                  const h = p.oreNette > 0 ? Math.max((p.oreNette / 180) * maxH, 4) : 2;
+                  return (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                      <div style={{ width: "100%", maxWidth: 28, height: h, borderRadius: 3, background: p.valutazione >= 4.5 ? T.teal : p.valutazione >= 4 ? T.blue : T.amber, opacity: 0.7 }} />
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {op.storicoPrestazioni.map((p, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: T.muted }}>{p.mese}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: T.ink, fontFamily: T.mono }}>{p.oreNette}h</div>
+                    <div style={{ fontSize: 9, color: p.valutazione >= 4.5 ? T.green : T.sub }}>{p.valutazione > 0 ? `${p.valutazione}★` : "—"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* COLONNA DX — Dettaglio commessa */}
+          <div style={{ flex: 1, overflowY: "auto", background: T.bg }}>
+            {!comm ? (
+              <div style={{ padding: 40, textAlign: "center", color: T.muted, fontSize: 13 }}>
+                Seleziona una commessa per vedere tutti i dettagli
+              </div>
+            ) : (
+              <>
+                {/* Tabs */}
+                <div style={{ display: "flex", borderBottom: `1px solid ${T.line}`, padding: "0 20px", position: "sticky", top: 0, background: T.bg, zIndex: 2 }}>
+                  {["vani", "foto", "documenti", "chat", "timeline", "materiali", "firme", "spese", "ore"].map(tab => (
+                    <div key={tab} onClick={() => setCommTab(tab)}
+                      style={{ padding: "10px 14px", fontSize: 11, fontWeight: commTab === tab ? 700 : 500, color: commTab === tab ? T.teal : T.sub, borderBottom: commTab === tab ? `2px solid ${T.teal}` : "2px solid transparent", cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s" }}>
+                      {tab}
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── TAB VANI ── */}
+                {commTab === "vani" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+                      {comm.vani.length} vani — {comm.vani.filter(v => v.stato === "montato").length} completati, {comm.vani.filter(v => v.stato === "in_corso").length} in corso
+                    </div>
+                    {comm.vani.map((v, i) => {
+                      const vc = statoVanoColor(v.stato);
+                      return (
+                        <React.Fragment key={v.id}>
+                          <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: vc.dot, flexShrink: 0 }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{v.id} · {v.nome}</span>
+                                <span style={{ fontSize: 10, color: T.sub }}>{v.tipo}</span>
+                              </div>
+                              <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>
+                                {v.dim} · {v.materiale}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: "right", flexShrink: 0 }}>
+                              <div style={{ fontSize: 10, color: vc.dot === T.green ? T.green : T.sub, fontWeight: 600 }}>{vc.label}</div>
+                              <div style={{ fontSize: 11, fontFamily: T.mono, color: T.ink, marginTop: 1 }}>{fmtOre(v.oreReali)}/{fmtOre(v.orePreviste)}</div>
+                            </div>
+                          </div>
+                          {i < comm.vani.length - 1 && <Line />}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ── TAB FOTO ── */}
+                {commTab === "foto" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.foto.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessuna foto caricata</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{comm.foto.length} foto</div>
+                        {comm.foto.map((f, i) => {
+                          const faseColor: Record<string, string> = { PRIMA: T.blue, DEMOLIZIONE: T.red, MONTAGGIO: T.amber, DOPO: T.green, RILIEVO: T.purple };
+                          return (
+                            <React.Fragment key={i}>
+                              <div style={{ padding: "10px 0", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                {/* Placeholder foto */}
+                                <div style={{ width: 64, height: 64, borderRadius: 6, background: T.lineLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${T.line}` }}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: faseColor[f.fase] || T.sub, background: `${faseColor[f.fase] || T.sub}15`, padding: "1px 6px", borderRadius: 3 }}>{f.fase}</span>
+                                    <span style={{ fontSize: 10, color: T.sub }}>Vano {f.vano}</span>
+                                    <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>{f.data}</span>
+                                  </div>
+                                  <div style={{ fontSize: 12, color: T.ink }}>{f.nota}</div>
+                                  <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{f.src}</div>
+                                </div>
+                              </div>
+                              {i < comm.foto.length - 1 && <Line />}
+                            </React.Fragment>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB DOCUMENTI ── */}
+                {commTab === "documenti" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.documenti.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessun documento</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{comm.documenti.length} documenti</div>
+                        {comm.documenti.map((d, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 6, background: d.tipo === "pdf" ? T.redLight : T.blueLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <span style={{ fontSize: 10, fontWeight: 800, color: d.tipo === "pdf" ? T.red : T.blue, textTransform: "uppercase" }}>{d.tipo}</span>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 500, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.nome}</div>
+                                <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{d.peso}</div>
+                              </div>
+                              <span style={{ fontSize: 10, color: T.muted }}>{d.data}</span>
+                            </div>
+                            {i < comm.documenti.length - 1 && <Line />}
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB CHAT ── */}
+                {commTab === "chat" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.chat.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessun messaggio</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{comm.chat.length} messaggi</div>
+                        {comm.chat.map((msg, i) => {
+                          const col = tipoChatColor(msg.tipo);
+                          return (
+                            <React.Fragment key={i}>
+                              <div style={{ padding: "8px 0", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                                <div style={{ width: 6, height: 6, borderRadius: "50%", background: col, flexShrink: 0, marginTop: 6 }} />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: col }}>{msg.da}</span>
+                                    <span style={{ fontSize: 10, color: T.muted }}>{msg.ora}</span>
+                                  </div>
+                                  <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.5 }}>{msg.testo}</div>
+                                </div>
+                              </div>
+                              {i < comm.chat.length - 1 && <Line />}
+                            </React.Fragment>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB TIMELINE ── */}
+                {commTab === "timeline" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>Timeline commessa</div>
+                    {comm.timeline.map((t, i) => (
+                      <div key={i} style={{ padding: "8px 0", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ width: 24, textAlign: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: t.tipo === "oggi" ? 10 : 12, color: t.tipo === "oggi" ? T.teal : T.sub }}>{tipoTimelineIcon(t.tipo)}</span>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, color: t.tipo === "oggi" ? T.teal : T.ink, fontWeight: t.tipo === "oggi" ? 700 : 400 }}>{t.evento}</div>
+                        </div>
+                        <span style={{ fontSize: 10, color: T.muted, fontFamily: T.mono, flexShrink: 0 }}>{t.data}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── TAB MATERIALI ── */}
+                {commTab === "materiali" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.materiali.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessun materiale assegnato</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{comm.materiali.length} materiali</div>
+                        {comm.materiali.map((m, i) => {
+                          const pct = m.qta > 0 ? (m.usate / m.qta) * 100 : 0;
+                          return (
+                            <React.Fragment key={i}>
+                              <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 12, color: T.ink }}>{m.nome}</div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                                    <ProgressBar pct={pct} height={3} />
+                                    <span style={{ fontSize: 10, color: T.sub, fontFamily: T.mono, minWidth: 60 }}>{m.usate}/{m.qta} {m.um}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {i < comm.materiali.length - 1 && <Line />}
+                            </React.Fragment>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB FIRME ── */}
+                {commTab === "firme" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.firme.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessuna firma richiesta</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>Firme</div>
+                        {comm.firme.map((f, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                              <span style={{ width: 7, height: 7, borderRadius: "50%", background: f.firmato ? T.green : T.muted, flexShrink: 0 }} />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 12, color: T.ink, fontWeight: 500 }}>{f.tipo}</div>
+                                {f.firmato && <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{f.chi} · {f.data}</div>}
+                              </div>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: f.firmato ? T.green : T.muted }}>{f.firmato ? "Firmato" : "In attesa"}</span>
+                            </div>
+                            {i < comm.firme.length - 1 && <Line />}
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB SPESE ── */}
+                {commTab === "spese" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.spese.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessuna spesa registrata</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+                          {comm.spese.length} spese · Totale: €{comm.spese.reduce((s, sp) => s + sp.importo, 0).toFixed(2)}
+                        </div>
+                        {comm.spese.map((sp, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 12, color: T.ink }}>{sp.desc}</div>
+                                <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{sp.cat} · {sp.data}</div>
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, fontFamily: T.mono }}>€{sp.importo.toFixed(2)}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 3, color: sp.stato === "approvata" ? T.green : T.amber, background: sp.stato === "approvata" ? T.greenLight : T.amberLight }}>{sp.stato === "approvata" ? "OK" : "Attesa"}</span>
+                            </div>
+                            {i < comm.spese.length - 1 && <Line />}
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ── TAB ORE ── */}
+                {commTab === "ore" && (
+                  <div style={{ padding: "12px 20px" }}>
+                    {comm.ore.length === 0 ? (
+                      <div style={{ color: T.muted, fontSize: 12, padding: 20, textAlign: "center" }}>Nessuna ora registrata</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+                          Ore lavorate · Totale: {fmtOre(comm.ore.reduce((s, o) => s + o.nette, 0))}
+                        </div>
+                        {comm.ore.map((o, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 12 }}>
+                              <span style={{ fontSize: 12, fontWeight: 500, color: T.ink, fontFamily: T.mono, minWidth: 42 }}>{o.data}</span>
+                              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 12, color: T.ink }}>{o.inizio}</span>
+                                <span style={{ fontSize: 10, color: T.muted }}>→</span>
+                                <span style={{ fontSize: 12, color: o.fine ? T.ink : T.amber }}>{o.fine || "in corso"}</span>
+                                {o.pausa > 0 && <span style={{ fontSize: 10, color: T.sub }}>({o.pausa}min pausa)</span>}
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: T.teal, fontFamily: T.mono }}>{o.nette > 0 ? fmtOre(o.nette) : "..."}</span>
+                              <span style={{ fontSize: 10, color: T.muted }}>{o.tipo}</span>
+                            </div>
+                            {i < comm.ore.length - 1 && <Line />}
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", fontFamily: T.font, color: T.ink, height: "100vh", overflow: "hidden", background: T.bg }}>
+      <Sidebar />
+      <DettaglioOp />
+    </div>
+  );
+}
