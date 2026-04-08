@@ -11,7 +11,7 @@ const sb={
   patch:async(t,id,b)=>{try{await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(b)});}catch{}},
 };
 const F=`'DM Sans',-apple-system,sans-serif`;const M=`'JetBrains Mono','SF Mono',monospace`;
-const C={bg:'#080C14',sb:'#0C1220',sf:'#111827',cd:'#151E2F',cdH:'#1A2740',bd:'#1E293B',bdL:'#283548',teal:'#2DD4BF',tealD:'#14B8A6',tBg:'rgba(45,212,191,0.08)',tBd:'rgba(45,212,191,0.2)',grn:'#34D399',gBg:'rgba(52,211,153,0.1)',amb:'#FBBF24',aBg:'rgba(251,191,36,0.1)',red:'#F87171',rBg:'rgba(248,113,113,0.1)',blu:'#60A5FA',bBg:'rgba(96,165,250,0.1)',pur:'#A78BFA',t1:'#F8FAFC',t2:'#94A3B8',t3:'#475569'};
+const C={bg:'#080C14',sb:'#0C1220',sf:'#111827',cd:'#151E2F',cdH:'#1A2740',bd:'#1E293B',bdL:'#283548',teal:'#2FA7A2',tealD:'#14B8A6',tBg:'rgba(47,167,162,0.08)',tBd:'rgba(47,167,162,0.2)',grn:'#7ED957',gBg:'rgba(126,217,87,0.1)',amb:'#F59E0B',aBg:'rgba(245,158,11,0.1)',red:'#F87171',rBg:'rgba(248,113,113,0.1)',blu:'#60A5FA',bBg:'rgba(96,165,250,0.1)',pur:'#A78BFA',t1:'#F8FAFC',t2:'#94A3B8',t3:'#475569'};
 const ST={nuova:{bg:C.aBg,c:C.amb,l:'In attesa'},vista:{bg:C.bBg,c:C.blu,l:'Presa in carico'},accettata:{bg:C.gBg,c:C.grn,l:'Accettata'},in_corso:{bg:C.tBg,c:C.teal,l:'In lavorazione'},completata:{bg:'rgba(167,139,250,0.1)',c:C.pur,l:'Completata'},rifiutata:{bg:C.rBg,c:C.red,l:'Rifiutata'},annullata:{bg:'rgba(71,85,105,0.1)',c:C.t3,l:'Annullata'}};
 
 // Timeline event icons
@@ -133,10 +133,34 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
 
       {/* ═══ SIDEBAR ═══ */}
       <div style={{width:250,background:C.sb,borderRight:`1px solid ${C.bd}`,display:'flex',flexDirection:'column',flexShrink:0}}>
-        <div style={{padding:'18px 16px 14px',borderBottom:`1px solid ${C.bd}`}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${azienda?.colore||C.teal},${C.tealD})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'#fff'}}>{(azienda?.nome||'?')[0]}</div>
-            <div><div style={{color:C.t1,fontWeight:700,fontSize:13}}>{azienda?.nome}</div><div style={{color:C.t3,fontSize:10}}>{freelancers.length} serramentisti</div></div>
+        {/* fliwoX logo */}
+        <div style={{padding:'14px 16px 10px',borderBottom:`1px solid ${C.bd}`}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+            <svg width="28" height="28" viewBox="0 0 200 200" fill="none">
+              <rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/>
+              <rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/>
+              <rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/>
+              <rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/>
+              <rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/>
+              <rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/>
+              <rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/>
+              <rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/>
+              <rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/>
+              <rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/>
+              <rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/>
+              <rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/>
+              <g transform="rotate(8 100 100)">
+                <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+                <path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+                <path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+              </g>
+            </svg>
+            <span style={{fontSize:16,fontWeight:800,color:C.t1,letterSpacing:'-0.02em'}}>fliwo<span style={{color:'#2FA7A2'}}>X</span></span>
+          </div>
+          {/* Azienda info */}
+          <div style={{display:'flex',alignItems:'center',gap:8,background:C.cd,borderRadius:8,padding:'8px 10px',border:`1px solid ${C.bd}`}}>
+            <div style={{width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${azienda?.colore||'#2FA7A2'},#14B8A6)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#fff',flexShrink:0}}>{(azienda?.nome||'?')[0]}</div>
+            <div><div style={{color:C.t1,fontWeight:700,fontSize:12}}>{azienda?.nome}</div><div style={{color:C.t3,fontSize:9}}>{freelancers.length} serramentisti</div></div>
           </div>
         </div>
 
@@ -164,7 +188,12 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
             );
           })}
         </div>
-        <div style={{padding:'10px 14px',borderTop:`1px solid ${C.bd}`,fontSize:9,color:C.t3,textAlign:'center'}}>Powered by <span style={{color:C.teal,fontWeight:700}}>fliwoX</span></div>
+        <div style={{padding:'10px 14px',borderTop:`1px solid ${C.bd}`,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          <svg width="14" height="14" viewBox="0 0 200 200" fill="none">
+            <g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g>
+          </svg>
+          <span style={{fontSize:9,color:C.t3}}>Powered by <span style={{color:'#2FA7A2',fontWeight:700}}>fliwoX</span></span>
+        </div>
       </div>
 
       {/* ═══ MAIN ═══ */}
