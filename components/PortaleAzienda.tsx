@@ -33,6 +33,9 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
   const [calDate,setCalDate]=useState(()=>new Date());
   const [hoverEvent,setHoverEvent]=useState(null);
   const [hoverPos,setHoverPos]=useState({x:0,y:0});
+  const [fFatture,setFFatture]=useState([]);
+  const [fProfilo,setFProfilo]=useState(null);
+  const [flTab,setFlTab]=useState('panoramica');
   const [notifiche,setNotifiche]=useState([]);
   const [valutazioni,setValutazioni]=useState([]);
   const [chatMsg,setChatMsg]=useState('');
@@ -67,6 +70,18 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
     pollRef.current=setInterval(async()=>{const a=await sb.get('aziende_freelance',{nome:'eq.'+azienda.nome,attiva:'eq.true'});await loadRL(a||[]);},25000);
     return()=>clearInterval(pollRef.current);
   },[azienda]);
+
+  // Load freelancer details when selected
+  useEffect(()=>{
+    if(!selFL)return;
+    (async()=>{
+      const fat=await sb.get('fatture_freelance',{operatore_id:'eq.'+selFL.id,order:'data_emissione.desc',limit:'50'});
+      setFFatture(fat||[]);
+      const prof=await sb.get('profili_freelance',{operatore_id:'eq.'+selFL.id,limit:'1'});
+      setFProfilo(prof?.[0]||null);
+      setFlTab('panoramica');
+    })();
+  },[selFL]);
 
   const loadRL=async(azL)=>{const all=[];for(const a of azL){const r=await sb.get('richieste_lavoro',{azienda_fl_id:'eq.'+a.id,order:'created_at.desc',limit:'200'});all.push(...(r||[]));}all.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));setRichieste(all);};
 
@@ -137,7 +152,7 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
             const fA=rpf(f.id).filter(r=>['accettata','in_corso'].includes(r.stato)).length;
             const rt=avgRating(f.id);
             return(
-              <button key={f.id} onClick={()=>{setSelFL(selFL?.id===f.id?null:f);setPage('dashboard');setSelR(null);}}
+              <button key={f.id} onClick={()=>{setSelFL(f);setPage('serramentista');setSelR(null);}}
                 style={{width:'100%',display:'flex',alignItems:'center',gap:8,padding:'7px 8px',borderRadius:7,border:'none',cursor:'pointer',marginBottom:1,background:selFL?.id===f.id?C.tBg:'transparent'}}>
                 <div style={{width:26,height:26,borderRadius:7,background:selFL?.id===f.id?`${C.teal}33`:C.cd,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:selFL?.id===f.id?C.teal:C.t2,flexShrink:0}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
                 <div style={{flex:1,textAlign:'left',minWidth:0}}>
@@ -149,7 +164,7 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
             );
           })}
         </div>
-        <div style={{padding:'10px 14px',borderTop:`1px solid ${C.bd}`,fontSize:9,color:C.t3,textAlign:'center'}}>Powered by <span style={{color:C.teal,fontWeight:700}}>MASTRO</span></div>
+        <div style={{padding:'10px 14px',borderTop:`1px solid ${C.bd}`,fontSize:9,color:C.t3,textAlign:'center'}}>Powered by <span style={{color:C.teal,fontWeight:700}}>fliwoX</span></div>
       </div>
 
       {/* ═══ MAIN ═══ */}
@@ -666,11 +681,253 @@ export default function PortaleAzienda({inviteCode}:{inviteCode:string}){
                   ):null;})()}
 
                   {/* Report */}
-                  <button onClick={()=>{const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>Report ${r.cliente}</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;padding:32px;max-width:800px;margin:0 auto;color:#1a1a1a}h1{font-size:22px;font-weight:800}h3{font-size:13px;font-weight:700;margin:16px 0 6px;color:#0D9488}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #e5e5e5;padding:6px 8px;font-size:11px}th{background:#f8f8f8;font-weight:700;font-size:9px;text-transform:uppercase;color:#666}</style></head><body>`);w.document.write(`<h1>${r.cliente}</h1><p style="color:#666;font-size:11px">${r.indirizzo} \u2014 ${new Date().toLocaleDateString('it-IT')}</p>`);if(vani.length){w.document.write('<h3>Vani</h3><table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th></tr>');vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'\u00D7'+v.altezza:'\u2014'}</td><td>${v.stanza||'\u2014'}</td></tr>`));w.document.write('</table>');}w.document.write('<p style="margin-top:24px;color:#ccc;font-size:8px">MASTRO Suite</p></body></html>');w.document.close();w.print();}}
+                  <button onClick={()=>{const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>Report ${r.cliente}</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;padding:32px;max-width:800px;margin:0 auto;color:#1a1a1a}h1{font-size:22px;font-weight:800}h3{font-size:13px;font-weight:700;margin:16px 0 6px;color:#0D9488}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #e5e5e5;padding:6px 8px;font-size:11px}th{background:#f8f8f8;font-weight:700;font-size:9px;text-transform:uppercase;color:#666}</style></head><body>`);w.document.write(`<h1>${r.cliente}</h1><p style="color:#666;font-size:11px">${r.indirizzo} \u2014 ${new Date().toLocaleDateString('it-IT')}</p>`);if(vani.length){w.document.write('<h3>Vani</h3><table><tr><th>#</th><th>Tipo</th><th>Materiale</th><th>Misure</th><th>Stanza</th></tr>');vani.forEach((v,i)=>w.document.write(`<tr><td>${i+1}</td><td>${v.tipo}</td><td>${v.materiale}</td><td>${v.larghezza&&v.altezza?v.larghezza+'\u00D7'+v.altezza:'\u2014'}</td><td>${v.stanza||'\u2014'}</td></tr>`));w.document.write('</table>');}w.document.write('<p style="margin-top:24px;color:#ccc;font-size:8px">fliwoX</p></body></html>');w.document.close();w.print();}}
                     style={{width:'100%',background:C.tBg,color:C.teal,border:`1px solid ${C.tBd}`,borderRadius:10,padding:'10px 0',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     Report PDF
                   </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ═══ SERRAMENTISTA — SCHEDA COMPLETA ═══ */}
+          {page==='serramentista'&&selFL&&(()=>{
+            const f=selFL;
+            const fRL=rpf(f.id);
+            const fComp=fRL.filter(r=>r.stato==='completata');
+            const fAtt=fRL.filter(r=>['accettata','in_corso'].includes(r.stato));
+            const fNuove=fRL.filter(r=>['nuova','vista'].includes(r.stato));
+            const fRif=fRL.filter(r=>r.stato==='rifiutata');
+            const fBudget=fRL.filter(r=>r.budget&&!['rifiutata','annullata'].includes(r.stato)).reduce((s,r)=>s+(parseFloat(r.budget)||0),0);
+            const rt=avgRating(f.id);
+            const fVal=valutazioni.filter(v=>v.operatore_id===f.id);
+            const totFatt=fFatture.reduce((s,x)=>s+(parseFloat(x.totale)||parseFloat(x.importo)||0),0);
+            const totPag=fFatture.filter(x=>x.stato==='pagata').reduce((s,x)=>s+(parseFloat(x.totale)||parseFloat(x.importo)||0),0);
+            const totScad=fFatture.filter(x=>x.stato==='scaduta').reduce((s,x)=>s+(parseFloat(x.totale)||parseFloat(x.importo)||0),0);
+            const tassoComp=fRL.length>0?((fComp.length/fRL.length)*100).toFixed(0):0;
+            // Media globale per confronto
+            const allComp=richieste.filter(r=>r.stato==='completata').length;
+            const allTot=richieste.length;
+            const tassoGlobale=allTot>0?((allComp/allTot)*100).toFixed(0):0;
+
+            const FL_COLORS=['#2DD4BF','#60A5FA','#A78BFA','#F87171','#FBBF24','#34D399','#F472B6','#38BDF8','#818CF8','#FB923C','#4ADE80'];
+            const fc=FL_COLORS[freelancers.findIndex(x=>x.id===f.id)%FL_COLORS.length];
+
+            return(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:16}}>
+                {/* LEFT */}
+                <div style={{overflowY:'auto',maxHeight:'calc(100vh - 80px)',paddingRight:4}}>
+                  {/* HERO */}
+                  <div style={{background:`linear-gradient(135deg,${C.cd},${fc}11)`,border:`1px solid ${fc}33`,borderRadius:16,padding:24,marginBottom:16}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:16}}>
+                      <div style={{width:64,height:64,borderRadius:18,background:`${fc}22`,border:`2px solid ${fc}44`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,fontWeight:800,color:fc,flexShrink:0}}>{(f.nome||'?')[0]}{(f.cognome||'?')[0]}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:24,fontWeight:800,color:C.t1,letterSpacing:'-.02em'}}>{f.nome} {f.cognome}</div>
+                        <div style={{fontSize:13,color:C.t3,marginTop:2}}>{f.ruolo||'Montatore serramentista'}</div>
+                        {fProfilo?.bio&&<div style={{fontSize:12,color:C.t2,marginTop:8,lineHeight:1.5}}>{fProfilo.bio}</div>}
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:10}}>
+                          {(fProfilo?.specializzazioni||[]).map(s=><span key={s} style={{fontSize:10,fontWeight:600,color:fc,background:`${fc}15`,border:`1px solid ${fc}33`,borderRadius:6,padding:'2px 8px'}}>{s}</span>)}
+                        </div>
+                      </div>
+                      {rt.n>0&&<div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:28,fontWeight:800,color:C.amb,fontFamily:M}}>{rt.avg}</div>
+                        <div style={{fontSize:12,color:C.amb}}>{'\u2605'.repeat(Math.round(parseFloat(rt.avg)))}</div>
+                        <div style={{fontSize:10,color:C.t3}}>{rt.n} valutazioni</div>
+                      </div>}
+                    </div>
+                    {/* Info row */}
+                    {fProfilo&&<div style={{display:'flex',gap:16,marginTop:16,flexWrap:'wrap'}}>
+                      {fProfilo.anni_esperienza&&<div style={{display:'flex',alignItems:'center',gap:4}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg><span style={{fontSize:11,color:C.t2}}>{fProfilo.anni_esperienza} anni exp.</span></div>}
+                      {fProfilo.tariffa_oraria&&<div style={{display:'flex',alignItems:'center',gap:4}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span style={{fontSize:11,color:C.t2}}>{'\u20AC'}{fProfilo.tariffa_oraria}/h</span></div>}
+                      {(fProfilo.zone_operative||[]).length>0&&<div style={{display:'flex',alignItems:'center',gap:4}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{fontSize:11,color:C.t2}}>{(fProfilo.zone_operative||[]).join(', ')}</span></div>}
+                    </div>}
+                    {(fProfilo?.certificazioni||[]).length>0&&<div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:10}}>
+                      {fProfilo.certificazioni.map(c=><span key={c} style={{fontSize:9,fontWeight:600,color:C.grn,background:C.gBg,borderRadius:4,padding:'2px 7px'}}>{c}</span>)}
+                    </div>}
+                  </div>
+
+                  {/* KPI */}
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:10,marginBottom:16}}>
+                    {[
+                      {n:fRL.length,l:'Totali',c:C.t1},
+                      {n:fNuove.length,l:'In attesa',c:C.amb},
+                      {n:fAtt.length,l:'Attivi',c:C.blu},
+                      {n:fComp.length,l:'Completati',c:C.grn},
+                      {n:tassoComp+'%',l:'Tasso compl.',c:parseFloat(tassoComp)>=80?C.grn:parseFloat(tassoComp)>=60?C.amb:C.red},
+                      {n:'\u20AC'+fBudget.toLocaleString('it-IT',{maximumFractionDigits:0}),l:'Volume',c:C.teal},
+                    ].map((k,i)=>(
+                      <div key={i} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:'12px 8px',textAlign:'center'}}>
+                        <div style={{fontFamily:M,fontWeight:700,fontSize:typeof k.n==='number'?20:16,color:k.c}}>{k.n}</div>
+                        <div style={{fontSize:9,color:C.t3,marginTop:2}}>{k.l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* TABS */}
+                  <div style={{display:'flex',gap:2,marginBottom:14,background:C.cd,borderRadius:10,padding:3,border:`1px solid ${C.bd}`}}>
+                    {[{k:'panoramica',l:'Panoramica'},{k:'lavori',l:`Lavori (${fRL.length})`},{k:'contabilita',l:'Contabilità'},{k:'valutazioni',l:`Valutazioni (${fVal.length})`},{k:'confronto',l:'Confronto'}].map(t=>(
+                      <button key={t.k} onClick={()=>setFlTab(t.k)} style={{flex:1,background:flTab===t.k?C.tBg:'transparent',color:flTab===t.k?C.teal:C.t3,border:'none',borderRadius:8,padding:'7px 4px',fontSize:11,fontWeight:flTab===t.k?700:500,cursor:'pointer'}}>{t.l}</button>
+                    ))}
+                  </div>
+
+                  {/* TAB: PANORAMICA */}
+                  {flTab==='panoramica'&&<>
+                    {/* Ultimi lavori */}
+                    <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,overflow:'hidden',marginBottom:14}}>
+                      <div style={{padding:'10px 14px',borderBottom:`1px solid ${C.bd}`,fontSize:11,fontWeight:700,color:C.t1}}>Ultimi lavori</div>
+                      {fRL.slice(0,5).map(r=>{const st=ST[r.stato]||ST.nuova;return(
+                        <div key={r.id} onClick={()=>openDet(r)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',borderBottom:`1px solid ${C.bd}`,cursor:'pointer'}}
+                          onMouseEnter={e=>e.currentTarget.style.background=C.cdH} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                          <div><div style={{fontSize:12,fontWeight:600,color:C.t1}}>{r.cliente}</div><div style={{fontSize:10,color:C.t3}}>{r.indirizzo}</div></div>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            {r.budget&&<span style={{fontFamily:M,fontSize:11,color:C.teal,fontWeight:600}}>{'\u20AC'}{parseFloat(r.budget).toLocaleString('it-IT')}</span>}
+                            <span style={{display:'inline-flex',alignItems:'center',gap:3,background:st.bg,borderRadius:5,padding:'2px 8px'}}><div style={{width:5,height:5,borderRadius:'50%',background:st.c}}/><span style={{fontSize:9,fontWeight:600,color:st.c}}>{st.l}</span></span>
+                          </div>
+                        </div>
+                      );})}
+                    </div>
+                    {/* Ultime valutazioni */}
+                    {fVal.length>0&&<div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.t1,marginBottom:10}}>Ultime valutazioni</div>
+                      {fVal.slice(0,3).map(v=>(
+                        <div key={v.id} style={{padding:'8px 0',borderBottom:`1px solid ${C.bd}`}}>
+                          <div style={{fontSize:14,color:C.amb,marginBottom:4}}>{'\u2605'.repeat(v.stelle)}{'\u2606'.repeat(5-v.stelle)}</div>
+                          {v.commento&&<div style={{fontSize:12,color:C.t2,fontStyle:'italic',lineHeight:1.4}}>"{v.commento}"</div>}
+                        </div>
+                      ))}
+                    </div>}
+                  </>}
+
+                  {/* TAB: LAVORI */}
+                  {flTab==='lavori'&&<div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,overflow:'hidden'}}>
+                    <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 80px 80px 100px',padding:'8px 14px',borderBottom:`1px solid ${C.bd}`,background:C.sf}}>
+                      {['Cliente','Indirizzo','Vani','Budget','Stato'].map(h=><div key={h} style={{fontSize:9,color:C.t3,fontWeight:600,textTransform:'uppercase'}}>{h}</div>)}
+                    </div>
+                    {fRL.map(r=>{const st=ST[r.stato]||ST.nuova;return(
+                      <div key={r.id} onClick={()=>openDet(r)} style={{display:'grid',gridTemplateColumns:'2fr 2fr 80px 80px 100px',padding:'10px 14px',borderBottom:`1px solid ${C.bd}`,cursor:'pointer'}}
+                        onMouseEnter={e=>e.currentTarget.style.background=C.cdH} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                        <div style={{fontSize:12,fontWeight:600,color:C.t1}}>{r.cliente}{r.urgente?<span style={{fontSize:8,color:C.red,marginLeft:4}}>URG</span>:''}</div>
+                        <div style={{fontSize:11,color:C.t3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.indirizzo}</div>
+                        <div style={{fontFamily:M,fontSize:11,color:C.t2}}>{(r.vani_json||[]).length}</div>
+                        <div style={{fontFamily:M,fontSize:11,color:C.teal,fontWeight:600}}>{r.budget?'\u20AC'+parseFloat(r.budget).toLocaleString('it-IT'):'—'}</div>
+                        <div><span style={{display:'inline-flex',alignItems:'center',gap:3,background:st.bg,borderRadius:5,padding:'2px 7px'}}><div style={{width:4,height:4,borderRadius:'50%',background:st.c}}/><span style={{fontSize:9,fontWeight:600,color:st.c}}>{st.l}</span></span></div>
+                      </div>
+                    );})}
+                  </div>}
+
+                  {/* TAB: CONTABILITA */}
+                  {flTab==='contabilita'&&<>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:10,marginBottom:14}}>
+                      {[{l:'Fatturato',v:'\u20AC'+totFatt.toFixed(0),c:C.teal},{l:'Pagato',v:'\u20AC'+totPag.toFixed(0),c:C.grn},{l:'Da pagare',v:'\u20AC'+(totFatt-totPag).toFixed(0),c:(totFatt-totPag)>0?C.amb:C.grn},{l:'Scaduto',v:'\u20AC'+totScad.toFixed(0),c:totScad>0?C.red:C.grn}].map((k,i)=>(
+                        <div key={i} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:'14px 10px',textAlign:'center'}}><div style={{fontFamily:M,fontWeight:700,fontSize:18,color:k.c}}>{k.v}</div><div style={{fontSize:9,color:C.t3,marginTop:2}}>{k.l}</div></div>
+                      ))}
+                    </div>
+                    <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,overflow:'hidden'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr 100px',padding:'8px 14px',borderBottom:`1px solid ${C.bd}`,background:C.sf}}>
+                        {['Numero','Data','Scadenza','Totale','Stato'].map(h=><div key={h} style={{fontSize:9,color:C.t3,fontWeight:600,textTransform:'uppercase'}}>{h}</div>)}
+                      </div>
+                      {fFatture.length===0?<div style={{padding:20,textAlign:'center',color:C.t3,fontSize:12}}>Nessuna fattura</div>:
+                      fFatture.map(ft=>{const fc2=ft.stato==='pagata'?C.grn:ft.stato==='scaduta'?C.red:C.amb;return(
+                        <div key={ft.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr 100px',padding:'10px 14px',borderBottom:`1px solid ${C.bd}`}}>
+                          <div style={{fontSize:12,fontWeight:600,color:C.t1}}>N. {ft.numero}</div>
+                          <div style={{fontSize:11,color:C.t3}}>{new Date(ft.data_emissione).toLocaleDateString('it-IT')}</div>
+                          <div style={{fontSize:11,color:ft.stato==='scaduta'?C.red:C.t3}}>{ft.data_scadenza?new Date(ft.data_scadenza).toLocaleDateString('it-IT'):'—'}</div>
+                          <div style={{fontFamily:M,fontSize:12,fontWeight:700,color:C.teal}}>{'\u20AC'}{parseFloat(ft.totale||ft.importo).toLocaleString('it-IT')}</div>
+                          <div><span style={{fontSize:10,fontWeight:700,color:fc2,background:`${fc2}15`,borderRadius:4,padding:'2px 8px'}}>{ft.stato}</span></div>
+                        </div>
+                      );})}
+                    </div>
+                  </>}
+
+                  {/* TAB: VALUTAZIONI */}
+                  {flTab==='valutazioni'&&<>
+                    {fVal.length===0?<div style={{padding:30,textAlign:'center',color:C.t3}}>Nessuna valutazione</div>:
+                    <>
+                      {/* Media categorie */}
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
+                        {['puntualita','qualita','comunicazione','pulizia'].map(cat=>{
+                          const vals=fVal.filter(v=>v[cat]).map(v=>v[cat]);
+                          const avg=vals.length?(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1):'—';
+                          return(
+                            <div key={cat} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:'12px 8px',textAlign:'center'}}>
+                              <div style={{fontFamily:M,fontWeight:700,fontSize:20,color:C.amb}}>{avg}</div>
+                              <div style={{fontSize:10,color:C.t3,marginTop:2,textTransform:'capitalize'}}>{cat}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {fVal.map(v=>(
+                        <div key={v.id} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:14,marginBottom:8}}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                            <div style={{fontSize:16,color:C.amb}}>{'\u2605'.repeat(v.stelle)}{'\u2606'.repeat(5-v.stelle)}</div>
+                            <div style={{fontSize:10,color:C.t3}}>{new Date(v.created_at).toLocaleDateString('it-IT')}</div>
+                          </div>
+                          <div style={{display:'flex',gap:12,marginBottom:6}}>
+                            {[{l:'Punt.',v:v.puntualita},{l:'Qual.',v:v.qualita},{l:'Com.',v:v.comunicazione},{l:'Pul.',v:v.pulizia}].map(k=>k.v&&<div key={k.l} style={{fontSize:10,color:C.t2}}>{k.l} <span style={{fontWeight:700,color:C.amb}}>{k.v}/5</span></div>)}
+                          </div>
+                          {v.commento&&<div style={{fontSize:12,color:C.t2,fontStyle:'italic',lineHeight:1.4,borderTop:`1px solid ${C.bd}`,paddingTop:6}}>"{v.commento}"</div>}
+                        </div>
+                      ))}
+                    </>}
+                  </>}
+
+                  {/* TAB: CONFRONTO */}
+                  {flTab==='confronto'&&<>
+                    <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:18}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.t1,marginBottom:14}}>Confronto con media serramentisti</div>
+                      {[
+                        {l:'Tasso completamento',v:tassoComp+'%',avg:tassoGlobale+'%',better:parseFloat(tassoComp)>=parseFloat(tassoGlobale)},
+                        {l:'Rating medio',v:rt.avg,avg:valutazioni.length?(valutazioni.reduce((s,x)=>s+x.stelle,0)/valutazioni.length).toFixed(1):'—',better:parseFloat(rt.avg)>=(valutazioni.length?(valutazioni.reduce((s,x)=>s+x.stelle,0)/valutazioni.length):0)},
+                        {l:'Lavori completati',v:String(fComp.length),avg:String(Math.round(allComp/Math.max(freelancers.length,1))),better:fComp.length>=Math.round(allComp/Math.max(freelancers.length,1))},
+                        {l:'Volume medio per lavoro',v:fRL.length?'\u20AC'+Math.round(fBudget/fRL.length).toLocaleString('it-IT'):'—',avg:richieste.length?'\u20AC'+Math.round(kB/richieste.length).toLocaleString('it-IT'):'—'},
+                      ].map((row,i)=>(
+                        <div key={i} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 40px',alignItems:'center',padding:'10px 0',borderBottom:i<3?`1px solid ${C.bd}`:'none'}}>
+                          <div style={{fontSize:12,color:C.t1,fontWeight:500}}>{row.l}</div>
+                          <div style={{fontFamily:M,fontSize:13,fontWeight:700,color:row.better?C.grn:C.red,textAlign:'center'}}>{row.v}</div>
+                          <div style={{fontFamily:M,fontSize:12,color:C.t3,textAlign:'center'}}>{row.avg}</div>
+                          <div style={{textAlign:'center'}}>{row.better?<span style={{color:C.grn,fontSize:14}}>{'\u2191'}</span>:<span style={{color:C.red,fontSize:14}}>{'\u2193'}</span>}</div>
+                        </div>
+                      ))}
+                      <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 40px',padding:'6px 0',marginTop:4}}>
+                        <div/>
+                        <div style={{fontSize:9,color:C.teal,textAlign:'center',fontWeight:600}}>Questo</div>
+                        <div style={{fontSize:9,color:C.t3,textAlign:'center',fontWeight:600}}>Media</div>
+                        <div/>
+                      </div>
+                    </div>
+                  </>}
+                </div>
+
+                {/* RIGHT SIDEBAR */}
+                <div style={{borderLeft:`1px solid ${C.bd}`,paddingLeft:16,overflowY:'auto',maxHeight:'calc(100vh - 80px)'}}>
+                  {/* Quick stats */}
+                  <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14,marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Quick Stats</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                      <div style={{background:C.sf,borderRadius:8,padding:'8px',textAlign:'center'}}><div style={{fontFamily:M,fontWeight:700,fontSize:18,color:C.teal}}>{'\u20AC'}{totFatt.toFixed(0)}</div><div style={{fontSize:8,color:C.t3}}>Fatturato</div></div>
+                      <div style={{background:C.sf,borderRadius:8,padding:'8px',textAlign:'center'}}><div style={{fontFamily:M,fontWeight:700,fontSize:18,color:(totFatt-totPag)>0?C.amb:C.grn}}>{'\u20AC'}{(totFatt-totPag).toFixed(0)}</div><div style={{fontSize:8,color:C.t3}}>Da pagare</div></div>
+                    </div>
+                  </div>
+
+                  {/* Info contatto */}
+                  {fProfilo&&<div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:14,marginBottom:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Informazioni</div>
+                    {[
+                      {l:'Tariffa',v:fProfilo.tariffa_oraria?'\u20AC'+fProfilo.tariffa_oraria+'/h':'—'},
+                      {l:'Esperienza',v:fProfilo.anni_esperienza?fProfilo.anni_esperienza+' anni':'—'},
+                      {l:'Zone',v:(fProfilo.zone_operative||[]).join(', ')||'—'},
+                    ].map(r=>(
+                      <div key={r.l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:`1px solid ${C.bd}`}}>
+                        <span style={{fontSize:11,color:C.t3}}>{r.l}</span>
+                        <span style={{fontSize:11,color:C.t1,fontWeight:600}}>{r.v}</span>
+                      </div>
+                    ))}
+                  </div>}
+
+                  {/* Azioni */}
+                  <button onClick={()=>{setPage('nuovo');}} style={{width:'100%',background:C.tBg,color:C.teal,border:`1px solid ${C.tBd}`,borderRadius:10,padding:'10px 0',fontSize:12,fontWeight:700,cursor:'pointer',marginBottom:8}}>Invia lavoro a {f.nome}</button>
+                  <button onClick={()=>{setPage('dashboard');setSelFL(f);}} style={{width:'100%',background:'transparent',color:C.t3,border:`1px solid ${C.bd}`,borderRadius:10,padding:'10px 0',fontSize:12,fontWeight:600,cursor:'pointer'}}>Filtra dashboard</button>
                 </div>
               </div>
             );
