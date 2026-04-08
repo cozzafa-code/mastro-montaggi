@@ -1,271 +1,398 @@
-// SpesaQuick.tsx — Registrazione spese rapida dal cantiere
-// PIN operatore → foto scontrino → importo → categoria → commessa → invio
-'use client';
 // @ts-nocheck
-import React, { useState, useRef } from 'react';
+'use client';
+import React, { useState, useRef, useEffect } from 'react';
 
 const DS = {
-  bg:'#E8F4F4', topbar:'#0D1F1F', teal:'#28A0A0', tealDark:'#156060',
-  tealLight:'#EEF8F8', green:'#1A9E73', greenDark:'#0F7A56',
-  red:'#DC4444', redDark:'#A83030', amber:'#D08008', amberDark:'#A06005',
-  text:'#0D1F1F', textMid:'#4A7070', textLight:'#8BBCBC',
-  border:'#C8E4E4', mono:'"JetBrains Mono", monospace',
-  ui:'system-ui, -apple-system, sans-serif',
+  teal:'#28A0A0', tealDark:'#1a7a7a', tealLight:'rgba(40,160,160,0.08)',
+  topbar:'#0D1F1F', text:'#1a2a2a', textMid:'#5a7a7a', textLight:'#8aA0A0',
+  border:'#C8E4E4', green:'#1A9E73', greenDark:'#14805c',
+  red:'#DC4444', amber:'#F59E0B', amberDark:'#d48806',
+  white:'#FFFFFF', ui:'Inter, system-ui, sans-serif', mono:'"JetBrains Mono", monospace',
 };
 
+const SB_URL = 'https://fgefcigxlbrmbeqqzjmo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZWZjaWd4bGJybWJlcXF6am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwODcyMDAsImV4cCI6MjA1ODY2MzIwMH0.4lKTGaxOWxGUyJLDOWVOxPbGMSFJkGzwMVtC8MhJMI8';
+
 const CATEGORIE = [
-  { id:'materiale', label:'Materiale extra', icon:'M' },
-  { id:'carburante', label:'Carburante', icon:'C' },
-  { id:'vitto', label:'Pasto / Vitto', icon:'V' },
-  { id:'pedaggio', label:'Pedaggio', icon:'P' },
-  { id:'parcheggio', label:'Parcheggio', icon:'K' },
-  { id:'attrezzatura', label:'Attrezzatura', icon:'A' },
-  { id:'altro', label:'Altro', icon:'?' },
+  { id: 'carburante', label: 'Carburante', icon: 'G', color: '#3B7FE0' },
+  { id: 'materiale', label: 'Materiale', icon: 'M', color: DS.amber },
+  { id: 'pranzo', label: 'Pranzo', icon: 'P', color: DS.green },
+  { id: 'autostrada', label: 'Autostrada', icon: 'A', color: '#8B5CF6' },
+  { id: 'parcheggio', label: 'Parcheggio', icon: 'K', color: '#EC4899' },
+  { id: 'ferramenta', label: 'Ferramenta', icon: 'F', color: DS.teal },
+  { id: 'altro', label: 'Altro', icon: '?', color: DS.textMid },
 ];
 
 interface SpesaQuickProps {
+  operatoreNome: string;
+  operatoreId?: string;
+  aziendaId?: string;
   commessaId?: string;
   commessaCodice?: string;
-  operatore?: string;
   onClose: () => void;
-  onSend: (spesa: any) => void;
 }
 
-export default function SpesaQuick({ commessaId, commessaCodice, operatore, onClose, onSend }: SpesaQuickProps) {
-  const [step, setStep] = useState<'foto'|'dati'|'conferma'|'done'>('foto');
-  const [fotoB64, setFotoB64] = useState<string|null>(null);
+interface SpesaRecord {
+  id: string;
+  importo: number;
+  categoria: string;
+  nota: string;
+  foto_url: string | null;
+  cm_id: string | null;
+  stato: string;
+  created_at: string;
+}
+
+export default function SpesaQuick({ operatoreNome, operatoreId, aziendaId, commessaId, commessaCodice, onClose }: SpesaQuickProps) {
+  const [step, setStep] = useState<'form' | 'lista' | 'success'>('form');
   const [importo, setImporto] = useState('');
-  const [categoria, setCategoria] = useState('materiale');
+  const [categoria, setCategoria] = useState('');
   const [nota, setNota] = useState('');
-  const [vocale, setVocale] = useState<string|null>(null);
-  const [recording, setRecording] = useState(false);
-  const fileRef = useRef<any>(null);
-  const mediaRef = useRef<any>(null);
-  const chunksRef = useRef<any>([]);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [spese, setSpese] = useState<SpesaRecord[]>([]);
+  const [loadingSpese, setLoadingSpese] = useState(true);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const sbH = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-  const scattaFoto = () => fileRef.current?.click();
+  useEffect(() => { loadSpese(); }, []);
 
-  const onFile = (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setFotoB64(ev.target?.result as string);
-      setStep('dati');
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const startRec = async () => {
+  async function loadSpese() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunksRef.current = [];
-      const mr = new MediaRecorder(stream);
-      mediaRef.current = mr;
-      mr.ondataavailable = (e: any) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        setVocale(URL.createObjectURL(blob));
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mr.start();
-      setRecording(true);
-    } catch { /* microfono non disponibile */ }
-  };
-
-  const stopRec = () => {
-    mediaRef.current?.stop();
-    setRecording(false);
-  };
-
-  const invia = () => {
-    const spesa = {
-      id: 'SP-' + Date.now(),
-      commessa_id: commessaId || null,
-      commessa_codice: commessaCodice || null,
-      operatore: operatore || 'Operatore',
-      importo: parseFloat(importo),
-      categoria,
-      nota: nota.trim(),
-      foto_url: fotoB64,
-      vocale_url: vocale,
-      created_at: new Date().toISOString(),
-      stato: 'in_attesa', // in_attesa -> approvata -> rifiutata
-    };
-    onSend(spesa);
-    setStep('done');
-    setTimeout(onClose, 1500);
-  };
-
-  const card = { background:'linear-gradient(145deg,#fff,#f4fcfc)', borderRadius:14, border:'1.5px solid '+DS.border, boxShadow:'0 2px 8px rgba(40,160,160,.08)', padding:14 };
-
-  // ─── STEP FOTO ─────────────────────────────────────────────
-  if (step === 'foto') return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:500, display:'flex', alignItems:'flex-end' }}>
-      <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', padding:20, width:'100%', maxWidth:480, margin:'0 auto' }}>
-        <div style={{ width:40, height:4, borderRadius:2, background:DS.border, margin:'0 auto 16px' }}/>
-        <div style={{ fontWeight:800, fontSize:16, color:DS.text, marginBottom:4 }}>Registra spesa</div>
-        <div style={{ fontSize:12, color:DS.textMid, marginBottom:16 }}>
-          {commessaCodice ? `Commessa: ${commessaCodice}` : 'Spesa generica (senza commessa)'}
-        </div>
-
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display:'none' }} onChange={onFile}/>
-
-        <button onClick={scattaFoto} style={{
-          width:'100%', padding:'40px 20px', background:DS.tealLight, border:`2px dashed ${DS.teal}`,
-          borderRadius:14, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:10
-        }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="2" strokeLinecap="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-          <span style={{ fontWeight:700, fontSize:14, color:DS.teal, fontFamily:DS.ui }}>Scatta foto scontrino</span>
-          <span style={{ fontSize:11, color:DS.textMid }}>oppure scegli dalla galleria</span>
-        </button>
-
-        <button onClick={() => setStep('dati')} style={{
-          width:'100%', marginTop:10, padding:12, background:'none', border:`1px solid ${DS.border}`,
-          borderRadius:10, cursor:'pointer', fontSize:13, color:DS.textMid, fontFamily:DS.ui, fontWeight:600
-        }}>
-          Continua senza foto
-        </button>
-
-        <button onClick={onClose} style={{
-          width:'100%', marginTop:8, padding:10, background:'none', border:'none',
-          cursor:'pointer', fontSize:13, color:DS.textLight, fontFamily:DS.ui
-        }}>
-          Annulla
-        </button>
-      </div>
-    </div>
-  );
-
-  // ─── STEP DATI ─────────────────────────────────────────────
-  if (step === 'dati') return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:500, display:'flex', alignItems:'flex-end' }}>
-      <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', padding:20, width:'100%', maxWidth:480, margin:'0 auto', maxHeight:'85vh', overflowY:'auto' }}>
-        <div style={{ width:40, height:4, borderRadius:2, background:DS.border, margin:'0 auto 16px' }}/>
-        <div style={{ fontWeight:800, fontSize:16, color:DS.text, marginBottom:16 }}>Dettagli spesa</div>
-
-        {fotoB64 && (
-          <div style={{ position:'relative', marginBottom:12 }}>
-            <img src={fotoB64} alt="" style={{ width:'100%', maxHeight:120, objectFit:'cover', borderRadius:10 }}/>
-            <button onClick={() => setFotoB64(null)} style={{
-              position:'absolute', top:6, right:6, width:24, height:24, borderRadius:'50%',
-              background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', cursor:'pointer', fontSize:14
-            }}>x</button>
-          </div>
-        )}
-
-        {/* Importo */}
-        <div style={{ position:'relative', marginBottom:12 }}>
-          <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:18, fontWeight:800, color:DS.teal }}>EUR</span>
-          <input value={importo} onChange={e => setImporto(e.target.value)} type="number" inputMode="decimal" placeholder="0.00"
-            style={{ width:'100%', padding:'14px 14px 14px 50px', border:`1.5px solid ${DS.border}`, borderRadius:10,
-              fontSize:22, fontFamily:DS.mono, fontWeight:800, color:DS.text, outline:'none', boxSizing:'border-box' }}/>
-        </div>
-
-        {/* Categoria */}
-        <div style={{ fontSize:11, color:DS.textLight, fontWeight:700, textTransform:'uppercase', marginBottom:6, letterSpacing:0.5 }}>Categoria</div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:14 }}>
-          {CATEGORIE.map(cat => (
-            <button key={cat.id} onClick={() => setCategoria(cat.id)} style={{
-              padding:'8px 12px', borderRadius:20, border:`1.5px solid ${categoria === cat.id ? DS.teal : DS.border}`,
-              background: categoria === cat.id ? DS.teal : '#fff', color: categoria === cat.id ? '#fff' : DS.text,
-              fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:DS.ui
-            }}>
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Nota */}
-        <textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="Nota (opzionale)" rows={2}
-          style={{ width:'100%', padding:'10px 12px', border:`1.5px solid ${DS.border}`, borderRadius:10,
-            fontSize:13, outline:'none', resize:'none', boxSizing:'border-box', fontFamily:DS.ui, marginBottom:10 }}/>
-
-        {/* Voce */}
-        <button onClick={recording ? stopRec : startRec} style={{
-          width:'100%', padding:10, borderRadius:10, border:`1.5px solid ${recording ? DS.red : DS.border}`,
-          background: recording ? 'rgba(220,68,68,0.1)' : '#fff', cursor:'pointer',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:14
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={recording ? DS.red : DS.textMid} strokeWidth="2" strokeLinecap="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-          <span style={{ fontSize:12, fontWeight:600, color: recording ? DS.red : DS.textMid, fontFamily:DS.ui }}>
-            {recording ? 'Registrando... tap per fermare' : vocale ? 'Nota vocale registrata' : 'Aggiungi nota vocale'}
-          </span>
-        </button>
-
-        {vocale && (
-          <audio controls src={vocale} style={{ width:'100%', height:36, marginBottom:10 }}/>
-        )}
-
-        {/* Bottoni */}
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={() => setStep('foto')} style={{
-            flex:1, padding:12, background:DS.tealLight, color:DS.textMid, border:'none',
-            borderRadius:10, fontWeight:700, cursor:'pointer', fontFamily:DS.ui, fontSize:13
-          }}>Indietro</button>
-          <button onClick={() => setStep('conferma')} disabled={!importo || parseFloat(importo) <= 0} style={{
-            flex:2, padding:12, background: importo && parseFloat(importo) > 0 ? DS.teal : DS.border,
-            color:'#fff', border:'none', borderRadius:10, fontWeight:700, cursor:'pointer',
-            fontFamily:DS.ui, fontSize:14, boxShadow: importo ? `0 4px 0 0 ${DS.tealDark}` : 'none'
-          }}>Conferma</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ─── STEP CONFERMA ─────────────────────────────────────────
-  if (step === 'conferma') {
-    const catLabel = CATEGORIE.find(c => c.id === categoria)?.label || categoria;
-    return (
-      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:500, display:'flex', alignItems:'flex-end' }}>
-        <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', padding:20, width:'100%', maxWidth:480, margin:'0 auto' }}>
-          <div style={{ width:40, height:4, borderRadius:2, background:DS.border, margin:'0 auto 16px' }}/>
-          <div style={{ fontWeight:800, fontSize:16, color:DS.text, marginBottom:16 }}>Conferma spesa</div>
-
-          <div style={{ ...card, marginBottom:12 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-              <span style={{ fontSize:13, color:DS.textMid, fontWeight:600 }}>{catLabel}</span>
-              <span style={{ fontFamily:DS.mono, fontWeight:800, fontSize:22, color:DS.teal }}>EUR {parseFloat(importo).toFixed(2)}</span>
-            </div>
-            {commessaCodice && <div style={{ fontSize:11, color:DS.textLight }}>Commessa: {commessaCodice}</div>}
-            {nota && <div style={{ fontSize:12, color:DS.textMid, marginTop:4 }}>{nota}</div>}
-            {fotoB64 && <div style={{ fontSize:11, color:DS.green, marginTop:4 }}>Foto scontrino allegata</div>}
-            {vocale && <div style={{ fontSize:11, color:DS.green, marginTop:2 }}>Nota vocale allegata</div>}
-          </div>
-
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={() => setStep('dati')} style={{
-              flex:1, padding:12, background:DS.tealLight, color:DS.textMid, border:'none',
-              borderRadius:10, fontWeight:700, cursor:'pointer', fontFamily:DS.ui
-            }}>Modifica</button>
-            <button onClick={invia} style={{
-              flex:2, padding:12, background:DS.green, color:'#fff', border:'none',
-              borderRadius:10, fontWeight:700, cursor:'pointer', fontFamily:DS.ui, fontSize:14,
-              boxShadow:`0 4px 0 0 ${DS.greenDark}`
-            }}>Invia spesa</button>
-          </div>
-        </div>
-      </div>
-    );
+      const filter = operatoreId ? `operatore_id=eq.${operatoreId}` : `operatore_nome=eq.${encodeURIComponent(operatoreNome)}`;
+      const res = await fetch(
+        `${SB_URL}/rest/v1/spese_operatori?${filter}&select=*&order=created_at.desc&limit=20`,
+        { headers: sbH }
+      );
+      if (res.ok) setSpese(await res.json());
+    } catch (e) { console.error('loadSpese:', e); }
+    setLoadingSpese(false);
   }
 
-  // ─── STEP DONE ─────────────────────────────────────────────
+  async function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ts = Date.now();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `spese/${operatoreNome.replace(/\s/g, '_')}/${ts}.${ext}`;
+      const upRes = await fetch(`${SB_URL}/storage/v1/object/foto-vani/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+        body: file,
+      });
+      if (upRes.ok) {
+        setFotoUrl(`${SB_URL}/storage/v1/object/public/foto-vani/${path}`);
+      } else {
+        alert('Errore upload foto');
+      }
+    } catch (e) { console.error('handleFoto:', e); alert('Errore upload'); }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  async function salvaSpesa() {
+    if (!importo || !categoria) return;
+    setSaving(true);
+    try {
+      const record = {
+        operatore_nome: operatoreNome,
+        operatore_id: operatoreId || null,
+        azienda_id: aziendaId || null,
+        importo: parseFloat(importo),
+        categoria,
+        nota: nota || null,
+        foto_url: fotoUrl,
+        cm_id: commessaId || null,
+        stato: 'da_approvare',
+      };
+      const res = await fetch(`${SB_URL}/rest/v1/spese_operatori`, {
+        method: 'POST',
+        headers: { ...sbH, 'Prefer': 'return=representation' },
+        body: JSON.stringify(record),
+      });
+      if (res.ok) {
+        setStep('success');
+        setTimeout(() => {
+          setStep('form');
+          setImporto('');
+          setCategoria('');
+          setNota('');
+          setFotoUrl(null);
+          loadSpese();
+        }, 2000);
+      } else {
+        alert('Errore salvataggio spesa');
+      }
+    } catch (e) { console.error('salvaSpesa:', e); alert('Errore'); }
+    setSaving(false);
+  }
+
+  const totMese = spese
+    .filter(s => new Date(s.created_at).getMonth() === new Date().getMonth())
+    .reduce((sum, s) => sum + (Number(s.importo) || 0), 0);
+
+  const catColor = (cat: string) => CATEGORIE.find(c => c.id === cat)?.color || DS.textMid;
+
+  // === FULLSCREEN ===
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', borderRadius:20, padding:30, textAlign:'center', maxWidth:300 }}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2.5" strokeLinecap="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-        <div style={{ fontWeight:800, fontSize:16, color:DS.text, marginTop:12 }}>Spesa inviata</div>
-        <div style={{ fontSize:12, color:DS.textMid, marginTop:4 }}>In attesa di approvazione</div>
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: '#f4f8f8', zIndex: 9998,
+      display: 'flex', flexDirection: 'column', fontFamily: DS.ui,
+    }}>
+      {/* Topbar */}
+      <div style={{
+        background: DS.topbar, padding: '12px 16px', paddingTop: 52,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Spese</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{operatoreNome}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setStep(step === 'lista' ? 'form' : 'lista')} style={{
+            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+            padding: '6px 12px', cursor: 'pointer', color: '#fff',
+            fontFamily: DS.ui, fontWeight: 600, fontSize: 12,
+          }}>
+            {step === 'lista' ? 'Nuova' : 'Storico'}
+          </button>
+          <button onClick={onClose} style={{
+            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%',
+            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#fff',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
       </div>
+
+      {/* Totale mese */}
+      <div style={{
+        background: DS.white, padding: '10px 16px', borderBottom: `1px solid ${DS.border}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 12, color: DS.textMid }}>Totale questo mese</span>
+        <span style={{ fontFamily: DS.mono, fontSize: 18, fontWeight: 700, color: DS.text }}>
+          {'\u20AC'}{totMese.toFixed(2)}
+        </span>
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {/* SUCCESS */}
+        {step === 'success' && (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%', background: 'rgba(26,158,115,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: DS.green }}>Spesa registrata</div>
+            <div style={{ fontSize: 13, color: DS.textMid, marginTop: 4 }}>In attesa di approvazione</div>
+          </div>
+        )}
+
+        {/* FORM */}
+        {step === 'form' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Importo */}
+            <div style={{
+              background: DS.white, border: `1.5px solid ${DS.border}`, borderRadius: 14,
+              padding: 16, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 11, color: DS.textMid, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Importo</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: DS.textLight }}>{'\u20AC'}</span>
+                <input
+                  value={importo}
+                  onChange={e => setImporto(e.target.value.replace(/[^0-9.,]/g, ''))}
+                  placeholder="0.00"
+                  inputMode="decimal"
+                  autoFocus
+                  style={{
+                    fontSize: 36, fontWeight: 800, fontFamily: DS.mono,
+                    border: 'none', outline: 'none', textAlign: 'center',
+                    width: 160, color: DS.text, background: 'transparent',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Categoria */}
+            <div style={{ background: DS.white, border: `1.5px solid ${DS.border}`, borderRadius: 14, padding: 14 }}>
+              <div style={{ fontSize: 11, color: DS.textMid, fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Categoria</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                {CATEGORIE.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoria(cat.id)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                      border: categoria === cat.id ? `2.5px solid ${cat.color}` : `1.5px solid ${DS.border}`,
+                      background: categoria === cat.id ? `${cat.color}15` : '#fff',
+                      fontFamily: DS.ui,
+                    }}
+                  >
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: categoria === cat.id ? cat.color : `${cat.color}20`,
+                      color: categoria === cat.id ? '#fff' : cat.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 800,
+                    }}>
+                      {cat.icon}
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: categoria === cat.id ? cat.color : DS.textMid }}>
+                      {cat.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Nota + Foto */}
+            <div style={{ background: DS.white, border: `1.5px solid ${DS.border}`, borderRadius: 14, padding: 14 }}>
+              <input
+                value={nota}
+                onChange={e => setNota(e.target.value)}
+                placeholder="Nota (opzionale)"
+                style={{
+                  width: '100%', padding: '10px 12px', border: `1.5px solid ${DS.border}`,
+                  borderRadius: 8, fontSize: 13, fontFamily: DS.ui, outline: 'none',
+                  marginBottom: 10, boxSizing: 'border-box',
+                }}
+              />
+
+              {commessaCodice && (
+                <div style={{
+                  fontSize: 11, color: DS.teal, fontWeight: 600,
+                  background: DS.tealLight, borderRadius: 6, padding: '4px 8px',
+                  marginBottom: 10, display: 'inline-block',
+                }}>
+                  Commessa: {commessaCodice}
+                </div>
+              )}
+
+              <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFoto} style={{ display: 'none' }} />
+
+              {fotoUrl ? (
+                <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: `1px solid ${DS.border}` }}>
+                  <img src={fotoUrl} alt="scontrino" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+                  <button onClick={() => setFotoUrl(null)} style={{
+                    position: 'absolute', top: 6, right: 6, width: 28, height: 28, borderRadius: '50%',
+                    background: 'rgba(220,68,68,0.85)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
+                  width: '100%', padding: '12px', background: '#fff',
+                  border: `2px dashed ${DS.border}`, borderRadius: 10, cursor: 'pointer',
+                  fontFamily: DS.ui, fontSize: 13, fontWeight: 600, color: DS.textMid,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={DS.textMid} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
+                  </svg>
+                  {uploading ? 'Caricamento...' : 'Foto scontrino'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* LISTA SPESE */}
+        {step === 'lista' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {loadingSpese && <div style={{ textAlign: 'center', color: DS.textMid, padding: 20 }}>Caricamento...</div>}
+            {!loadingSpese && spese.length === 0 && (
+              <div style={{ textAlign: 'center', color: DS.textLight, padding: 40 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Nessuna spesa registrata</div>
+              </div>
+            )}
+            {spese.map(s => (
+              <div key={s.id} style={{
+                background: DS.white, border: `1.5px solid ${DS.border}`, borderRadius: 12,
+                padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: `${catColor(s.categoria)}15`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 800, color: catColor(s.categoria),
+                }}>
+                  {CATEGORIE.find(c => c.id === s.categoria)?.icon || '?'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: DS.text }}>
+                      {CATEGORIE.find(c => c.id === s.categoria)?.label || s.categoria}
+                    </span>
+                    <span style={{ fontFamily: DS.mono, fontWeight: 700, fontSize: 15, color: DS.text }}>
+                      {'\u20AC'}{Number(s.importo).toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                    <span style={{ fontSize: 11, color: DS.textMid }}>
+                      {s.nota || ''}{s.cm_id ? ` \u2022 ${s.cm_id}` : ''}
+                    </span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '2px 6px',
+                      background: s.stato === 'approvata' ? 'rgba(26,158,115,0.1)' : s.stato === 'rifiutata' ? 'rgba(220,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+                      color: s.stato === 'approvata' ? DS.green : s.stato === 'rifiutata' ? DS.red : DS.amber,
+                    }}>
+                      {s.stato === 'da_approvare' ? 'In attesa' : s.stato === 'approvata' ? 'Approvata' : 'Rifiutata'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: DS.textLight, marginTop: 2 }}>
+                    {new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                {s.foto_url && (
+                  <img src={s.foto_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom bar - solo nel form */}
+      {step === 'form' && (
+        <div style={{
+          padding: '12px 16px', paddingBottom: 28,
+          background: DS.white, borderTop: `1px solid ${DS.border}`,
+        }}>
+          <button
+            onClick={salvaSpesa}
+            disabled={!importo || !categoria || saving}
+            style={{
+              width: '100%', padding: '16px',
+              background: (!importo || !categoria || saving) ? DS.textLight : DS.teal,
+              color: '#fff', border: 'none', borderRadius: 14,
+              fontFamily: DS.ui, fontWeight: 800, fontSize: 15,
+              cursor: (!importo || !categoria || saving) ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              boxShadow: (!importo || !categoria || saving) ? 'none' : `0 5px 0 0 ${DS.tealDark}`,
+            }}
+          >
+            {saving ? 'Salvataggio...' : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                Registra spesa {importo ? `\u20AC${importo}` : ''}
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

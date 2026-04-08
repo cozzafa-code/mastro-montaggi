@@ -4006,7 +4006,7 @@ export default function MontaggiApp({ onLogout, modalita }: { onLogout?: () => v
       <ReportCommessa open={reportOpen} onClose={()=>setReportOpen(false)} onOpenCad={(id,nome)=>{setCadVanoId(id);setCadVano(nome);setReportOpen(false);setShowCad(true);}}/>
       <MastroAI open={aiOpen} onClose={()=>setAiOpen(false)} ctx={ctxAI} onAction={handleFabAction}/>
       {showDisegno && <DisegnoCanvas commessaCodice={comData.id} onClose={()=>setShowDisegno(false)} onSend={(d)=>{console.log('Disegno:',d);setShowDisegno(false);}}/>}
-      {showSpesa && <SpesaQuick commessaId={comData.id} commessaCodice={comData.id} operatore={'Marco Vito'} onClose={()=>setShowSpesa(false)} onSend={(s)=>{console.log('Spesa:',s);setShowSpesa(false);}}/>}
+      {showSpesa && <SpesaQuick commessaId={comData.id?.toString()||''} commessaCodice={comData.codice||comData.id?.toString()||''} operatoreNome={OP.nome||'Operatore'} onClose={()=>setShowSpesa(false)}/>}
       <MastroFAB onAction={handleFabAction} activeCommessa={{ id: comData.id, codice: comData.id, cliente: comData.cliente }} onLogout={onLogout}/>
 
       {cadOverlay}
