@@ -3040,7 +3040,7 @@ function TabVani({onCad,vanoImgs}:{onCad:(n:string,id:number)=>void;vanoImgs:Rec
               vanoNome={v.nome}
               commessaId={COM.id?.toString()||''}
               montaggioId={COM.montaggioId||''}
-              operatoreId={OP.id||''}
+              operatoreId={OP.nome||''}
               compact={false}
             />
           </CardVanoIndicatori>
